@@ -12,32 +12,8 @@
             theme: {
                 extend: {
                     colors: {
-                        emerald: { 
-                            50: '#ecfdf5', 
-                            100: '#d1fae5', 
-                            200: '#a7f3d0', 
-                            300: '#6ee7b7', 
-                            400: '#34d399', 
-                            500: '#10b981', 
-                            600: '#059669', 
-                            700: '#047857', 
-                            800: '#065f46', 
-                            900: '#064e3b', 
-                            950: '#022c22' 
-                        },
-                        slate: { 
-                            50: '#f8fafc', 
-                            100: '#f1f5f9', 
-                            200: '#e2e8f0', 
-                            300: '#cbd5e1', 
-                            400: '#94a3b8', 
-                            500: '#64748b', 
-                            600: '#475569', 
-                            700: '#334155', 
-                            800: '#1e293b', 
-                            900: '#0f172a', 
-                            950: '#020617' 
-                        }
+                        emerald: { 50:'#ecfdf5', 100:'#d1fae5', 200:'#a7f3d0', 300:'#6ee7b7', 400:'#34d399', 500:'#10b981', 600:'#059669', 700:'#047857', 800:'#065f46', 900:'#064e3b', 950:'#022c22' },
+                        slate: { 50:'#f8fafc', 100:'#f1f5f9', 200:'#e2e8f0', 300:'#cbd5e1', 400:'#94a3b8', 500:'#64748b', 600:'#475569', 700:'#334155', 800:'#1e293b', 900:'#0f172a', 950:'#020617' }
                     },
                     fontFamily: {
                         sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
@@ -164,7 +140,7 @@
         <div id="screen-signup" class="w-full max-w-sm glass-card p-8 space-y-4 fade-in hidden-el">
             <h2 class="text-xl font-extrabold">Create account</h2>
             <div class="space-y-3">
-                <input type="text" id="su-name" placeholder="Full Name">
+                <input type="text" id="su-name" placeholder="Full Name (e.g. Miracle Moses)">
                 <input type="email" id="su-email" placeholder="Email Address">
                 <input type="password" id="su-pass" placeholder="Password (6+ characters)">
             </div>
@@ -200,7 +176,7 @@
                     <option value="500">500 Level</option>
                 </select>
                 <input type="text" id="ob-program" placeholder="Program (e.g., Political Science & IR)">
-                <input type="number" id="ob-total-units" placeholder="Required Graduation Units (e.g., 120)">
+                <input type="number" id="ob-total-units" placeholder="Graduation Required Units (e.g., 120)">
                 <button onclick="completeOnboard()" class="w-full py-3.5 rounded-2xl font-bold text-sm text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition mt-2">Initialize Core Engine</button>
             </div>
         </div>
@@ -221,7 +197,7 @@
             </div>
             <div class="flex items-center gap-2">
                 <button onclick="toggleTheme()" class="p-2.5 rounded-2xl pill-badge hover:scale-105 transition">
-                    <svg id="theme-svg-icon" class="w-4 h-4 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                    <svg class="w-4 h-4 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
                 </button>
             </div>
         </header>
@@ -230,8 +206,8 @@
             <!-- DESKTOP SIDEBAR -->
             <aside id="main-sidebar" class="hidden lg:flex flex-col w-64 shrink-0 p-6 space-y-6 border-r border-slate-200/60 dark:border-white/5">
                 <div class="space-y-1">
-                    <div id="sidebar-profile-name" class="font-extrabold text-slate-800 dark:text-slate-100">Miracle Moses</div>
-                    <div id="sidebar-profile-detail" class="text-xs text-slate-400 truncate">University of Abuja • Political Science</div>
+                    <div id="sidebar-profile-name" class="font-extrabold text-slate-800 dark:text-slate-100">User</div>
+                    <div id="sidebar-profile-detail" class="text-xs text-slate-400 truncate">Academic Profile</div>
                 </div>
 
                 <nav class="space-y-1 flex-1">
@@ -371,128 +347,35 @@
                 };
             },
 
+            // CORRECT MATHEMATICAL DETECTIVE CALCULATION:
+            // QP1 = GPA1 * Units1
+            // QP_Total = Portal_CGPA * (Units1 + Units2)
+            // QP2 = QP_Total - QP1
+            // GPA2 = QP2 / Units2
             detectiveAnalysis(gpa1, currentCGPA, sem1Units = 20, sem2Units = 20) {
-                // Formula: (Current CGPA * 2) - First Sem GPA = Second Sem GPA
-                const halfCGPA = currentCGPA / 2;
-                const diffCGPA = currentCGPA - halfCGPA;
-                const sem2GPA = diffCGPA * 2;
+                const sem1QP = gpa1 * sem1Units;
+                const totalUnits = sem1Units + sem2Units;
+                const targetTotalQP = currentCGPA * totalUnits;
+                const requiredSem2QP = targetTotalQP - sem1QP;
+                const requiredSem2GPA = sem2Units > 0 ? requiredSem2QP / sem2Units : 0;
 
                 return {
                     sem1Units,
-                    sem1QP: gpa1 * sem1Units,
+                    sem1QP,
                     sem2Units,
-                    requiredSem2QP: sem2GPA * sem2Units,
-                    requiredSem2GPA: sem2GPA,
-                    isPossible: sem2GPA >= 0 && sem2GPA <= 5.0
+                    totalUnits,
+                    targetTotalQP,
+                    requiredSem2QP,
+                    requiredSem2GPA,
+                    isPossible: requiredSem2GPA >= 0 && requiredSem2GPA <= 5.0
                 };
             }
         };
 
         // =========================================================================
-        // 2. STATE & DATABASE ENGINE WITH DEMO PRESETS
+        // 2. STATE & DATABASE ENGINE (DYNAMIC & CLEAN BY DEFAULT)
         // =========================================================================
-        const INITIAL_DEMO_DATA = {
-            users: {
-                "miracle@summit.os": {
-                    name: "Miracle Moses",
-                    pass: "password123",
-                    profile: {
-                        uni: "University of Abuja",
-                        level: "200",
-                        program: "Political Science & IR",
-                        totalUnits: 120
-                    },
-                    academic: {
-                        cgpa: 3.82,
-                        totalUnits: 72,
-                        cumulativeQP: 275.0,
-                        targetCGPA: 4.50,
-                        semesters: [
-                            {
-                                id: 101,
-                                name: "100L First Semester",
-                                gpa: 4.10,
-                                units: 20,
-                                qp: 82.0,
-                                courses: [
-                                    { code: "POS101", unit: 3, score: 78, grade: "A", gp: 5, qp: 15 },
-                                    { code: "POS103", unit: 3, score: 65, grade: "B", gp: 4, qp: 12 },
-                                    { code: "POS105", unit: 2, score: 72, grade: "A", gp: 5, qp: 10 },
-                                    { code: "GST111", unit: 2, score: 81, grade: "A", gp: 5, qp: 10 },
-                                    { code: "HIS101", unit: 2, score: 58, grade: "C", gp: 3, qp: 6 },
-                                    { code: "POS107", unit: 2, score: 68, grade: "B", gp: 4, qp: 8 },
-                                    { code: "POS111", unit: 3, score: 71, grade: "A", gp: 5, qp: 15 },
-                                    { code: "POS113", unit: 3, score: 62, grade: "B", gp: 4, qp: 12 }
-                                ]
-                            },
-                            {
-                                id: 102,
-                                name: "100L Second Semester",
-                                gpa: 3.86,
-                                units: 22,
-                                qp: 85.0,
-                                courses: [
-                                    { code: "POS102", unit: 3, score: 74, grade: "A", gp: 5, qp: 15 },
-                                    { code: "POS106", unit: 2, score: 61, grade: "B", gp: 4, qp: 8 },
-                                    { code: "POS108", unit: 2, score: 54, grade: "C", gp: 3, qp: 6 },
-                                    { code: "POS110", unit: 2, score: 79, grade: "A", gp: 5, qp: 10 },
-                                    { code: "POS112", unit: 2, score: 66, grade: "B", gp: 4, qp: 8 },
-                                    { code: "GST112", unit: 2, score: 83, grade: "A", gp: 5, qp: 10 },
-                                    { code: "HIS102", unit: 3, score: 59, grade: "C", gp: 3, qp: 9 },
-                                    { code: "POL108", unit: 3, score: 67, grade: "B", gp: 4, qp: 12 },
-                                    { code: "GNS122", unit: 3, score: 63, grade: "B", gp: 4, qp: 12 }
-                                ]
-                            },
-                            {
-                                id: 103,
-                                name: "200L First Semester",
-                                gpa: 3.50,
-                                units: 30,
-                                qp: 105.0,
-                                courses: [
-                                    { code: "POS201", unit: 2, score: 70, grade: "A", gp: 5, qp: 10 },
-                                    { code: "POS203", unit: 2, score: 64, grade: "B", gp: 4, qp: 8 },
-                                    { code: "POS205", unit: 2, score: 56, grade: "C", gp: 3, qp: 6 },
-                                    { code: "POS207", unit: 2, score: 71, grade: "A", gp: 5, qp: 10 },
-                                    { code: "POS209", unit: 2, score: 48, grade: "D", gp: 2, qp: 4 },
-                                    { code: "POS211", unit: 2, score: 62, grade: "B", gp: 4, qp: 8 },
-                                    { code: "POS213", unit: 2, score: 68, grade: "B", gp: 4, qp: 8 },
-                                    { code: "POS215", unit: 2, score: 53, grade: "C", gp: 3, qp: 6 },
-                                    { code: "FSS201", unit: 2, score: 75, grade: "A", gp: 5, qp: 10 },
-                                    { code: "ENT211", unit: 2, score: 60, grade: "B", gp: 4, qp: 8 },
-                                    { code: "CSC200", unit: 2, score: 51, grade: "C", gp: 3, qp: 6 },
-                                    { code: "GNS201", unit: 2, score: 80, grade: "A", gp: 5, qp: 10 },
-                                    { code: "GNS211P", unit: 2, score: 45, grade: "D", gp: 2, qp: 4 },
-                                    { code: "POS217", unit: 2, score: 58, grade: "C", gp: 3, qp: 6 },
-                                    { code: "POS219", unit: 2, score: 42, grade: "E", gp: 1, qp: 1 }
-                                ]
-                            }
-                        ]
-                    },
-                    planner: {
-                        tasks: [
-                            { title: "Read Chapter 4 of POS 201 (Political Analysis)", done: false },
-                            { title: "Review AfCFTA Essay draft with Uche", done: true },
-                            { title: "Prepare notes for POS 207 Political Economy", done: false }
-                        ],
-                        events: [
-                            { code: "POS201", type: "Exam", date: "2026-11-15" },
-                            { code: "POS203", type: "Test", date: "2026-10-28" }
-                        ]
-                    },
-                    finance: {
-                        semesterBudget: 150000,
-                        transactions: [
-                            { amount: 12000, desc: "Political Science Department Handouts", type: "expense", date: Date.now() },
-                            { amount: 8500, desc: "Library Printing & Binding", type: "expense", date: Date.now() }
-                        ]
-                    }
-                }
-            },
-            current: "miracle@summit.os"
-        };
-
-        let DB = JSON.parse(localStorage.getItem('as_unified_db_v5')) || INITIAL_DEMO_DATA;
+        let DB = JSON.parse(localStorage.getItem('as_unified_db_v5')) || { users: {}, current: null };
         let currentUser = null;
 
         function saveDB() {
@@ -548,14 +431,14 @@
             const email = document.getElementById('su-email').value.trim().toLowerCase();
             const pass = document.getElementById('su-pass').value;
 
-            if (!name || !email || pass.length < 6) return alert("Please complete all fields.");
-            if (DB.users[email]) return alert("Account already exists.");
+            if (!name || !email || pass.length < 6) return alert("Please complete all fields with a valid password.");
+            if (DB.users[email]) return alert("An account with this email already exists.");
 
             DB.users[email] = {
                 name, pass, profile: null,
                 academic: { semesters: [], cgpa: 0.00, totalUnits: 0, cumulativeQP: 0, targetCGPA: 4.50 },
                 planner: { tasks: [], events: [] },
-                finance: { semesterBudget: 150000, transactions: [] }
+                finance: { semesterBudget: 100000, transactions: [] }
             };
             DB.current = email;
             saveDB();
@@ -568,7 +451,7 @@
 
             if (!DB.users[email] || DB.users[email].pass !== pass) {
                 const err = document.getElementById('auth-error');
-                err.textContent = "Invalid credentials.";
+                err.textContent = "Invalid email or password.";
                 err.classList.remove('hidden-el');
                 return;
             }
@@ -649,20 +532,29 @@
             recomputeUserData();
             const acad = currentUser.academic;
             const totalReq = currentUser.profile.totalUnits || 120;
-            const progressPct = Math.min(100, Math.round((acad.totalUnits / totalReq) * 100));
+            const progressPct = totalReq > 0 ? Math.min(100, Math.round((acad.totalUnits / totalReq) * 100)) : 0;
 
             const lastSem = acad.semesters.length > 0 ? acad.semesters[acad.semesters.length - 1] : null;
-            const lastGPA = lastSem ? lastSem.gpa.toFixed(2) : "4.10";
+            const lastGPA = lastSem ? lastSem.gpa.toFixed(2) : "0.00";
+
+            let diffText = "No previous semester records";
+            if (acad.semesters.length > 1) {
+                const prevGPA = acad.semesters[acad.semesters.length - 2].gpa;
+                const diff = (lastSem.gpa - prevGPA).toFixed(2);
+                diffText = diff >= 0 ? `↑ +${diff} from previous semester` : `↓ ${diff} from previous semester`;
+            }
+
+            const firstName = currentUser.name.split(' ')[0] || "Student";
 
             container.innerHTML = `
                 <div class="fade-in space-y-5">
                     <!-- HERO WELCOME BANNER -->
                     <div class="glass-card p-6 md:p-8 space-y-4 relative overflow-hidden">
-                        <div class="absolute -top-10 -right-10 w-40 h-40 bg-purple-400/15 rounded-full blur-3xl pointer-events-none"></div>
+                        <div class="absolute -top-10 -right-10 w-40 h-40 bg-emerald-400/15 rounded-full blur-3xl pointer-events-none"></div>
                         <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">WELCOME BACK</p>
-                        <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight">Keep climbing, ${currentUser.name.split(' ')[0]}.</h2>
+                        <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight">Keep climbing, ${firstName}.</h2>
                         <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-xl">
-                            Track your results, understand your academic trajectory, plan your semester and keep your university life organized in one place.
+                            Track your results, understand your academic trajectory, plan your semester, and keep your university life organized in one place.
                         </p>
                         <div class="flex flex-wrap gap-2 pt-2">
                             <span class="pill-badge px-3.5 py-1.5 rounded-full text-xs font-semibold text-slate-600 dark:text-slate-300">${currentUser.profile.uni}</span>
@@ -675,8 +567,8 @@
                     <div class="glass-card p-6 space-y-2">
                         <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">CURRENT CGPA</p>
                         <div class="text-5xl font-black tracking-tight">${acad.cgpa.toFixed(2)}</div>
-                        <p class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                            <span>↑ +0.24</span> from last semester
+                        <p class="text-xs font-semibold ${acad.semesters.length > 1 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}">
+                            ${diffText}
                         </p>
                     </div>
 
@@ -871,12 +763,12 @@
             });
 
             recomputeUserData();
-            alert(`Semester GPA: ${semEval.gpa.toFixed(2)}\nNew CGPA: ${currentUser.academic.cgpa.toFixed(2)}`);
+            alert(`Semester GPA Calculated: ${semEval.gpa.toFixed(2)}\nUpdated Cumulative CGPA: ${currentUser.academic.cgpa.toFixed(2)}`);
             switchView('home');
         }
 
         // =========================================================================
-        // RESULT DETECTIVE VIEW (4.65 CGPA -> 4.80 SEM 1 = 4.50 SEM 2)
+        // RESULT DETECTIVE VIEW
         // =========================================================================
         function renderDetectiveSub() {
             highlightAcadTab('tab-det');
@@ -888,23 +780,31 @@
                     <div>
                         <h3 class="font-extrabold text-base">🔍 Result Detective Engine</h3>
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                            Calculates required Second Semester GPA using your target Portal CGPA shift equation.
+                            Reverse engine required Second Semester GPA using cumulative weighted Quality Points.
                         </p>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400">First Semester GPA</label>
-                            <input type="number" id="det-1st" step="0.01" value="4.80" placeholder="4.80" class="mt-1">
+                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400">1st Semester GPA</label>
+                            <input type="number" id="det-1st" step="0.01" placeholder="e.g., 4.80" class="mt-1">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400">1st Sem Credit Units</label>
+                            <input type="number" id="det-1st-u" value="20" placeholder="20" class="mt-1">
                         </div>
                         <div>
                             <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Current Portal CGPA</label>
-                            <input type="number" id="det-curr" step="0.01" value="4.65" placeholder="4.65" class="mt-1">
+                            <input type="number" id="det-curr" step="0.01" placeholder="e.g., 4.65" class="mt-1">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400">2nd Sem Credit Units</label>
+                            <input type="number" id="det-2nd-u" value="20" placeholder="20" class="mt-1">
                         </div>
                     </div>
 
                     <button onclick="runDetective()" class="w-full py-3.5 rounded-2xl font-bold text-sm text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition">
-                        Run Authoritative Engine Calculation
+                        Run Authoritative Engine Analysis
                     </button>
 
                     <div id="det-results" class="space-y-3 pt-2"></div>
@@ -914,38 +814,31 @@
 
         function runDetective() {
             const gpa1 = parseFloat(document.getElementById('det-1st').value);
+            const u1 = parseFloat(document.getElementById('det-1st-u').value) || 20;
             const cgpa = parseFloat(document.getElementById('det-curr').value);
+            const u2 = parseFloat(document.getElementById('det-2nd-u').value) || 20;
             const res = document.getElementById('det-results');
 
             if (isNaN(gpa1) || isNaN(cgpa)) return alert("Enter both GPA values.");
 
-            const analysis = AcademicEngine.detectiveAnalysis(gpa1, cgpa, 20, 20);
-
-            // Calculation trace matching prompt logic:
-            // 4.65 current CGPA
-            // First sem 4.80
-            // ÷ 2 = 2.40
-            // 2.40 - 4.65 = 2.25 CGPA addition
-            // 2.25 × 2 = 4.50 second semester GPA
-            const halfCGPA = cgpa / 2;
-            const diffCGPA = cgpa - halfCGPA; 
-            const sem2GPA = analysis.requiredSem2GPA; 
+            const analysis = AcademicEngine.detectiveAnalysis(gpa1, cgpa, u1, u2);
 
             let html = `
                 <div class="glass-card p-5 space-y-2 border-l-4 border-emerald-500">
-                    <p class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Formula Execution Trace</p>
+                    <p class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Quality Points Calculation Trace</p>
                     <div class="text-xs font-mono text-slate-600 dark:text-slate-300 space-y-1">
-                        <p>1. Half Portal CGPA: ${cgpa.toFixed(2)} ÷ 2 = ${halfCGPA.toFixed(2)}</p>
-                        <p>2. CGPA Balance: ${cgpa.toFixed(2)} - ${halfCGPA.toFixed(2)} = ${diffCGPA.toFixed(2)} addition needed</p>
-                        <p>3. Required 2nd Semester GPA: ${diffCGPA.toFixed(2)} × 2 = <b>${sem2GPA.toFixed(2)}</b></p>
+                        <p>1. Sem 1 Quality Points: ${gpa1.toFixed(2)} GPA × ${u1} Units = ${analysis.sem1QP.toFixed(2)} QP</p>
+                        <p>2. Target Total Quality Points: ${cgpa.toFixed(2)} CGPA × ${analysis.totalUnits} Total Units = ${analysis.targetTotalQP.toFixed(2)} QP</p>
+                        <p>3. Required Sem 2 Quality Points: ${analysis.targetTotalQP.toFixed(2)} - ${analysis.sem1QP.toFixed(2)} = ${analysis.requiredSem2QP.toFixed(2)} QP</p>
+                        <p>4. Required Sem 2 GPA: ${analysis.requiredSem2QP.toFixed(2)} ÷ ${u2} Units = <b>${analysis.requiredSem2GPA.toFixed(2)}</b></p>
                     </div>
                 </div>
 
                 <div class="glass-card p-5 space-y-1">
-                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">RESULT DETECTIVE VERDICT</p>
-                    <div class="text-3xl font-black text-emerald-600 dark:text-emerald-400">${sem2GPA.toFixed(2)}</div>
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">DETECTIVE VERDICT</p>
+                    <div class="text-3xl font-black ${analysis.isPossible ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}">${analysis.requiredSem2GPA.toFixed(2)}</div>
                     <p class="text-xs text-slate-500 leading-relaxed">
-                        To maintain a cumulative portal CGPA of <b>${cgpa.toFixed(2)}</b> given a First Semester GPA of <b>${gpa1.toFixed(2)}</b>, your second semester GPA is <b>${sem2GPA.toFixed(2)}</b>.
+                        To maintain a cumulative portal CGPA of <b>${cgpa.toFixed(2)}</b> given a First Semester GPA of <b>${gpa1.toFixed(2)}</b> (${u1} units), your required second semester GPA across ${u2} units is <b>${analysis.requiredSem2GPA.toFixed(2)}</b>.
                     </p>
                 </div>
             `;
@@ -956,9 +849,11 @@
         function renderDecimalsSub() {
             highlightAcadTab('tab-dec');
             const sub = document.getElementById('acad-sub-content');
+            const totalUnits = currentUser.academic.totalUnits > 0 ? currentUser.academic.totalUnits : 40;
             sub.innerHTML = `
                 <div class="glass-card p-6 space-y-4 fade-in">
                     <h3 class="font-extrabold text-base">Menu of Decimals</h3>
+                    <p class="text-xs text-slate-400">Impact of individual course grades based on ${totalUnits} accumulated units.</p>
                     <div class="overflow-x-auto">
                         <table class="w-full text-xs text-left">
                             <thead>
@@ -973,9 +868,9 @@
                                 ${[1, 2, 3, 4, 6].map(u => `
                                     <tr>
                                         <td class="p-2 font-bold font-sans">${u} Unit</td>
-                                        <td class="p-2 text-emerald-600 dark:text-emerald-400">+${((u * 5) / 40).toFixed(3)}</td>
-                                        <td class="p-2">+${((u * 4) / 40).toFixed(3)}</td>
-                                        <td class="p-2">+${((u * 3) / 40).toFixed(3)}</td>
+                                        <td class="p-2 text-emerald-600 dark:text-emerald-400">+${((u * 5) / totalUnits).toFixed(3)}</td>
+                                        <td class="p-2">+${((u * 4) / totalUnits).toFixed(3)}</td>
+                                        <td class="p-2">+${((u * 3) / totalUnits).toFixed(3)}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -989,6 +884,8 @@
             highlightAcadTab('tab-rec');
             recomputeUserData();
             const sub = document.getElementById('acad-sub-content');
+            const sems = currentUser.academic.semesters;
+
             sub.innerHTML = `
                 <div class="glass-card p-6 space-y-4 fade-in">
                     <h3 class="font-extrabold text-base">Academic Record Summary</h3>
@@ -997,6 +894,25 @@
                         <span class="text-xs font-bold">Current CGPA: ${currentUser.academic.cgpa.toFixed(2)}</span>
                         <button onclick="window.print()" class="text-xs font-bold text-emerald-600 dark:text-emerald-400">Print</button>
                     </div>
+
+                    ${sems.length === 0 ? '<p class="text-xs text-slate-400 text-center py-6">No semester records available.</p>' : 
+                        sems.map(s => `
+                            <div class="p-4 rounded-2xl pill-badge space-y-2">
+                                <div class="flex justify-between items-center pb-2 border-b border-slate-200/50 dark:border-white/5">
+                                    <span class="text-xs font-bold">${s.name}</span>
+                                    <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">GPA: ${s.gpa.toFixed(2)} (${s.units} Units)</span>
+                                </div>
+                                <div class="space-y-1">
+                                    ${s.courses.map(c => `
+                                        <div class="flex justify-between text-xs">
+                                            <span class="font-mono text-slate-500">${c.code} (${c.unit} Units)</span>
+                                            <span class="font-bold">${c.score !== null ? c.score : '-'} / <span class="${c.grade==='A'?'text-emerald-600 dark:text-emerald-400':''}">${c.grade}</span></span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `).join('')
+                    }
                 </div>
             `;
         }
@@ -1119,7 +1035,7 @@
                     <div class="glass-card p-6 space-y-3 border-l-4 border-red-500">
                         <h3 class="font-bold text-xs text-red-500 uppercase tracking-widest">Danger Zone</h3>
                         <button onclick="if(confirm('Clear all data?')){localStorage.clear(); location.reload();}" class="w-full py-3.5 rounded-2xl text-xs font-bold text-red-500 pill-badge hover:bg-red-500/10 transition">
-                            Clear Local Storage
+                            Clear Local Storage Data
                         </button>
                     </div>
                 </div>
