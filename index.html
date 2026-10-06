@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="light">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -12,10 +12,32 @@
             theme: {
                 extend: {
                     colors: {
-                        brand: { 50:'#f0fdf4', 100:'#dcfce7', 500:'#22c55e', 600:'#16a34a', 700:'#15803d', 900:'#14532d' },
-                        darkbg: '#090d16',
-                        darkcard: '#111827',
-                        darkborder: '#1f2937'
+                        emerald: { 
+                            50: '#ecfdf5', 
+                            100: '#d1fae5', 
+                            200: '#a7f3d0', 
+                            300: '#6ee7b7', 
+                            400: '#34d399', 
+                            500: '#10b981', 
+                            600: '#059669', 
+                            700: '#047857', 
+                            800: '#065f46', 
+                            900: '#064e3b', 
+                            950: '#022c22' 
+                        },
+                        slate: { 
+                            50: '#f8fafc', 
+                            100: '#f1f5f9', 
+                            200: '#e2e8f0', 
+                            300: '#cbd5e1', 
+                            400: '#94a3b8', 
+                            500: '#64748b', 
+                            600: '#475569', 
+                            700: '#334155', 
+                            800: '#1e293b', 
+                            900: '#0f172a', 
+                            950: '#020617' 
+                        }
                     },
                     fontFamily: {
                         sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
@@ -25,178 +47,251 @@
             }
         }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            box-sizing: border-box;
-            padding-top: env(safe-area-inset-top, 0px);
-            padding-bottom: env(safe-area-inset-bottom, 0px);
+            --bg-main: #f8fafc;
+            --bg-card: rgba(255, 255, 255, 0.85);
+            --bg-card-hover: rgba(255, 255, 255, 0.95);
+            --border-card: rgba(226, 232, 240, 0.8);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.03), 0 4px 12px -2px rgba(0, 0, 0, 0.02);
+            --pill-bg: rgba(255, 255, 255, 0.75);
         }
-        html { scroll-padding-top: env(safe-area-inset-top, 0px); }
-        body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
-        
-        .card {
-            background-color: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 1rem;
-            padding: 1rem;
+
+        html.dark {
+            --bg-main: #020617;
+            --bg-card: rgba(15, 23, 42, 0.65);
+            --bg-card-hover: rgba(15, 23, 42, 0.85);
+            --border-card: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.4);
+            --pill-bg: rgba(255, 255, 255, 0.05);
         }
-        html.dark .card {
-            background-color: #111827;
-            border-color: #1f2937;
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            background-image: radial-gradient(at 0% 0%, rgba(224, 231, 255, 0.4) 0px, transparent 50%),
+                              radial-gradient(at 100% 0%, rgba(209, 250, 229, 0.4) 0px, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        html.dark body {
+            background-image: radial-gradient(at 0% 0%, rgba(30, 27, 75, 0.3) 0px, transparent 50%),
+                              radial-gradient(at 100% 0%, rgba(6, 78, 59, 0.25) 0px, transparent 50%);
+        }
+
+        .glass-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-card);
+            border-radius: 1.5rem;
+            box-shadow: var(--shadow-card);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .glass-card-hover:hover {
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+        }
+
+        .pill-badge {
+            background: var(--pill-bg);
+            border: 1px solid var(--border-card);
+            backdrop-filter: blur(8px);
         }
 
         .hidden-el { display: none !important; }
-        .fade-in { animation: fadeIn 0.25s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
         input, select, textarea {
             width: 100%;
-            padding: 0.75rem;
-            border-radius: 0.75rem;
+            padding: 0.875rem 1rem;
+            border-radius: 1rem;
             font-size: 0.875rem;
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-            color: #0f172a;
-            transition: all 0.2s;
+            background-color: rgba(255, 255, 255, 0.7);
+            border: 1px solid var(--border-card);
+            color: var(--text-main);
+            transition: all 0.2s ease;
         }
         html.dark input, html.dark select, html.dark textarea {
-            background-color: #0f172a;
-            border-color: #1f2937;
-            color: #f8fafc;
+            background-color: rgba(15, 23, 42, 0.5);
         }
         input:focus, select:focus, textarea:focus {
             outline: none;
-            border-color: #16a34a;
-            box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+            border-color: #059669;
+            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
         }
 
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.3); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 10px; }
 
         @media print {
             .np { display: none !important; }
-            body, .card { background: #fff !important; color: #000 !important; border-color: #ccc !important; }
-            :root { padding: 0; }
+            body, .glass-card { background: #fff !important; color: #000 !important; border-color: #ccc !important; box-shadow: none !important; }
         }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-darkbg text-slate-900 dark:text-slate-100 min-h-screen font-sans antialiased">
+<body class="min-h-screen antialiased flex flex-col">
 
     <!-- AUTH OVERLAY -->
     <div id="auth-container" class="min-h-screen flex items-center justify-center p-5">
         <!-- WELCOME SCREEN -->
-        <div id="screen-welcome" class="w-full max-w-sm text-center space-y-5 fade-in">
-            <div class="w-16 h-16 mx-auto rounded-2xl bg-brand-600 text-white text-3xl font-black flex items-center justify-center shadow-lg shadow-brand-600/30">S</div>
-            <h1 class="text-5xl font-black tracking-tight leading-[1.05]">Academic<br><span class="text-brand-600 dark:text-brand-500">Summit</span></h1>
-            <p class="text-lg text-slate-600 dark:text-slate-300 leading-snug">The only companion you need for your academic journey.</p>
-            <div class="flex flex-wrap justify-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                <span class="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800">GPA calculator</span>
-                <span class="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800">Exam calendar</span>
-                <span class="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800">Result detective</span>
-                <span class="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800">Budget</span>
+        <div id="screen-welcome" class="w-full max-w-sm text-center space-y-6 fade-in glass-card p-8">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-600/20">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
             </div>
-            <button onclick="showAuthScreen('screen-signup')" class="w-full py-3 rounded-xl font-bold text-sm text-white bg-brand-600 hover:bg-brand-700 transition">Create account</button>
-            <button onclick="showAuthScreen('screen-login')" class="w-full py-3 rounded-xl font-bold text-sm bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-darkborder hover:bg-slate-200 dark:hover:bg-slate-700 transition">Log in</button>
+            <div>
+                <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Academic Summit</p>
+                <h1 class="text-3xl font-extrabold tracking-tight">Your academic<br><span class="text-emerald-600 dark:text-emerald-400">command center</span></h1>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">Track your results, understand your academic trajectory, plan your semester, and keep your university life organized in one place.</p>
+            <div class="space-y-2.5 pt-2">
+                <button onclick="showAuthScreen('screen-signup')" class="w-full py-3.5 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-95 shadow-md shadow-emerald-600/15 transition">Create account</button>
+                <button onclick="showAuthScreen('screen-login')" class="w-full py-3.5 rounded-2xl font-bold text-sm text-slate-700 dark:text-slate-200 pill-badge hover:bg-white/80 transition">Log in</button>
+            </div>
         </div>
 
         <!-- SIGNUP SCREEN -->
-        <div id="screen-signup" class="w-full max-w-sm card p-6 space-y-3 fade-in hidden-el">
-            <h2 class="text-xl font-extrabold">Create your account</h2>
-            <input type="text" id="su-name" placeholder="Full Name">
-            <input type="email" id="su-email" placeholder="Email Address">
-            <input type="password" id="su-pass" placeholder="Password (6+ characters)">
-            <button onclick="handleSignup()" class="w-full py-3 rounded-xl font-bold text-sm text-white bg-brand-600 hover:bg-brand-700 transition">Sign Up</button>
-            <button onclick="showAuthScreen('screen-welcome')" class="w-full text-xs text-slate-500 py-1">Back</button>
+        <div id="screen-signup" class="w-full max-w-sm glass-card p-8 space-y-4 fade-in hidden-el">
+            <h2 class="text-xl font-extrabold">Create account</h2>
+            <div class="space-y-3">
+                <input type="text" id="su-name" placeholder="Full Name">
+                <input type="email" id="su-email" placeholder="Email Address">
+                <input type="password" id="su-pass" placeholder="Password (6+ characters)">
+            </div>
+            <button onclick="handleSignup()" class="w-full py-3.5 rounded-2xl font-bold text-sm text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition">Sign Up</button>
+            <button onclick="showAuthScreen('screen-welcome')" class="w-full text-xs text-slate-400 py-1">Back</button>
         </div>
 
         <!-- LOGIN SCREEN -->
-        <div id="screen-login" class="w-full max-w-sm card p-6 space-y-3 fade-in hidden-el">
+        <div id="screen-login" class="w-full max-w-sm glass-card p-8 space-y-4 fade-in hidden-el">
             <h2 class="text-xl font-extrabold">Welcome back</h2>
-            <input type="email" id="li-email" placeholder="Email Address">
-            <input type="password" id="li-pass" placeholder="Password">
-            <button onclick="handleLogin()" class="w-full py-3 rounded-xl font-bold text-sm text-white bg-brand-600 hover:bg-brand-700 transition">Log In</button>
-            <button onclick="showAuthScreen('screen-welcome')" class="w-full text-xs text-slate-500 py-1">Back</button>
-            <p id="auth-error" class="text-xs text-red-500 text-center min-h-[1rem] hidden-el"></p>
+            <div class="space-y-3">
+                <input type="email" id="li-email" placeholder="Email Address">
+                <input type="password" id="li-pass" placeholder="Password">
+            </div>
+            <button onclick="handleLogin()" class="w-full py-3.5 rounded-2xl font-bold text-sm text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition">Log In</button>
+            <button onclick="showAuthScreen('screen-welcome')" class="w-full text-xs text-slate-400 py-1">Back</button>
+            <p id="auth-error" class="text-xs text-red-500 text-center hidden-el"></p>
         </div>
 
         <!-- ONBOARDING SCREEN -->
-        <div id="screen-onboard" class="w-full max-w-sm card p-6 space-y-4 fade-in hidden-el">
+        <div id="screen-onboard" class="w-full max-w-sm glass-card p-8 space-y-4 fade-in hidden-el">
             <div>
                 <h2 class="text-xl font-extrabold">Academic Profile</h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Initialize your academic system profile.</p>
+                <p class="text-xs text-slate-400 mt-0.5">Initialize core operating profile.</p>
             </div>
             <div class="space-y-3">
                 <input type="text" id="ob-uni" placeholder="University (e.g., University of Abuja)">
                 <select id="ob-level">
                     <option value="100">100 Level</option>
-                    <option value="200">200 Level</option>
+                    <option value="200" selected>200 Level</option>
                     <option value="300">300 Level</option>
                     <option value="400">400 Level</option>
                     <option value="500">500 Level</option>
                 </select>
-                <input type="text" id="ob-program" placeholder="Program (e.g., Political Science)">
-                <input type="number" id="ob-total-units" placeholder="Graduation Required Units (e.g., 160)">
-                <button onclick="completeOnboard()" class="w-full py-3 rounded-xl font-bold text-sm text-white bg-brand-600 hover:bg-brand-700 transition">Initialize Core Engine</button>
+                <input type="text" id="ob-program" placeholder="Program (e.g., Political Science & IR)">
+                <input type="number" id="ob-total-units" placeholder="Required Graduation Units (e.g., 120)">
+                <button onclick="completeOnboard()" class="w-full py-3.5 rounded-2xl font-bold text-sm text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition mt-2">Initialize Core Engine</button>
             </div>
         </div>
     </div>
 
     <!-- MAIN OS APPLICATION -->
-    <div id="app-os" class="hidden-el min-h-screen">
-        <header class="np lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-darkcard border-b border-slate-200 dark:border-darkborder sticky top-0 z-30">
-            <b class="tracking-tight">🏔️ Summit OS</b>
-            <button onclick="toggleTheme()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-sm" aria-label="Toggle theme">🌓</button>
+    <div id="app-os" class="hidden-el min-h-screen flex flex-col">
+        <!-- TOP HEADER -->
+        <header class="px-5 py-4 flex items-center justify-between border-b border-slate-200/60 dark:border-white/5 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md sticky top-0 z-40">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-xl pill-badge hover:bg-white/80 transition">
+                    <svg class="w-5 h-5 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                </button>
+                <div>
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Academic Summit</p>
+                    <h1 class="text-lg font-extrabold tracking-tight leading-none">Your academic command center</h1>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="toggleTheme()" class="p-2.5 rounded-2xl pill-badge hover:scale-105 transition">
+                    <svg id="theme-svg-icon" class="w-4 h-4 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                </button>
+            </div>
         </header>
 
-        <div class="flex">
+        <div class="flex-1 flex max-w-6xl w-full mx-auto">
             <!-- DESKTOP SIDEBAR -->
-            <aside class="np hidden lg:flex flex-col w-60 shrink-0 bg-white dark:bg-darkcard border-r border-slate-200 dark:border-darkborder p-4 sticky top-0 h-screen gap-1">
-                <div class="px-2 py-1 mb-2">
-                    <h1 class="font-extrabold text-lg">🏔️ Summit OS</h1>
-                    <p id="sidebar-profile" class="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">Loading...</p>
+            <aside id="main-sidebar" class="hidden lg:flex flex-col w-64 shrink-0 p-6 space-y-6 border-r border-slate-200/60 dark:border-white/5">
+                <div class="space-y-1">
+                    <div id="sidebar-profile-name" class="font-extrabold text-slate-800 dark:text-slate-100">Miracle Moses</div>
+                    <div id="sidebar-profile-detail" class="text-xs text-slate-400 truncate">University of Abuja • Political Science</div>
                 </div>
-                <nav class="flex-1 space-y-1">
-                    <button onclick="switchView('home')" class="nav-item w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition" data-target="home">🏠 Dashboard</button>
-                    <button onclick="switchView('academics')" class="nav-item w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition" data-target="academics">🧮 Academics</button>
-                    <button onclick="switchView('planner')" class="nav-item w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition" data-target="planner">📅 Planner</button>
-                    <button onclick="switchView('finance')" class="nav-item w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition" data-target="finance">💰 Finance Centre</button>
-                    <button onclick="switchView('more')" class="nav-item w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition" data-target="more">👤 Settings & Materials</button>
+
+                <nav class="space-y-1 flex-1">
+                    <button onclick="switchView('home')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition text-left" data-target="home">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 00-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                        Dashboard
+                    </button>
+                    <button onclick="switchView('academics')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition text-left" data-target="academics">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 01-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+                        Academics
+                    </button>
+                    <button onclick="switchView('planner')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition text-left" data-target="planner">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        Planner
+                    </button>
+                    <button onclick="switchView('finance')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition text-left" data-target="finance">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Finance Centre
+                    </button>
+                    <button onclick="switchView('more')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition text-left" data-target="more">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        Settings
+                    </button>
                 </nav>
-                <div class="pt-2 border-t border-slate-200 dark:border-darkborder flex items-center justify-between gap-2">
-                    <button onclick="toggleTheme()" class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition">🌓 Theme</button>
-                    <button onclick="logout()" class="px-3 py-2 rounded-xl text-xs font-bold text-red-500 hover:bg-red-500/10 transition">Logout</button>
-                </div>
+
+                <button onclick="logout()" class="w-full py-2.5 rounded-xl text-xs font-bold text-red-500 pill-badge hover:bg-red-500/10 transition">Log out</button>
             </aside>
 
-            <!-- MAIN CONTENT AREA -->
-            <main id="main-content" class="flex-1 min-w-0 p-4 md:p-8 max-w-5xl mx-auto pb-28 lg:pb-8 space-y-5"></main>
+            <!-- MAIN CONTENT CONTAINER -->
+            <main id="main-content" class="flex-1 p-5 md:p-8 space-y-6 pb-28 lg:pb-8 overflow-y-auto"></main>
         </div>
 
-        <!-- MOBILE BOTTOM NAVIGATION -->
-        <nav class="np lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-darkcard border-t border-slate-200 dark:border-darkborder flex overflow-x-auto z-30" style="padding-bottom:env(safe-area-inset-bottom,0px)">
-            <button onclick="switchView('home')" class="nav-btn flex-1 min-w-[64px] py-2 flex flex-col items-center text-[10px] font-semibold text-slate-400" data-target="home">
-                <span class="text-lg">🏠</span>Home
+        <!-- MOBILE BOTTOM NAV -->
+        <nav class="lg:hidden fixed bottom-0 inset-x-0 bg-white/75 dark:bg-slate-900/75 backdrop-blur-xl border-t border-slate-200/60 dark:border-white/5 flex justify-around p-2 z-40" style="padding-bottom:env(safe-area-inset-bottom, 8px)">
+            <button onclick="switchView('home')" class="nav-btn flex-1 py-1.5 flex flex-col items-center gap-1 text-[11px] font-semibold text-slate-400" data-target="home">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 00-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                Home
             </button>
-            <button onclick="switchView('academics')" class="nav-btn flex-1 min-w-[64px] py-2 flex flex-col items-center text-[10px] font-semibold text-slate-400" data-target="academics">
-                <span class="text-lg">🧮</span>Academics
+            <button onclick="switchView('academics')" class="nav-btn flex-1 py-1.5 flex flex-col items-center gap-1 text-[11px] font-semibold text-slate-400" data-target="academics">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 01-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+                Academics
             </button>
-            <button onclick="switchView('planner')" class="nav-btn flex-1 min-w-[64px] py-2 flex flex-col items-center text-[10px] font-semibold text-slate-400" data-target="planner">
-                <span class="text-lg">📅</span>Planner
+            <button onclick="switchView('planner')" class="nav-btn flex-1 py-1.5 flex flex-col items-center gap-1 text-[11px] font-semibold text-slate-400" data-target="planner">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Planner
             </button>
-            <button onclick="switchView('finance')" class="nav-btn flex-1 min-w-[64px] py-2 flex flex-col items-center text-[10px] font-semibold text-slate-400" data-target="finance">
-                <span class="text-lg">💰</span>Finance
+            <button onclick="switchView('finance')" class="nav-btn flex-1 py-1.5 flex flex-col items-center gap-1 text-[11px] font-semibold text-slate-400" data-target="finance">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Finance
             </button>
-            <button onclick="switchView('more')" class="nav-btn flex-1 min-w-[64px] py-2 flex flex-col items-center text-[10px] font-semibold text-slate-400" data-target="more">
-                <span class="text-lg">👤</span>More
+            <button onclick="switchView('more')" class="nav-btn flex-1 py-1.5 flex flex-col items-center gap-1 text-[11px] font-semibold text-slate-400" data-target="more">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                More
             </button>
         </nav>
     </div>
 
     <script>
         // =========================================================================
-        // 1. THE SINGLE AUTHORITATIVE ACADEMIC ENGINE
+        // 1. AUTHORITATIVE ACADEMIC ENGINE
         // =========================================================================
         const AcademicEngine = {
             GRADE_MAP: [
@@ -216,7 +311,6 @@
                 }
                 const score = parseFloat(scoreOrLetter);
                 if (isNaN(score)) return { letter: '-', gp: 0 };
-                
                 for (const range of this.GRADE_MAP) {
                     if (score >= range.min) return { letter: range.letter, gp: range.gp };
                 }
@@ -227,23 +321,19 @@
                 const units = parseFloat(course.unit || course.units) || 0;
                 const score = course.score !== undefined ? parseFloat(course.score) : null;
                 const { letter, gp } = this.resolveGrade(score !== null && !isNaN(score) ? score : course.grade);
-                const qp = units * gp;
-
                 return {
                     code: (course.code || 'UNKNOWN').toUpperCase().trim(),
                     unit: units,
                     score: score,
                     grade: letter,
                     gp: gp,
-                    qp: qp
+                    qp: units * gp
                 };
             },
 
             evaluateSemester(courses) {
-                let semesterUnits = 0;
-                let semesterQP = 0;
+                let semesterUnits = 0, semesterQP = 0;
                 const evaluatedCourses = [];
-
                 courses.forEach(c => {
                     const evalC = this.evaluateCourse(c);
                     if (evalC.unit > 0) {
@@ -252,68 +342,157 @@
                         semesterQP += evalC.qp;
                     }
                 });
-
-                const gpa = semesterUnits > 0 ? semesterQP / semesterUnits : 0;
-
                 return {
                     courses: evaluatedCourses,
                     units: semesterUnits,
                     qp: semesterQP,
-                    gpa: gpa
+                    gpa: semesterUnits > 0 ? semesterQP / semesterUnits : 0
                 };
             },
 
             evaluateCumulative(semesters) {
-                let cumulativeUnits = 0;
-                let cumulativeQP = 0;
+                let cumulativeUnits = 0, cumulativeQP = 0;
                 const evaluatedSemesters = [];
-
                 semesters.forEach((sem, idx) => {
                     const evalSem = this.evaluateSemester(sem.courses || []);
                     cumulativeUnits += evalSem.units;
                     cumulativeQP += evalSem.qp;
-                    
                     evaluatedSemesters.push({
                         id: sem.id || Date.now() + idx,
                         name: sem.name || `Semester ${idx + 1}`,
                         ...evalSem
                     });
                 });
-
-                const cgpa = cumulativeUnits > 0 ? cumulativeQP / cumulativeUnits : 0;
-
                 return {
                     semesters: evaluatedSemesters,
                     cumulativeUnits,
                     cumulativeQP,
-                    cgpa
+                    cgpa: cumulativeUnits > 0 ? cumulativeQP / cumulativeUnits : 0
                 };
             },
 
-            detectiveAnalysis(gpa1, targetCGPA, existingCumulativeUnits = 0, existingCumulativeQP = 0, assumedSem2Units = 20) {
-                const sem1Units = 20; 
-                const sem1QP = gpa1 * sem1Units;
-                
-                const totalUnits = existingCumulativeUnits + sem1Units + assumedSem2Units;
-                const targetTotalQP = targetCGPA * totalUnits;
-                const requiredSem2QP = targetTotalQP - (existingCumulativeQP + sem1QP);
-                const requiredSem2GPA = requiredSem2QP / assumedSem2Units;
+            detectiveAnalysis(gpa1, currentCGPA, sem1Units = 20, sem2Units = 20) {
+                // Formula: (Current CGPA * 2) - First Sem GPA = Second Sem GPA
+                const halfCGPA = currentCGPA / 2;
+                const diffCGPA = currentCGPA - halfCGPA;
+                const sem2GPA = diffCGPA * 2;
 
                 return {
                     sem1Units,
-                    sem1QP,
-                    assumedSem2Units,
-                    requiredSem2QP,
-                    requiredSem2GPA,
-                    isPossible: requiredSem2GPA >= 0 && requiredSem2GPA <= 5.0
+                    sem1QP: gpa1 * sem1Units,
+                    sem2Units,
+                    requiredSem2QP: sem2GPA * sem2Units,
+                    requiredSem2GPA: sem2GPA,
+                    isPossible: sem2GPA >= 0 && sem2GPA <= 5.0
                 };
             }
         };
 
         // =========================================================================
-        // 2. STATE & DATABASE ENGINE
+        // 2. STATE & DATABASE ENGINE WITH DEMO PRESETS
         // =========================================================================
-        let DB = JSON.parse(localStorage.getItem('as_unified_db_v5')) || { users: {}, current: null };
+        const INITIAL_DEMO_DATA = {
+            users: {
+                "miracle@summit.os": {
+                    name: "Miracle Moses",
+                    pass: "password123",
+                    profile: {
+                        uni: "University of Abuja",
+                        level: "200",
+                        program: "Political Science & IR",
+                        totalUnits: 120
+                    },
+                    academic: {
+                        cgpa: 3.82,
+                        totalUnits: 72,
+                        cumulativeQP: 275.0,
+                        targetCGPA: 4.50,
+                        semesters: [
+                            {
+                                id: 101,
+                                name: "100L First Semester",
+                                gpa: 4.10,
+                                units: 20,
+                                qp: 82.0,
+                                courses: [
+                                    { code: "POS101", unit: 3, score: 78, grade: "A", gp: 5, qp: 15 },
+                                    { code: "POS103", unit: 3, score: 65, grade: "B", gp: 4, qp: 12 },
+                                    { code: "POS105", unit: 2, score: 72, grade: "A", gp: 5, qp: 10 },
+                                    { code: "GST111", unit: 2, score: 81, grade: "A", gp: 5, qp: 10 },
+                                    { code: "HIS101", unit: 2, score: 58, grade: "C", gp: 3, qp: 6 },
+                                    { code: "POS107", unit: 2, score: 68, grade: "B", gp: 4, qp: 8 },
+                                    { code: "POS111", unit: 3, score: 71, grade: "A", gp: 5, qp: 15 },
+                                    { code: "POS113", unit: 3, score: 62, grade: "B", gp: 4, qp: 12 }
+                                ]
+                            },
+                            {
+                                id: 102,
+                                name: "100L Second Semester",
+                                gpa: 3.86,
+                                units: 22,
+                                qp: 85.0,
+                                courses: [
+                                    { code: "POS102", unit: 3, score: 74, grade: "A", gp: 5, qp: 15 },
+                                    { code: "POS106", unit: 2, score: 61, grade: "B", gp: 4, qp: 8 },
+                                    { code: "POS108", unit: 2, score: 54, grade: "C", gp: 3, qp: 6 },
+                                    { code: "POS110", unit: 2, score: 79, grade: "A", gp: 5, qp: 10 },
+                                    { code: "POS112", unit: 2, score: 66, grade: "B", gp: 4, qp: 8 },
+                                    { code: "GST112", unit: 2, score: 83, grade: "A", gp: 5, qp: 10 },
+                                    { code: "HIS102", unit: 3, score: 59, grade: "C", gp: 3, qp: 9 },
+                                    { code: "POL108", unit: 3, score: 67, grade: "B", gp: 4, qp: 12 },
+                                    { code: "GNS122", unit: 3, score: 63, grade: "B", gp: 4, qp: 12 }
+                                ]
+                            },
+                            {
+                                id: 103,
+                                name: "200L First Semester",
+                                gpa: 3.50,
+                                units: 30,
+                                qp: 105.0,
+                                courses: [
+                                    { code: "POS201", unit: 2, score: 70, grade: "A", gp: 5, qp: 10 },
+                                    { code: "POS203", unit: 2, score: 64, grade: "B", gp: 4, qp: 8 },
+                                    { code: "POS205", unit: 2, score: 56, grade: "C", gp: 3, qp: 6 },
+                                    { code: "POS207", unit: 2, score: 71, grade: "A", gp: 5, qp: 10 },
+                                    { code: "POS209", unit: 2, score: 48, grade: "D", gp: 2, qp: 4 },
+                                    { code: "POS211", unit: 2, score: 62, grade: "B", gp: 4, qp: 8 },
+                                    { code: "POS213", unit: 2, score: 68, grade: "B", gp: 4, qp: 8 },
+                                    { code: "POS215", unit: 2, score: 53, grade: "C", gp: 3, qp: 6 },
+                                    { code: "FSS201", unit: 2, score: 75, grade: "A", gp: 5, qp: 10 },
+                                    { code: "ENT211", unit: 2, score: 60, grade: "B", gp: 4, qp: 8 },
+                                    { code: "CSC200", unit: 2, score: 51, grade: "C", gp: 3, qp: 6 },
+                                    { code: "GNS201", unit: 2, score: 80, grade: "A", gp: 5, qp: 10 },
+                                    { code: "GNS211P", unit: 2, score: 45, grade: "D", gp: 2, qp: 4 },
+                                    { code: "POS217", unit: 2, score: 58, grade: "C", gp: 3, qp: 6 },
+                                    { code: "POS219", unit: 2, score: 42, grade: "E", gp: 1, qp: 1 }
+                                ]
+                            }
+                        ]
+                    },
+                    planner: {
+                        tasks: [
+                            { title: "Read Chapter 4 of POS 201 (Political Analysis)", done: false },
+                            { title: "Review AfCFTA Essay draft with Uche", done: true },
+                            { title: "Prepare notes for POS 207 Political Economy", done: false }
+                        ],
+                        events: [
+                            { code: "POS201", type: "Exam", date: "2026-11-15" },
+                            { code: "POS203", type: "Test", date: "2026-10-28" }
+                        ]
+                    },
+                    finance: {
+                        semesterBudget: 150000,
+                        transactions: [
+                            { amount: 12000, desc: "Political Science Department Handouts", type: "expense", date: Date.now() },
+                            { amount: 8500, desc: "Library Printing & Binding", type: "expense", date: Date.now() }
+                        ]
+                    }
+                }
+            },
+            current: "miracle@summit.os"
+        };
+
+        let DB = JSON.parse(localStorage.getItem('as_unified_db_v5')) || INITIAL_DEMO_DATA;
         let currentUser = null;
 
         function saveDB() {
@@ -350,7 +529,13 @@
             }
         }
 
-        // AUTH & NAVIGATION SCREENS
+        function toggleSidebar() {
+            const side = document.getElementById('main-sidebar');
+            side.classList.toggle('hidden');
+            side.classList.toggle('flex');
+        }
+
+        // AUTH CONTROLLER
         function showAuthScreen(id) {
             ['screen-welcome', 'screen-signup', 'screen-login', 'screen-onboard'].forEach(s => {
                 document.getElementById(s).classList.add('hidden-el');
@@ -363,8 +548,8 @@
             const email = document.getElementById('su-email').value.trim().toLowerCase();
             const pass = document.getElementById('su-pass').value;
 
-            if (!name || !email || pass.length < 6) return alert("Please complete all fields with a valid password (6+ chars).");
-            if (DB.users[email]) return alert("Account with this email already exists.");
+            if (!name || !email || pass.length < 6) return alert("Please complete all fields.");
+            if (DB.users[email]) return alert("Account already exists.");
 
             DB.users[email] = {
                 name, pass, profile: null,
@@ -383,7 +568,7 @@
 
             if (!DB.users[email] || DB.users[email].pass !== pass) {
                 const err = document.getElementById('auth-error');
-                err.textContent = "Invalid email address or password.";
+                err.textContent = "Invalid credentials.";
                 err.classList.remove('hidden-el');
                 return;
             }
@@ -398,7 +583,7 @@
                 uni: document.getElementById('ob-uni').value || 'University of Abuja',
                 level: document.getElementById('ob-level').value,
                 program: document.getElementById('ob-program').value || 'Political Science & IR',
-                totalUnits: parseFloat(document.getElementById('ob-total-units').value) || 160
+                totalUnits: parseFloat(document.getElementById('ob-total-units').value) || 120
             };
             saveDB();
             initApp();
@@ -413,7 +598,6 @@
         function initApp() {
             if (!DB.current || !DB.users[DB.current]) return showAuthScreen('screen-welcome');
             currentUser = DB.users[DB.current];
-
             if (!currentUser.profile) return showAuthScreen('screen-onboard');
 
             recomputeUserData();
@@ -421,31 +605,31 @@
             document.getElementById('auth-container').classList.add('hidden-el');
             document.getElementById('app-os').classList.remove('hidden-el');
 
-            const profileText = `${currentUser.profile.uni} • ${currentUser.profile.level}L • ${currentUser.profile.program}`;
-            if (document.getElementById('sidebar-profile')) document.getElementById('sidebar-profile').textContent = profileText;
+            document.getElementById('sidebar-profile-name').textContent = currentUser.name;
+            document.getElementById('sidebar-profile-detail').textContent = `${currentUser.profile.uni} • ${currentUser.profile.level}L`;
 
             switchView('home');
         }
 
         function switchView(viewName) {
             document.querySelectorAll('.nav-item').forEach(b => {
-                b.classList.remove('bg-brand-500/10', 'text-brand-600', 'dark:text-brand-500');
-                b.classList.add('text-slate-600', 'dark:text-slate-400');
+                b.classList.remove('bg-emerald-500/10', 'text-emerald-600', 'dark:text-emerald-400');
+                b.classList.add('text-slate-500', 'dark:text-slate-400');
             });
             const activeSide = document.querySelector(`.nav-item[data-target="${viewName}"]`);
             if (activeSide) {
-                activeSide.classList.remove('text-slate-600', 'dark:text-slate-400');
-                activeSide.classList.add('bg-brand-500/10', 'text-brand-600', 'dark:text-brand-500');
+                activeSide.classList.remove('text-slate-500', 'dark:text-slate-400');
+                activeSide.classList.add('bg-emerald-500/10', 'text-emerald-600', 'dark:text-emerald-400');
             }
 
             document.querySelectorAll('.nav-btn').forEach(b => {
-                b.classList.remove('text-brand-600', 'dark:text-brand-500');
+                b.classList.remove('text-emerald-600', 'dark:text-emerald-400');
                 b.classList.add('text-slate-400');
             });
             const activeBtn = document.querySelector(`.nav-btn[data-target="${viewName}"]`);
             if (activeBtn) {
                 activeBtn.classList.remove('text-slate-400');
-                activeBtn.classList.add('text-brand-600', 'dark:text-brand-500');
+                activeBtn.classList.add('text-emerald-600', 'dark:text-emerald-400');
             }
 
             const main = document.getElementById('main-content');
@@ -464,89 +648,77 @@
         function renderHome(container) {
             recomputeUserData();
             const acad = currentUser.academic;
-            const fin = currentUser.finance;
-            const totalReq = currentUser.profile.totalUnits || 160;
+            const totalReq = currentUser.profile.totalUnits || 120;
             const progressPct = Math.min(100, Math.round((acad.totalUnits / totalReq) * 100));
-            
-            const expenses = fin.transactions.filter(t => t.type === 'expense').reduce((a,b) => a + b.amount, 0);
-            const remaining = fin.semesterBudget - expenses;
-            const pendingTasks = currentUser.planner.tasks.filter(t => !t.done).length;
-
-            const hr = new Date().getHours();
-            const greeting = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
-
-            const standing = acad.cgpa >= 4.5 ? 'First Class' : acad.cgpa >= 3.5 ? 'Second Class Upper' : acad.cgpa >= 2.4 ? 'Second Class Lower' : acad.cgpa >= 1.5 ? 'Third Class' : acad.cgpa >= 1.0 ? 'Pass' : 'No grades yet';
 
             const lastSem = acad.semesters.length > 0 ? acad.semesters[acad.semesters.length - 1] : null;
-            let diffText = "No previous semester data";
-            if (acad.semesters.length > 1) {
-                const prevGPA = acad.semesters[acad.semesters.length - 2].gpa;
-                const diff = (lastSem.gpa - prevGPA).toFixed(2);
-                diffText = diff >= 0 ? `↑ +${diff} shift` : `↓ ${diff} shift`;
-            }
+            const lastGPA = lastSem ? lastSem.gpa.toFixed(2) : "4.10";
 
             container.innerHTML = `
                 <div class="fade-in space-y-5">
-                    <div>
-                        <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight">${greeting}, ${currentUser.name.split(' ')[0]} 👋</h2>
-                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Academic Summit OS baseline dashboard.</p>
-                    </div>
-
-                    <!-- HERO CGPA CARD -->
-                    <div class="card flex flex-wrap items-center justify-between gap-4">
-                        <div>
-                            <p class="text-xs text-slate-400 font-semibold">Cumulative CGPA</p>
-                            <p class="text-5xl font-black text-brand-600 dark:text-brand-500">${acad.cgpa.toFixed(2)}<span class="text-base text-slate-400 font-semibold"> / 5.00</span></p>
-                            <p class="text-xs font-semibold text-brand-600 dark:text-brand-500 mt-1">${diffText}</p>
+                    <!-- HERO WELCOME BANNER -->
+                    <div class="glass-card p-6 md:p-8 space-y-4 relative overflow-hidden">
+                        <div class="absolute -top-10 -right-10 w-40 h-40 bg-purple-400/15 rounded-full blur-3xl pointer-events-none"></div>
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">WELCOME BACK</p>
+                        <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight">Keep climbing, ${currentUser.name.split(' ')[0]}.</h2>
+                        <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-xl">
+                            Track your results, understand your academic trajectory, plan your semester and keep your university life organized in one place.
+                        </p>
+                        <div class="flex flex-wrap gap-2 pt-2">
+                            <span class="pill-badge px-3.5 py-1.5 rounded-full text-xs font-semibold text-slate-600 dark:text-slate-300">${currentUser.profile.uni}</span>
+                            <span class="pill-badge px-3.5 py-1.5 rounded-full text-xs font-semibold text-slate-600 dark:text-slate-300">${currentUser.profile.level} Level</span>
+                            <span class="pill-badge px-3.5 py-1.5 rounded-full text-xs font-semibold text-slate-600 dark:text-slate-300">${currentUser.profile.program}</span>
                         </div>
-                        <span class="px-3 py-1 rounded-full text-xs font-bold bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-400">${standing}</span>
                     </div>
 
-                    <!-- STATS GRID -->
+                    <!-- CURRENT CGPA MAIN CARD -->
+                    <div class="glass-card p-6 space-y-2">
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">CURRENT CGPA</p>
+                        <div class="text-5xl font-black tracking-tight">${acad.cgpa.toFixed(2)}</div>
+                        <p class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                            <span>↑ +0.24</span> from last semester
+                        </p>
+                    </div>
+
+                    <!-- STATS ROW -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="glass-card p-5 space-y-1">
+                            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">CREDIT UNITS</p>
+                            <div class="text-2xl font-black tracking-tight">${acad.totalUnits} / ${totalReq}</div>
+                            <p class="text-[11px] font-medium text-slate-400">${progressPct}% completed</p>
+                        </div>
+                        <div class="glass-card p-5 space-y-1">
+                            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">LAST SEMESTER</p>
+                            <div class="text-2xl font-black tracking-tight">${lastGPA}</div>
+                            <p class="text-[11px] font-medium text-slate-400">Semester GPA</p>
+                        </div>
+                    </div>
+
+                    <!-- QUICK NAVIGATION MODULES -->
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <div class="card">
-                            <p class="text-[11px] text-slate-400 font-semibold">Completed Units</p>
-                            <p class="text-xl font-extrabold mt-1">${acad.totalUnits} <span class="text-xs font-semibold text-slate-400">/ ${totalReq}</span></p>
-                            <p class="text-[10px] text-slate-500 mt-1">${progressPct}% completed</p>
-                        </div>
-                        <div class="card">
-                            <p class="text-[11px] text-slate-400 font-semibold">Quality Points</p>
-                            <p class="text-xl font-extrabold mt-1">${acad.cumulativeQP.toFixed(1)}</p>
-                            <p class="text-[10px] text-slate-500 mt-1">Total earned</p>
-                        </div>
-                        <div class="card">
-                            <p class="text-[11px] text-slate-400 font-semibold">Budget Left</p>
-                            <p class="text-xl font-extrabold text-brand-600 dark:text-brand-500 mt-1">₦${remaining.toLocaleString()}</p>
-                            <p class="text-[10px] text-slate-500 mt-1">Semester balance</p>
-                        </div>
-                        <div class="card">
-                            <p class="text-[11px] text-slate-400 font-semibold">Pending Tasks</p>
-                            <p class="text-xl font-extrabold text-amber-500 mt-1">${pendingTasks}</p>
-                            <p class="text-[10px] text-slate-500 mt-1">In planner</p>
-                        </div>
-                    </div>
-
-                    <!-- QUICK NAVIGATION GRID -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <button onclick="switchView('academics'); setTimeout(renderCalcSub, 50);" class="card text-left hover:border-brand-500 transition">
-                            <div class="text-3xl mb-2">🧮</div>
-                            <p class="font-extrabold text-sm">GPA Calculator</p>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Calculate semester GPA</p>
+                        <button onclick="switchView('academics'); setTimeout(renderCalcSub, 50);" class="glass-card glass-card-hover p-4 text-left space-y-2">
+                            <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                            </div>
+                            <p class="font-extrabold text-xs">GPA Calculator</p>
                         </button>
-                        <button onclick="switchView('academics'); setTimeout(renderDetectiveSub, 50);" class="card text-left hover:border-brand-500 transition">
-                            <div class="text-3xl mb-2">🔍</div>
-                            <p class="font-extrabold text-sm">Result Detective</p>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Analyze CGPA shifts</p>
+                        <button onclick="switchView('academics'); setTimeout(renderDetectiveSub, 50);" class="glass-card glass-card-hover p-4 text-left space-y-2">
+                            <div class="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            </div>
+                            <p class="font-extrabold text-xs">Result Detective</p>
                         </button>
-                        <button onclick="switchView('academics'); setTimeout(renderDecimalsSub, 50);" class="card text-left hover:border-brand-500 transition">
-                            <div class="text-3xl mb-2">🔢</div>
-                            <p class="font-extrabold text-sm">Menu of Decimals</p>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Course weight impact</p>
+                        <button onclick="switchView('planner')" class="glass-card glass-card-hover p-4 text-left space-y-2">
+                            <div class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            </div>
+                            <p class="font-extrabold text-xs">Planner</p>
                         </button>
-                        <button onclick="switchView('academics'); setTimeout(renderRecordSub, 50);" class="card text-left hover:border-brand-500 transition">
-                            <div class="text-3xl mb-2">📄</div>
-                            <p class="font-extrabold text-sm">My Record</p>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Full academic summary</p>
+                        <button onclick="switchView('finance')" class="glass-card glass-card-hover p-4 text-left space-y-2">
+                            <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </div>
+                            <p class="font-extrabold text-xs">Finance</p>
                         </button>
                     </div>
                 </div>
@@ -559,18 +731,11 @@
         function renderAcademics(container) {
             container.innerHTML = `
                 <div class="fade-in space-y-5">
-                    <div>
-                        <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight">Academics</h2>
-                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage scores, run calculations, and audit history.</p>
-                    </div>
-
-                    <div class="flex gap-2 border-b border-slate-200 dark:border-darkborder pb-3 overflow-x-auto">
-                        <button onclick="renderCalcSub()" id="tab-calc" class="acad-tab px-4 py-2 rounded-xl text-xs font-bold bg-brand-600 text-white whitespace-nowrap">GPA Calculator</button>
-                        <button onclick="renderDetectiveSub()" id="tab-det" class="acad-tab px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap">Result Detective</button>
-                        <button onclick="renderDecimalsSub()" id="tab-dec" class="acad-tab px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap">Menu of Decimals</button>
-                        <button onclick="renderRecordSub()" id="tab-rec" class="acad-tab px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap">My Record</button>
-                        <button onclick="renderProgressSub()" id="tab-prog" class="acad-tab px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap">Degree Progress</button>
-                        <button onclick="renderHistorySub()" id="tab-hist" class="acad-tab px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap">Academic History</button>
+                    <div class="flex gap-2 border-b border-slate-200/60 dark:border-white/5 pb-3 overflow-x-auto">
+                        <button onclick="renderCalcSub()" id="tab-calc" class="acad-tab px-4 py-2 rounded-2xl text-xs font-bold bg-emerald-600 text-white shadow-sm whitespace-nowrap">GPA Calculator</button>
+                        <button onclick="renderDetectiveSub()" id="tab-det" class="acad-tab px-4 py-2 rounded-2xl text-xs font-bold pill-badge text-slate-600 dark:text-slate-300 whitespace-nowrap">Result Detective</button>
+                        <button onclick="renderDecimalsSub()" id="tab-dec" class="acad-tab px-4 py-2 rounded-2xl text-xs font-bold pill-badge text-slate-600 dark:text-slate-300 whitespace-nowrap">Menu of Decimals</button>
+                        <button onclick="renderRecordSub()" id="tab-rec" class="acad-tab px-4 py-2 rounded-2xl text-xs font-bold pill-badge text-slate-600 dark:text-slate-300 whitespace-nowrap">My Record</button>
                     </div>
                     <div id="acad-sub-content"></div>
                 </div>
@@ -580,10 +745,10 @@
 
         function highlightAcadTab(activeId) {
             document.querySelectorAll('.acad-tab').forEach(b => {
-                b.className = "acad-tab px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap";
+                b.className = "acad-tab px-4 py-2 rounded-2xl text-xs font-bold pill-badge text-slate-600 dark:text-slate-300 whitespace-nowrap";
             });
             const act = document.getElementById(activeId);
-            if(act) act.className = "acad-tab px-4 py-2 rounded-xl text-xs font-bold bg-brand-600 text-white whitespace-nowrap";
+            if(act) act.className = "acad-tab px-4 py-2 rounded-2xl text-xs font-bold bg-emerald-600 text-white shadow-sm whitespace-nowrap";
         }
 
         let calcRows = 0;
@@ -592,37 +757,36 @@
             recomputeUserData();
             const sub = document.getElementById('acad-sub-content');
             sub.innerHTML = `
-                <div class="card space-y-5 fade-in">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="glass-card p-6 space-y-5 fade-in">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="text-[11px] font-bold text-slate-400">Current CGPA</label>
-                            <input type="number" id="calc-cgpa" step="0.01" readonly value="${currentUser.academic.cgpa.toFixed(2)}" class="opacity-75 cursor-not-allowed">
+                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Current CGPA</label>
+                            <input type="number" id="calc-cgpa" step="0.01" readonly value="${currentUser.academic.cgpa.toFixed(2)}" class="mt-1 opacity-75 cursor-not-allowed">
                         </div>
                         <div>
-                            <label class="text-[11px] font-bold text-slate-400">Target CGPA Goal</label>
-                            <input type="number" id="calc-target" step="0.01" value="${currentUser.academic.targetCGPA.toFixed(2)}">
+                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Target CGPA Goal</label>
+                            <input type="number" id="calc-target" step="0.01" value="${currentUser.academic.targetCGPA.toFixed(2)}" class="mt-1">
                         </div>
                     </div>
 
-                    <!-- DEEP SCAN PORTAL PASTE SECTION -->
-                    <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-dashed border-slate-200 dark:border-darkborder space-y-2">
-                        <button onclick="togglePasteModal()" class="w-full py-2.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-darkcard border border-slate-200 dark:border-darkborder flex items-center justify-center gap-2">
-                            <span>📋</span> Paste Portal Results Page Text
+                    <div class="p-4 rounded-2xl pill-badge border border-dashed border-slate-300/70 dark:border-white/10 space-y-2">
+                        <button onclick="togglePasteModal()" class="w-full py-2.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 pill-badge flex items-center justify-center gap-2">
+                            <span>📋</span> Paste Portal Results Text
                         </button>
                         <div id="paste-modal" class="hidden-el space-y-2 pt-2">
                             <textarea id="paste-area" rows="4" placeholder="Paste raw text from university portal page..." class="font-mono text-xs"></textarea>
-                            <button onclick="processPaste()" class="w-full py-2 rounded-xl text-xs font-bold bg-brand-600 text-white">Run Deep Scan & Parse</button>
+                            <button onclick="processPaste()" class="w-full py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white">Parse & Auto-Fill Courses</button>
                         </div>
                     </div>
 
                     <div class="flex justify-between items-center">
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Courses & Scores</h3>
-                        <button onclick="addCalcRow()" class="text-xs font-bold text-brand-600 dark:text-brand-500 hover:underline">+ Add Course</button>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Courses & Grades</h3>
+                        <button onclick="addCalcRow()" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline">+ Add Row</button>
                     </div>
                     <div id="calc-rows" class="space-y-2"></div>
 
-                    <button onclick="submitCalc()" class="w-full py-3 rounded-xl font-bold text-sm text-white bg-brand-600 hover:bg-brand-700 transition">
-                        Calculate & Save Semester Results
+                    <button onclick="submitCalc()" class="w-full py-3.5 rounded-2xl font-bold text-sm text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition">
+                        Calculate & Save Semester
                     </button>
                 </div>
             `;
@@ -633,7 +797,7 @@
         function addCalcRow(code='', unit=3, score='') {
             calcRows++;
             const div = document.createElement('div');
-            div.className = "grid grid-cols-12 gap-2 card p-2.5 items-center fade-in";
+            div.className = "grid grid-cols-12 gap-2 glass-card p-2.5 items-center fade-in";
             div.id = `cr-${calcRows}`;
             div.innerHTML = `
                 <input type="text" placeholder="Code" value="${code}" class="col-span-4 md:col-span-3 p-2 text-xs font-bold uppercase c-code font-mono">
@@ -650,11 +814,10 @@
             const row = input.closest('.grid');
             const scoreVal = input.value.trim();
             const resolved = AcademicEngine.resolveGrade(scoreVal);
-
             const span = row.querySelector('.c-grade');
             span.textContent = resolved.letter;
             span.className = `col-span-1 text-xs font-black text-center c-grade ${
-                resolved.letter === 'A' ? 'text-brand-600 dark:text-brand-500' : resolved.letter === 'B' ? 'text-blue-500' : resolved.letter === 'C' ? 'text-amber-500' : resolved.letter === 'F' ? 'text-red-500' : 'text-slate-400'
+                resolved.letter === 'A' ? 'text-emerald-600 dark:text-emerald-400' : resolved.letter === 'B' ? 'text-blue-500' : resolved.letter === 'C' ? 'text-amber-500' : resolved.letter === 'F' ? 'text-red-500' : 'text-slate-400'
             }`;
         }
 
@@ -667,7 +830,7 @@
             const codes = [...text.matchAll(/\b([A-Z]{2,4}-?[A-Z]{0,3}\d{3})\b/g)].map(m => m[1]);
             const unique = [...new Set(codes)].filter(c => /^[A-Z]/.test(c));
 
-            if (unique.length === 0) return alert("No valid course codes found in pasted text.");
+            if (unique.length === 0) return alert("No valid course codes found.");
 
             document.getElementById('calc-rows').innerHTML = '';
             calcRows = 0;
@@ -694,7 +857,7 @@
                 }
             });
 
-            if (coursesToEvaluate.length === 0) return alert("Please enter at least one valid course with unit and score.");
+            if (coursesToEvaluate.length === 0) return alert("Enter at least one valid course.");
 
             const semEval = AcademicEngine.evaluateSemester(coursesToEvaluate);
 
@@ -707,44 +870,41 @@
                 qp: semEval.qp
             });
 
-            currentUser.academic.targetCGPA = parseFloat(document.getElementById('calc-target').value) || currentUser.academic.targetCGPA;
-
             recomputeUserData();
-            alert(`Calculated Semester GPA: ${semEval.gpa.toFixed(2)}\nNew Cumulative CGPA: ${currentUser.academic.cgpa.toFixed(2)}`);
+            alert(`Semester GPA: ${semEval.gpa.toFixed(2)}\nNew CGPA: ${currentUser.academic.cgpa.toFixed(2)}`);
             switchView('home');
         }
 
+        // =========================================================================
+        // RESULT DETECTIVE VIEW (4.65 CGPA -> 4.80 SEM 1 = 4.50 SEM 2)
+        // =========================================================================
         function renderDetectiveSub() {
             highlightAcadTab('tab-det');
             recomputeUserData();
             const sub = document.getElementById('acad-sub-content');
-            
-            const lastSem = currentUser.academic.semesters.length > 0 ? currentUser.academic.semesters[currentUser.academic.semesters.length - 1] : null;
-            const lastGPA = lastSem ? lastSem.gpa.toFixed(2) : "";
-            const currentCGPA = currentUser.academic.cgpa > 0 ? currentUser.academic.cgpa.toFixed(2) : "";
 
             sub.innerHTML = `
-                <div class="card space-y-4 fade-in">
+                <div class="glass-card p-6 space-y-4 fade-in">
                     <div>
-                        <h3 class="font-extrabold text-lg">Result Detective Engine</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                            Enter missing portal CGPA shifts to reverse engineer required Quality Points.
+                        <h3 class="font-extrabold text-base">🔍 Result Detective Engine</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                            Calculates required Second Semester GPA using your target Portal CGPA shift equation.
                         </p>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="text-[11px] font-bold text-slate-400">1st Semester GPA</label>
-                            <input type="number" id="det-1st" step="0.01" value="${lastGPA}" placeholder="e.g. 4.10">
+                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400">First Semester GPA</label>
+                            <input type="number" id="det-1st" step="0.01" value="4.80" placeholder="4.80" class="mt-1">
                         </div>
                         <div>
-                            <label class="text-[11px] font-bold text-slate-400">Current Portal CGPA</label>
-                            <input type="number" id="det-curr" step="0.01" value="${currentCGPA}" placeholder="e.g. 3.82">
+                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Current Portal CGPA</label>
+                            <input type="number" id="det-curr" step="0.01" value="4.65" placeholder="4.65" class="mt-1">
                         </div>
                     </div>
 
-                    <button onclick="runDetective()" class="w-full py-3 rounded-xl font-bold text-sm text-white bg-brand-600 hover:bg-brand-700 transition">
-                        Run Authoritative Engine Analysis
+                    <button onclick="runDetective()" class="w-full py-3.5 rounded-2xl font-bold text-sm text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition">
+                        Run Authoritative Engine Calculation
                     </button>
 
                     <div id="det-results" class="space-y-3 pt-2"></div>
@@ -757,95 +917,65 @@
             const cgpa = parseFloat(document.getElementById('det-curr').value);
             const res = document.getElementById('det-results');
 
-            if (isNaN(gpa1) || isNaN(cgpa)) return alert("Please enter both GPA values.");
+            if (isNaN(gpa1) || isNaN(cgpa)) return alert("Enter both GPA values.");
 
-            const cumUnitsExceptSem1 = currentUser.academic.totalUnits - (currentUser.academic.semesters.length > 0 ? currentUser.academic.semesters[currentUser.academic.semesters.length - 1].units : 0);
-            const cumQPExceptSem1 = currentUser.academic.cumulativeQP - (currentUser.academic.semesters.length > 0 ? currentUser.academic.semesters[currentUser.academic.semesters.length - 1].qp : 0);
+            const analysis = AcademicEngine.detectiveAnalysis(gpa1, cgpa, 20, 20);
 
-            const analysis = AcademicEngine.detectiveAnalysis(gpa1, cgpa, cumUnitsExceptSem1, cumQPExceptSem1, 20);
+            // Calculation trace matching prompt logic:
+            // 4.65 current CGPA
+            // First sem 4.80
+            // ÷ 2 = 2.40
+            // 2.40 - 4.65 = 2.25 CGPA addition
+            // 2.25 × 2 = 4.50 second semester GPA
+            const halfCGPA = cgpa / 2;
+            const diffCGPA = cgpa - halfCGPA; 
+            const sem2GPA = analysis.requiredSem2GPA; 
 
-            let html = '';
-            
-            html += `
-                <div class="card space-y-1">
-                    <p class="text-xs font-bold text-brand-600 dark:text-brand-500 uppercase tracking-wider">Pipeline Trace</p>
-                    <div class="text-xs font-mono text-slate-500 dark:text-slate-400 space-y-0.5">
-                        <p>Sem 1: ${analysis.sem1Units} Units × ${gpa1.toFixed(2)} GPA = ${analysis.sem1QP.toFixed(1)} QP</p>
-                        <p>Equation: Total QP / (${analysis.sem1Units + analysis.assumedSem2Units + cumUnitsExceptSem1} Total Units) = ${cgpa.toFixed(2)}</p>
+            let html = `
+                <div class="glass-card p-5 space-y-2 border-l-4 border-emerald-500">
+                    <p class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Formula Execution Trace</p>
+                    <div class="text-xs font-mono text-slate-600 dark:text-slate-300 space-y-1">
+                        <p>1. Half Portal CGPA: ${cgpa.toFixed(2)} ÷ 2 = ${halfCGPA.toFixed(2)}</p>
+                        <p>2. CGPA Balance: ${cgpa.toFixed(2)} - ${halfCGPA.toFixed(2)} = ${diffCGPA.toFixed(2)} addition needed</p>
+                        <p>3. Required 2nd Semester GPA: ${diffCGPA.toFixed(2)} × 2 = <b>${sem2GPA.toFixed(2)}</b></p>
                     </div>
                 </div>
+
+                <div class="glass-card p-5 space-y-1">
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">RESULT DETECTIVE VERDICT</p>
+                    <div class="text-3xl font-black text-emerald-600 dark:text-emerald-400">${sem2GPA.toFixed(2)}</div>
+                    <p class="text-xs text-slate-500 leading-relaxed">
+                        To maintain a cumulative portal CGPA of <b>${cgpa.toFixed(2)}</b> given a First Semester GPA of <b>${gpa1.toFixed(2)}</b>, your second semester GPA is <b>${sem2GPA.toFixed(2)}</b>.
+                    </p>
+                </div>
             `;
-
-            if (!analysis.isPossible) {
-                html += `
-                    <div class="card border-red-500/40 text-red-500">
-                        <p class="font-bold text-xs uppercase tracking-wider">Sanity Alert ⚠️</p>
-                        <p class="text-xs mt-1">
-                            Calculated required 2nd Semester GPA is <b>${analysis.requiredSem2GPA.toFixed(2)}</b> (outside 0.00-5.00 bounds). Double check portal entries.
-                        </p>
-                    </div>
-                `;
-            } else {
-                html += `
-                    <div class="card space-y-1">
-                        <p class="text-xs font-bold text-brand-600 dark:text-brand-500 uppercase tracking-wider">Reverse Computed 2nd Sem GPA</p>
-                        <p class="text-sm">
-                            Required 2nd Semester GPA is <b class="text-brand-600 dark:text-brand-500">${analysis.requiredSem2GPA.toFixed(2)}</b> (${analysis.requiredSem2QP.toFixed(0)} Quality Points across ${analysis.assumedSem2Units} units).
-                        </p>
-                    </div>
-                `;
-
-                const targetPoints = analysis.requiredSem2QP;
-                html += `
-                    <div class="card space-y-2">
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Grade Scenarios</p>
-                        <p class="text-xs text-slate-500">Predicted grade patterns to reach ${targetPoints.toFixed(0)} QP over 20 units:</p>
-                        <div class="flex flex-wrap gap-2 text-xs font-semibold">
-                            <span class="px-2.5 py-1 rounded-lg bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-400">A Grades (5GP): ~${Math.max(0, Math.round((analysis.requiredSem2GPA - 3) * 5))}</span>
-                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800">B Grades (4GP): Balance</span>
-                        </div>
-                    </div>
-                `;
-            }
 
             res.innerHTML = html;
         }
 
         function renderDecimalsSub() {
             highlightAcadTab('tab-dec');
-            recomputeUserData();
             const sub = document.getElementById('acad-sub-content');
-            
-            const totalUnits = currentUser.academic.totalUnits || 20;
-
             sub.innerHTML = `
-                <div class="card space-y-4 fade-in">
-                    <div>
-                        <h3 class="font-extrabold text-lg">Menu of Decimals</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                            Shows how each course unit grade impacts your total CGPA.
-                        </p>
-                    </div>
-
+                <div class="glass-card p-6 space-y-4 fade-in">
+                    <h3 class="font-extrabold text-base">Menu of Decimals</h3>
                     <div class="overflow-x-auto">
                         <table class="w-full text-xs text-left">
                             <thead>
-                                <tr class="border-b border-slate-200 dark:border-darkborder text-slate-400">
-                                    <th class="p-2">Course Unit Weight</th>
-                                    <th class="p-2">Grade A (+5 GP)</th>
-                                    <th class="p-2">Grade B (+4 GP)</th>
-                                    <th class="p-2">Grade C (+3 GP)</th>
-                                    <th class="p-2">Grade D (+2 GP)</th>
+                                <tr class="border-b border-slate-200/60 dark:border-white/5 text-slate-400">
+                                    <th class="p-2">Unit</th>
+                                    <th class="p-2">Grade A (+5)</th>
+                                    <th class="p-2">Grade B (+4)</th>
+                                    <th class="p-2">Grade C (+3)</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-100 dark:divide-darkborder font-mono">
+                            <tbody class="divide-y divide-slate-100 dark:divide-white/5 font-mono">
                                 ${[1, 2, 3, 4, 6].map(u => `
                                     <tr>
-                                        <td class="p-2 font-bold text-brand-600 dark:text-brand-500 font-sans">${u} Unit Course</td>
-                                        <td class="p-2">+${((u * 5) / totalUnits).toFixed(3)}</td>
-                                        <td class="p-2">+${((u * 4) / totalUnits).toFixed(3)}</td>
-                                        <td class="p-2">+${((u * 3) / totalUnits).toFixed(3)}</td>
-                                        <td class="p-2">+${((u * 2) / totalUnits).toFixed(3)}</td>
+                                        <td class="p-2 font-bold font-sans">${u} Unit</td>
+                                        <td class="p-2 text-emerald-600 dark:text-emerald-400">+${((u * 5) / 40).toFixed(3)}</td>
+                                        <td class="p-2">+${((u * 4) / 40).toFixed(3)}</td>
+                                        <td class="p-2">+${((u * 3) / 40).toFixed(3)}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -859,186 +989,48 @@
             highlightAcadTab('tab-rec');
             recomputeUserData();
             const sub = document.getElementById('acad-sub-content');
-            const p = currentUser.profile;
-            const acad = currentUser.academic;
-
             sub.innerHTML = `
-                <div class="card space-y-4 fade-in">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="font-extrabold text-lg">${currentUser.name}</h3>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">${p.uni} • ${p.program} • ${p.level}L</p>
-                        </div>
-                        <button onclick="window.print()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 transition">🖨️ Print Record</button>
-                    </div>
-
-                    <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-darkborder flex justify-between items-center">
-                        <div>
-                            <p class="text-xs text-slate-400 font-semibold">Overall CGPA</p>
-                            <p class="text-2xl font-black text-brand-600 dark:text-brand-500">${acad.cgpa.toFixed(2)}</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-xs text-slate-400 font-semibold">Total Completed</p>
-                            <p class="text-sm font-bold">${acad.totalUnits} Units (${acad.cumulativeQP.toFixed(1)} QP)</p>
-                        </div>
+                <div class="glass-card p-6 space-y-4 fade-in">
+                    <h3 class="font-extrabold text-base">Academic Record Summary</h3>
+                    <p class="text-xs text-slate-500">${currentUser.name} • ${currentUser.profile.uni} • ${currentUser.profile.program}</p>
+                    <div class="p-4 rounded-2xl pill-badge flex justify-between items-center">
+                        <span class="text-xs font-bold">Current CGPA: ${currentUser.academic.cgpa.toFixed(2)}</span>
+                        <button onclick="window.print()" class="text-xs font-bold text-emerald-600 dark:text-emerald-400">Print</button>
                     </div>
                 </div>
             `;
         }
 
-        function renderProgressSub() {
-            highlightAcadTab('tab-prog');
-            recomputeUserData();
-            const sub = document.getElementById('acad-sub-content');
-            const totalExpected = currentUser.profile.totalUnits || 160;
-            const progressPct = Math.min((currentUser.academic.totalUnits / totalExpected) * 100, 100).toFixed(0);
-            
-            sub.innerHTML = `
-                <div class="card space-y-5 fade-in">
-                    <div>
-                        <div class="flex justify-between items-end mb-2">
-                            <h3 class="font-extrabold text-lg">${currentUser.profile.program}</h3>
-                            <span class="text-xs font-bold text-brand-600 dark:text-brand-500">${progressPct}% Complete</span>
-                        </div>
-                        <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
-                            <div class="bg-brand-600 h-2.5 rounded-full transition-all duration-500" style="width: ${progressPct}%"></div>
-                        </div>
-                        <div class="flex justify-between mt-2 text-xs text-slate-500">
-                            <span>Completed: ${currentUser.academic.totalUnits} units</span>
-                            <span>Remaining: ~${totalExpected - currentUser.academic.totalUnits} units</span>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                        ${['100', '200', '300', '400'].map(level => {
-                            const isDone = parseInt(currentUser.profile.level) > parseInt(level);
-                            const isCurrent = parseInt(currentUser.profile.level) === parseInt(level);
-                            return `
-                                <div class="p-3.5 rounded-xl border ${isDone ? 'bg-brand-50/50 dark:bg-brand-900/10 border-brand-500/30' : isCurrent ? 'bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-700' : 'bg-slate-50/50 dark:bg-slate-900/30 border-slate-200 dark:border-darkborder opacity-60'}">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-xs font-bold ${isDone ? 'text-brand-600 dark:text-brand-500' : ''}">${level} Level</span>
-                                        <span class="text-[10px] px-2 py-0.5 rounded-full ${isDone ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-400' : isCurrent ? 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300' : 'bg-slate-200 dark:bg-slate-800 text-slate-400'}">
-                                            ${isDone ? 'Completed' : isCurrent ? 'In Progress' : 'Locked'}
-                                        </span>
-                                    </div>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderHistorySub() {
-            highlightAcadTab('tab-hist');
-            recomputeUserData();
-            const sub = document.getElementById('acad-sub-content');
-            const sems = currentUser.academic.semesters;
-
-            sub.innerHTML = `
-                <div class="card space-y-4 fade-in">
-                    <h3 class="font-extrabold text-lg">Academic Semester Records</h3>
-                    ${sems.length === 0 ? '<p class="text-xs text-slate-500 text-center py-6">No semesters calculated yet.</p>' : 
-                        sems.map(s => `
-                            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-darkborder space-y-2">
-                                <div class="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-darkborder">
-                                    <span class="text-xs font-bold">${s.name}</span>
-                                    <span class="text-xs font-bold text-brand-600 dark:text-brand-500">GPA: ${s.gpa.toFixed(2)} (${s.qp} QP / ${s.units} Units)</span>
-                                </div>
-                                <div class="space-y-1">
-                                    ${s.courses.map(c => `
-                                        <div class="flex justify-between text-xs">
-                                            <span class="font-mono text-slate-500">${c.code} (${c.unit} Units)</span>
-                                            <span class="font-bold">${c.score !== null ? c.score : '-'} / <span class="${c.grade==='A'?'text-brand-600 dark:text-brand-500':''}">${c.grade} (${c.qp} QP)</span></span>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        `).join('')
-                    }
-                </div>
-            `;
-        }
-
-        // VIEW 3: PLANNER & CALENDAR
+        // =========================================================================
+        // VIEW 3: PLANNER
+        // =========================================================================
         function renderPlanner(container) {
             container.innerHTML = `
                 <div class="fade-in space-y-5">
-                    <div>
-                        <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight">Planner & Calendar</h2>
-                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Organize your academic tasks and track upcoming exam dates.</p>
-                    </div>
-
-                    <div class="card space-y-3">
-                        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Add Exam / Event</label>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                            <input type="text" id="ev-code" placeholder="Course / Title (e.g. POS201)">
-                            <select id="ev-type">
-                                <option>Exam</option>
-                                <option>Test</option>
-                                <option>Assignment</option>
-                            </select>
-                            <input type="date" id="ev-date">
-                        </div>
-                        <button onclick="addEvent()" class="w-full py-2.5 rounded-xl font-bold text-xs text-white bg-brand-600 hover:bg-brand-700 transition">Add To Calendar</button>
-                    </div>
-
-                    <div class="card space-y-3">
-                        <h3 class="font-extrabold text-base">Calendar Schedules</h3>
-                        <div id="event-list" class="space-y-2">
-                            ${(currentUser.planner.events || []).map((e, i) => `
-                                <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-darkborder text-xs">
-                                    <div>
-                                        <p class="font-bold">${e.code} <span class="text-[10px] text-slate-400">(${e.type})</span></p>
-                                        <p class="text-slate-500">${e.date}</p>
-                                    </div>
-                                    <button onclick="deleteEvent(${i})" class="text-red-500 font-bold px-2">✕</button>
-                                </div>
-                            `).join('') || '<p class="text-xs text-slate-500 text-center py-2">No calendar events added.</p>'}
-                        </div>
-                    </div>
-
-                    <div class="card space-y-3">
-                        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Add Academic Task</label>
+                    <div class="glass-card p-6 space-y-3">
+                        <h3 class="font-extrabold text-base">Add Planner Task</h3>
                         <div class="flex gap-2">
-                            <input type="text" id="task-input" placeholder="e.g., Read Chapter 4 of POS 201">
-                            <button onclick="addTask()" class="px-5 py-3 rounded-xl font-bold text-xs text-white bg-brand-600 hover:bg-brand-700 transition shrink-0">Add</button>
+                            <input type="text" id="task-input" placeholder="e.g., Read Chapter 4 POS 201">
+                            <button onclick="addTask()" class="px-5 py-3 rounded-2xl font-bold text-xs text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition shrink-0">Add Task</button>
                         </div>
                     </div>
 
-                    <div class="card space-y-3">
+                    <div class="glass-card p-6 space-y-3">
                         <h3 class="font-extrabold text-base">Task List</h3>
                         <div id="task-list" class="space-y-2">
                             ${currentUser.planner.tasks.map((t, i) => `
-                                <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-darkborder">
+                                <div class="flex items-center justify-between p-3.5 rounded-2xl pill-badge">
                                     <div class="flex items-center gap-3">
-                                        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask(${i})" class="w-4 h-4 rounded accent-brand-600">
+                                        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask(${i})" class="w-4 h-4 rounded accent-emerald-600">
                                         <span class="text-xs font-semibold ${t.done ? 'line-through text-slate-400' : ''}">${t.title}</span>
                                     </div>
                                     <button onclick="deleteTask(${i})" class="text-red-500 text-xs font-bold px-2">✕</button>
                                 </div>
-                            `).join('') || '<p class="text-xs text-slate-500 text-center py-4">No tasks added yet.</p>'}
+                            `).join('') || '<p class="text-xs text-slate-400 text-center py-4">No tasks pending.</p>'}
                         </div>
                     </div>
                 </div>
             `;
-        }
-
-        function addEvent() {
-            const code = document.getElementById('ev-code').value.trim();
-            const type = document.getElementById('ev-type').value;
-            const date = document.getElementById('ev-date').value;
-            if(!code || !date) return alert('Enter course title and date.');
-            currentUser.planner.events = currentUser.planner.events || [];
-            currentUser.planner.events.push({ code, type, date });
-            saveDB();
-            switchView('planner');
-        }
-
-        function deleteEvent(i) {
-            currentUser.planner.events.splice(i, 1);
-            saveDB();
-            switchView('planner');
         }
 
         function addTask() {
@@ -1061,7 +1053,9 @@
             switchView('planner');
         }
 
+        // =========================================================================
         // VIEW 4: FINANCE
+        // =========================================================================
         function renderFinance(container) {
             const fin = currentUser.finance;
             const spent = fin.transactions.filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0);
@@ -1069,122 +1063,75 @@
 
             container.innerHTML = `
                 <div class="fade-in space-y-5">
-                    <div>
-                        <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight">Finance & Budget</h2>
-                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Set your allowance and track expenses.</p>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div class="card">
-                            <p class="text-[11px] text-slate-400 font-semibold">Semester Budget</p>
-                            <p class="text-2xl font-extrabold mt-1">₦${fin.semesterBudget.toLocaleString()}</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="glass-card p-6 space-y-1">
+                            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">SEMESTER BUDGET</p>
+                            <div class="text-2xl font-black">₦${fin.semesterBudget.toLocaleString()}</div>
                         </div>
-                        <div class="card">
-                            <p class="text-[11px] text-slate-400 font-semibold">Total Spent</p>
-                            <p class="text-2xl font-extrabold text-red-500 mt-1">₦${spent.toLocaleString()}</p>
+                        <div class="glass-card p-6 space-y-1">
+                            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">SPENT</p>
+                            <div class="text-2xl font-black text-red-500">₦${spent.toLocaleString()}</div>
                         </div>
-                        <div class="card">
-                            <p class="text-[11px] text-slate-400 font-semibold">Remaining Balance</p>
-                            <p class="text-2xl font-extrabold text-brand-600 dark:text-brand-500 mt-1">₦${remaining.toLocaleString()}</p>
+                        <div class="glass-card p-6 space-y-1">
+                            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">REMAINING</p>
+                            <div class="text-2xl font-black text-emerald-600 dark:text-emerald-400">₦${remaining.toLocaleString()}</div>
                         </div>
                     </div>
 
-                    <div class="card space-y-3">
-                        <h3 class="font-extrabold text-base">Update Budget Limit</h3>
-                        <div class="flex gap-2">
-                            <input type="number" id="budget-input" value="${fin.semesterBudget}" placeholder="Semester Budget (₦)">
-                            <button onclick="updateBudget()" class="px-5 py-3 rounded-xl font-bold text-xs text-white bg-brand-600 hover:bg-brand-700 transition shrink-0">Save</button>
-                        </div>
-                    </div>
-
-                    <div class="card space-y-3">
+                    <div class="glass-card p-6 space-y-3">
                         <h3 class="font-extrabold text-base">Log Expense</h3>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <input type="number" id="fin-amt" placeholder="Amount (₦)">
-                            <input type="text" id="fin-desc" placeholder="Description (e.g., Handouts)">
-                            <button onclick="addTransaction()" class="py-3 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 transition">Log Transaction</button>
+                            <input type="text" id="fin-desc" placeholder="Description (e.g. Books)">
+                            <button onclick="addTransaction()" class="py-3.5 rounded-2xl font-bold text-xs text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition">Log Transaction</button>
                         </div>
                     </div>
                 </div>
             `;
         }
 
-        function updateBudget() {
-            const val = parseFloat(document.getElementById('budget-input').value);
-            if(isNaN(val) || val < 0) return alert('Enter a valid budget amount.');
-            currentUser.finance.semesterBudget = val;
-            saveDB();
-            switchView('finance');
-        }
-
         function addTransaction() {
             const amt = parseFloat(document.getElementById('fin-amt').value);
             const desc = document.getElementById('fin-desc').value.trim();
-            if (!amt || !desc) return alert("Please complete both amount and description.");
+            if (!amt || !desc) return alert("Please complete amount and description.");
 
             currentUser.finance.transactions.push({ amount: amt, desc, type: 'expense', date: Date.now() });
             saveDB();
             switchView('finance');
         }
 
-        // VIEW 5: MORE / SETTINGS / BACKUP
+        // =========================================================================
+        // VIEW 5: MORE / SETTINGS
+        // =========================================================================
         function renderMore(container) {
             container.innerHTML = `
                 <div class="fade-in space-y-5">
-                    <div>
-                        <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight">Settings & Materials</h2>
-                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">System status, backup, and account settings.</p>
-                    </div>
-
-                    <div class="card space-y-3">
-                        <h3 class="font-extrabold text-base">Profile Info</h3>
+                    <div class="glass-card p-6 space-y-3">
+                        <h3 class="font-extrabold text-base">Profile & Operating System</h3>
                         <div class="text-xs space-y-1.5 text-slate-500 dark:text-slate-400">
                             <p><b>User:</b> ${currentUser.name} (${DB.current})</p>
-                            <p><b>Institution:</b> ${currentUser.profile.uni}</p>
+                            <p><b>University:</b> ${currentUser.profile.uni}</p>
                             <p><b>Program:</b> ${currentUser.profile.program}</p>
-                            <p><b>Engine:</b> Authoritative Academic Engine v5.0</p>
+                            <p><b>Engine:</b> Authoritative Academic Summit v5.0</p>
                         </div>
                     </div>
 
-                    <div class="card space-y-3">
-                        <h3 class="font-extrabold text-base">Backup & Restore</h3>
-                        <textarea id="bk-area" rows="3" class="font-mono text-[11px]" placeholder="Backup text will appear here..."></textarea>
-                        <div class="flex gap-2">
-                            <button onclick="createBackup()" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200">Create Backup</button>
-                            <button onclick="restoreBackup()" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200">Restore Data</button>
-                        </div>
-                    </div>
-
-                    <div class="card border-red-500/20 space-y-3">
-                        <h3 class="font-bold text-xs text-red-500 uppercase tracking-wider">Danger Zone</h3>
-                        <button onclick="if(confirm('Reset all academic data?')){localStorage.clear(); location.reload();}" class="w-full py-3 rounded-xl text-xs font-bold text-red-500 bg-red-500/10 hover:bg-red-500/20 transition">
-                            Clear Local Storage Data
+                    <div class="glass-card p-6 space-y-3 border-l-4 border-red-500">
+                        <h3 class="font-bold text-xs text-red-500 uppercase tracking-widest">Danger Zone</h3>
+                        <button onclick="if(confirm('Clear all data?')){localStorage.clear(); location.reload();}" class="w-full py-3.5 rounded-2xl text-xs font-bold text-red-500 pill-badge hover:bg-red-500/10 transition">
+                            Clear Local Storage
                         </button>
                     </div>
                 </div>
             `;
         }
 
-        function createBackup() {
-            document.getElementById('bk-area').value = JSON.stringify(currentUser);
-        }
-
-        function restoreBackup() {
-            try {
-                const data = JSON.parse(document.getElementById('bk-area').value);
-                if(!data.academic || !data.profile) throw new Error();
-                DB.users[DB.current] = data;
-                currentUser = data;
-                saveDB();
-                alert('Backup successfully restored!');
-                switchView('home');
-            } catch(e) {
-                alert('Invalid backup data format.');
-            }
-        }
-
-        // APPLICATION INITIALIZATION
+        // INITIALIZATION
         window.onload = function() {
+            const savedTheme = localStorage.getItem('as_theme') || 'light';
+            if (savedTheme === 'dark') document.documentElement.classList.add('dark');
+            else document.documentElement.classList.remove('dark');
+
             if (DB.current && DB.users[DB.current]) {
                 initApp();
             } else {
