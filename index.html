@@ -1,277 +1,203 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Academic Summit OS</title>
+    <script>(function(){var t=null;try{t=localStorage.getItem('as_theme')}catch(e){}if(t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.classList.add('dark')})();</script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { 
-                        sans: ['Plus Jakarta Sans', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace']
-                    },
                     colors: {
-                        navy: { 950: '#020617', 900: '#0f172a', 800: '#1e293b', 700: '#334155' },
-                        brand: { blue: '#3b82f6', purple: '#8b5cf6', cyan: '#06b6d4', amber: '#f59e0b', green: '#10b981', red: '#ef4444' }
+                        brand: { 50:'#f0fdf4', 100:'#dcfce7', 500:'#22c55e', 600:'#16a34a', 700:'#15803d', 900:'#14532d' },
+                        darkbg: '#090d16',
+                        darkcard: '#111827',
+                        darkborder: '#1f2937'
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
                     }
                 }
             }
         }
     </script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-main: #f8fafc;
-            --bg-card: rgba(255, 255, 255, 0.85);
-            --bg-card-heavy: #ffffff;
-            --border-color: rgba(226, 232, 240, 0.8);
-            --text-main: #0f172a;
-            --text-sub: #64748b;
-            --accent-purple: #8b5cf6;
-            --accent-soft: rgba(139, 92, 246, 0.08);
-            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
-            --shadow-md: 0 8px 24px rgba(149, 157, 165, 0.1);
+            box-sizing: border-box;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
         }
-
-        html.dark {
-            --bg-main: #020617;
-            --bg-card: rgba(30, 41, 59, 0.4);
-            --bg-card-heavy: rgba(15, 23, 42, 0.75);
-            --border-color: rgba(255, 255, 255, 0.08);
-            --text-main: #f8fafc;
-            --text-sub: #94a3b8;
-            --accent-purple: #a855f7;
-            --accent-soft: rgba(168, 85, 247, 0.12);
-            --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.3);
-            --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.5);
+        html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+        body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        .card {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 1rem;
         }
-
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-
-        .glass {
-            background: var(--bg-card);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow-sm);
-        }
-
-        .glass-heavy {
-            background: var(--bg-card-heavy);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow-md);
+        html.dark .card {
+            background-color: #111827;
+            border-color: #1f2937;
         }
 
         .hidden-el { display: none !important; }
+        .fade-in { animation: fadeIn 0.25s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-        .fade-in { animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .text-grad {
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .grad-primary { background: linear-gradient(135deg, #3b82f6, #8b5cf6); }
-        .grad-accent { background: linear-gradient(135deg, #06b6d4, #3b82f6); }
-        
         input, select, textarea {
-            background: rgba(0, 0, 0, 0.03);
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            color: #0f172a;
             transition: all 0.2s;
         }
         html.dark input, html.dark select, html.dark textarea {
-            background: rgba(15, 23, 42, 0.6);
+            background-color: #0f172a;
+            border-color: #1f2937;
+            color: #f8fafc;
         }
         input:focus, select:focus, textarea:focus {
-            border-color: #3b82f6;
             outline: none;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+            border-color: #16a34a;
+            box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
         }
 
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.3); border-radius: 10px; }
 
-        .nav-item.active {
-            background: rgba(59, 130, 246, 0.1);
-            color: #3b82f6;
-            border-right: 3px solid #3b82f6;
+        @media print {
+            .np { display: none !important; }
+            body, .card { background: #fff !important; color: #000 !important; border-color: #ccc !important; }
+            :root { padding: 0; }
         }
-
-        .pill-badge {
-            background: rgba(0, 0, 0, 0.04);
-            border: 1px solid var(--border-color);
-        }
-        html.dark .pill-badge {
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .progress-bar { background: linear-gradient(90deg, #3b82f6, #8b5cf6); }
     </style>
 </head>
-<body class="h-screen flex flex-col md:flex-row font-sans antialiased overflow-hidden">
+<body class="bg-slate-50 dark:bg-darkbg text-slate-900 dark:text-slate-100 min-h-screen font-sans antialiased">
 
     <!-- AUTH OVERLAY -->
-    <div id="auth-container" class="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/90 backdrop-blur-lg">
-        <div id="screen-welcome" class="w-full max-w-md text-center fade-in glass-heavy p-8 rounded-3xl">
-            <div class="text-6xl mb-4">🏔️</div>
-            <h1 class="text-4xl font-black mb-2">Academic <span class="text-grad">Summit</span></h1>
-            <p class="text-slate-400 text-sm mb-8">Your unified academic operating system.</p>
-            <button onclick="showAuthScreen('screen-login')" class="w-full py-4 rounded-2xl font-bold text-white grad-primary shadow-lg mb-3 hover:opacity-95 transition">Login</button>
-            <button onclick="showAuthScreen('screen-signup')" class="w-full py-4 rounded-2xl font-bold text-slate-300 glass hover:bg-white/10 transition">Create Account</button>
-        </div>
-
-        <div id="screen-signup" class="w-full max-w-md glass-heavy rounded-3xl p-8 fade-in hidden-el">
-            <h2 class="text-2xl font-bold mb-4">Create Account</h2>
-            <div class="space-y-4">
-                <input type="text" id="su-name" placeholder="Full Name" class="w-full p-4 rounded-xl text-sm">
-                <input type="email" id="su-email" placeholder="Email Address" class="w-full p-4 rounded-xl text-sm">
-                <input type="password" id="su-pass" placeholder="Create Password" class="w-full p-4 rounded-xl text-sm">
-                <button onclick="handleSignup()" class="w-full py-4 rounded-xl font-bold text-white grad-primary">Sign Up</button>
-                <button onclick="showAuthScreen('screen-welcome')" class="w-full text-sm text-slate-400 py-2">Back</button>
+    <div id="auth-container" class="min-h-screen flex items-center justify-center p-5">
+        <!-- WELCOME SCREEN -->
+        <div id="screen-welcome" class="w-full max-w-sm text-center space-y-5 fade-in">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-brand-600 text-white text-3xl font-black flex items-center justify-center shadow-lg shadow-brand-600/30">S</div>
+            <h1 class="text-5xl font-black tracking-tight leading-[1.05]">Academic<br><span class="text-brand-600 dark:text-brand-500">Summit</span></h1>
+            <p class="text-lg text-slate-600 dark:text-slate-300 leading-snug">The only companion you need for your academic journey.</p>
+            <div class="flex flex-wrap justify-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                <span class="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800">GPA calculator</span>
+                <span class="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800">Exam calendar</span>
+                <span class="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800">Result detective</span>
+                <span class="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800">Budget</span>
             </div>
+            <button onclick="showAuthScreen('screen-signup')" class="w-full py-3 rounded-xl font-bold text-sm text-white bg-brand-600 hover:bg-brand-700 transition">Create account</button>
+            <button onclick="showAuthScreen('screen-login')" class="w-full py-3 rounded-xl font-bold text-sm bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-darkborder hover:bg-slate-200 dark:hover:bg-slate-700 transition">Log in</button>
         </div>
 
-        <div id="screen-login" class="w-full max-w-md glass-heavy rounded-3xl p-8 fade-in hidden-el">
-            <h2 class="text-2xl font-bold mb-4">Welcome Back</h2>
-            <div class="space-y-4">
-                <input type="email" id="li-email" placeholder="Email Address" class="w-full p-4 rounded-xl text-sm">
-                <input type="password" id="li-pass" placeholder="Password" class="w-full p-4 rounded-xl text-sm">
-                <button onclick="handleLogin()" class="w-full py-4 rounded-xl font-bold text-white grad-accent">Login</button>
-                <button onclick="showAuthScreen('screen-welcome')" class="w-full text-sm text-slate-400 py-2">Back</button>
+        <!-- SIGNUP SCREEN -->
+        <div id="screen-signup" class="w-full max-w-sm card p-6 space-y-3 fade-in hidden-el">
+            <h2 class="text-xl font-extrabold">Create your account</h2>
+            <input type="text" id="su-name" placeholder="Full Name">
+            <input type="email" id="su-email" placeholder="Email Address">
+            <input type="password" id="su-pass" placeholder="Password (6+ characters)">
+            <button onclick="handleSignup()" class="w-full py-3 rounded-xl font-bold text-sm text-white bg-brand-600 hover:bg-brand-700 transition">Sign Up</button>
+            <button onclick="showAuthScreen('screen-welcome')" class="w-full text-xs text-slate-500 py-1">Back</button>
+        </div>
+
+        <!-- LOGIN SCREEN -->
+        <div id="screen-login" class="w-full max-w-sm card p-6 space-y-3 fade-in hidden-el">
+            <h2 class="text-xl font-extrabold">Welcome back</h2>
+            <input type="email" id="li-email" placeholder="Email Address">
+            <input type="password" id="li-pass" placeholder="Password">
+            <button onclick="handleLogin()" class="w-full py-3 rounded-xl font-bold text-sm text-white bg-brand-600 hover:bg-brand-700 transition">Log In</button>
+            <button onclick="showAuthScreen('screen-welcome')" class="w-full text-xs text-slate-500 py-1">Back</button>
+            <p id="auth-error" class="text-xs text-red-500 text-center min-h-[1rem] hidden-el"></p>
+        </div>
+
+        <!-- ONBOARDING SCREEN -->
+        <div id="screen-onboard" class="w-full max-w-sm card p-6 space-y-4 fade-in hidden-el">
+            <div>
+                <h2 class="text-xl font-extrabold">Academic Profile</h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Initialize your academic system profile.</p>
             </div>
-            <p id="auth-error" class="text-red-500 text-xs text-center mt-3 hidden-el"></p>
-        </div>
-
-        <div id="screen-onboard" class="w-full max-w-md glass-heavy rounded-3xl p-8 fade-in hidden-el">
-            <h2 class="text-2xl font-bold mb-1">Academic Profile</h2>
-            <p class="text-xs text-slate-400 mb-6">Initialize your academic system profile.</p>
-            <div class="space-y-4">
-                <input type="text" id="ob-uni" placeholder="University (e.g., University of Abuja)" class="w-full p-4 rounded-xl text-sm">
-                <select id="ob-level" class="w-full p-4 rounded-xl text-sm">
+            <div class="space-y-3">
+                <input type="text" id="ob-uni" placeholder="University (e.g., University of Abuja)">
+                <select id="ob-level">
                     <option value="100">100 Level</option>
                     <option value="200">200 Level</option>
                     <option value="300">300 Level</option>
                     <option value="400">400 Level</option>
                     <option value="500">500 Level</option>
                 </select>
-                <input type="text" id="ob-program" placeholder="Program (e.g., Political Science)" class="w-full p-4 rounded-xl text-sm">
-                <input type="number" id="ob-total-units" placeholder="Graduation Required Units (e.g., 160)" class="w-full p-4 rounded-xl text-sm">
-                <button onclick="completeOnboard()" class="w-full py-4 rounded-xl font-bold text-white grad-primary mt-2">Initialize Core Engine</button>
+                <input type="text" id="ob-program" placeholder="Program (e.g., Political Science)">
+                <input type="number" id="ob-total-units" placeholder="Graduation Required Units (e.g., 160)">
+                <button onclick="completeOnboard()" class="w-full py-3 rounded-xl font-bold text-sm text-white bg-brand-600 hover:bg-brand-700 transition">Initialize Core Engine</button>
             </div>
         </div>
     </div>
 
-    <!-- MAIN OS -->
-    <div id="app-os" class="flex-1 flex hidden-el h-full w-full">
-        <!-- DESKTOP SIDEBAR -->
-        <aside class="hidden md:flex w-64 flex-col border-r border-gray-200 dark:border-white/5 bg-white/60 dark:bg-[#0f172a]/80 backdrop-blur-xl">
-            <div class="p-6 border-b border-gray-200 dark:border-white/5">
-                <h1 class="text-xl font-extrabold tracking-tight">Academic <span class="text-grad">Summit</span></h1>
-                <p id="sidebar-profile" class="text-[11px] text-gray-500 dark:text-slate-400 mt-1 font-medium truncate">Loading...</p>
-            </div>
-            <nav class="flex-1 p-4 space-y-1">
-                <button onclick="switchView('home')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-600 dark:text-slate-400 hover:bg-black/5 dark:hover:bg-white/5 transition text-left" data-target="home">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 00-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                    Dashboard
-                </button>
-                <button onclick="switchView('academics')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-600 dark:text-slate-400 hover:bg-black/5 dark:hover:bg-white/5 transition text-left" data-target="academics">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 01-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
-                    Academics
-                </button>
-                <button onclick="switchView('planner')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-600 dark:text-slate-400 hover:bg-black/5 dark:hover:bg-white/5 transition text-left" data-target="planner">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                    Planner
-                </button>
-                <button onclick="switchView('finance')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-600 dark:text-slate-400 hover:bg-black/5 dark:hover:bg-white/5 transition text-left" data-target="finance">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    Finance Centre
-                </button>
-                <button onclick="switchView('more')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-600 dark:text-slate-400 hover:bg-black/5 dark:hover:bg-white/5 transition text-left" data-target="more">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                    Settings & Materials
-                </button>
-            </nav>
-            <div class="p-4 border-t border-gray-200 dark:border-white/5 flex items-center justify-between">
-                <button onclick="toggleTheme()" class="p-2.5 rounded-xl glass hover:opacity-80 transition">
-                    <span id="theme-icon-desktop">🌙</span>
-                </button>
-                <button onclick="logout()" class="px-4 py-2 rounded-xl text-xs font-bold text-red-500 hover:bg-red-500/10 transition">Logout</button>
-            </div>
-        </aside>
+    <!-- MAIN OS APPLICATION -->
+    <div id="app-os" class="hidden-el min-h-screen">
+        <header class="np lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-darkcard border-b border-slate-200 dark:border-darkborder sticky top-0 z-30">
+            <b class="tracking-tight">🏔️ Summit OS</b>
+            <button onclick="toggleTheme()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-sm" aria-label="Toggle theme">🌓</button>
+        </header>
 
-        <!-- MAIN CONTENT AREA -->
-        <main class="flex-1 flex flex-col h-full overflow-hidden relative">
-            <!-- HEADER -->
-            <header class="p-4 md:p-6 flex justify-between items-center glass border-b border-gray-200 dark:border-white/5 z-40">
-                <div>
-                    <p class="text-[10px] uppercase tracking-widest font-bold text-gray-400">Academic Summit OS v5.0</p>
-                    <h1 class="text-xl md:text-2xl font-extrabold tracking-tight">Your academic command center</h1>
+        <div class="flex">
+            <!-- DESKTOP SIDEBAR -->
+            <aside class="np hidden lg:flex flex-col w-60 shrink-0 bg-white dark:bg-darkcard border-r border-slate-200 dark:border-darkborder p-4 sticky top-0 h-screen gap-1">
+                <div class="px-2 py-1 mb-2">
+                    <h1 class="font-extrabold text-lg">🏔️ Summit OS</h1>
+                    <p id="sidebar-profile" class="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">Loading...</p>
                 </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="toggleTheme()" class="p-2.5 rounded-2xl glass hover:scale-105 transition">
-                        <span id="theme-icon">🌙</span>
-                    </button>
-                    <button onclick="switchView('more')" class="p-2.5 rounded-2xl glass hover:scale-105 transition">
-                        <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                    </button>
+                <nav class="flex-1 space-y-1">
+                    <button onclick="switchView('home')" class="nav-item w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition" data-target="home">🏠 Dashboard</button>
+                    <button onclick="switchView('academics')" class="nav-item w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition" data-target="academics">🧮 Academics</button>
+                    <button onclick="switchView('planner')" class="nav-item w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition" data-target="planner">📅 Planner</button>
+                    <button onclick="switchView('finance')" class="nav-item w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition" data-target="finance">💰 Finance Centre</button>
+                    <button onclick="switchView('more')" class="nav-item w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition" data-target="more">👤 Settings & Materials</button>
+                </nav>
+                <div class="pt-2 border-t border-slate-200 dark:border-darkborder flex items-center justify-between gap-2">
+                    <button onclick="toggleTheme()" class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition">🌓 Theme</button>
+                    <button onclick="logout()" class="px-3 py-2 rounded-xl text-xs font-bold text-red-500 hover:bg-red-500/10 transition">Logout</button>
                 </div>
-            </header>
+            </aside>
 
-            <!-- CONTAINER -->
-            <div id="main-content" class="flex-1 overflow-y-auto p-4 md:p-8 pb-28 md:pb-8 scroll-smooth"></div>
+            <!-- MAIN CONTENT AREA -->
+            <main id="main-content" class="flex-1 min-w-0 p-4 md:p-8 max-w-5xl mx-auto pb-28 lg:pb-8 space-y-5"></main>
+        </div>
 
-            <!-- MOBILE BOTTOM NAV -->
-            <nav class="md:hidden fixed bottom-0 left-0 right-0 glass border-t border-gray-200 dark:border-white/5 z-50 pb-safe">
-                <div class="flex justify-around p-2">
-                    <button onclick="switchView('home')" class="nav-btn flex-1 py-2 flex flex-col items-center gap-1 text-gray-400 hover:text-brand-blue transition" data-target="home">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 00-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                        <span class="text-[10px] font-semibold">Home</span>
-                    </button>
-                    <button onclick="switchView('academics')" class="nav-btn flex-1 py-2 flex flex-col items-center gap-1 text-gray-400 hover:text-brand-purple transition" data-target="academics">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 01-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
-                        <span class="text-[10px] font-semibold">Academics</span>
-                    </button>
-                    <button onclick="switchView('planner')" class="nav-btn flex-1 py-2 flex flex-col items-center gap-1 text-gray-400 hover:text-brand-cyan transition" data-target="planner">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                        <span class="text-[10px] font-semibold">Planner</span>
-                    </button>
-                    <button onclick="switchView('finance')" class="nav-btn flex-1 py-2 flex flex-col items-center gap-1 text-gray-400 hover:text-brand-green transition" data-target="finance">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <span class="text-[10px] font-semibold">Finance</span>
-                    </button>
-                    <button onclick="switchView('more')" class="nav-btn flex-1 py-2 flex flex-col items-center gap-1 text-gray-400 hover:text-brand-amber transition" data-target="more">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                        <span class="text-[10px] font-semibold">More</span>
-                    </button>
-                </div>
-            </nav>
-        </main>
+        <!-- MOBILE BOTTOM NAVIGATION -->
+        <nav class="np lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-darkcard border-t border-slate-200 dark:border-darkborder flex overflow-x-auto z-30" style="padding-bottom:env(safe-area-inset-bottom,0px)">
+            <button onclick="switchView('home')" class="nav-btn flex-1 min-w-[64px] py-2 flex flex-col items-center text-[10px] font-semibold text-slate-400" data-target="home">
+                <span class="text-lg">🏠</span>Home
+            </button>
+            <button onclick="switchView('academics')" class="nav-btn flex-1 min-w-[64px] py-2 flex flex-col items-center text-[10px] font-semibold text-slate-400" data-target="academics">
+                <span class="text-lg">🧮</span>Academics
+            </button>
+            <button onclick="switchView('planner')" class="nav-btn flex-1 min-w-[64px] py-2 flex flex-col items-center text-[10px] font-semibold text-slate-400" data-target="planner">
+                <span class="text-lg">📅</span>Planner
+            </button>
+            <button onclick="switchView('finance')" class="nav-btn flex-1 min-w-[64px] py-2 flex flex-col items-center text-[10px] font-semibold text-slate-400" data-target="finance">
+                <span class="text-lg">💰</span>Finance
+            </button>
+            <button onclick="switchView('more')" class="nav-btn flex-1 min-w-[64px] py-2 flex flex-col items-center text-[10px] font-semibold text-slate-400" data-target="more">
+                <span class="text-lg">👤</span>More
+            </button>
+        </nav>
     </div>
 
     <script>
         // =========================================================================
         // 1. THE SINGLE AUTHORITATIVE ACADEMIC ENGINE
         // =========================================================================
-        // COURSE -> Units + Score -> Grade + Grade Point -> Quality Points
-        // -> Semester GPA -> Semester Units -> Cumulative Quality Points + Units -> CGPA
-        // =========================================================================
-
         const AcademicEngine = {
             GRADE_MAP: [
                 { min: 70, max: 100, letter: 'A', gp: 5 },
@@ -282,9 +208,6 @@
                 { min: 0,  max: 39,  letter: 'F', gp: 0 }
             ],
 
-            /**
-             * Pure step 1: Grade & Grade Point resolution from numeric score or letter grade
-             */
             resolveGrade(scoreOrLetter) {
                 if (typeof scoreOrLetter === 'string') {
                     const clean = scoreOrLetter.trim().toUpperCase();
@@ -300,9 +223,6 @@
                 return { letter: 'F', gp: 0 };
             },
 
-            /**
-             * Pure step 2: Single Course Evaluation
-             */
             evaluateCourse(course) {
                 const units = parseFloat(course.unit || course.units) || 0;
                 const score = course.score !== undefined ? parseFloat(course.score) : null;
@@ -319,9 +239,6 @@
                 };
             },
 
-            /**
-             * Pure step 3: Single Semester Evaluation
-             */
             evaluateSemester(courses) {
                 let semesterUnits = 0;
                 let semesterQP = 0;
@@ -346,9 +263,6 @@
                 };
             },
 
-            /**
-             * Pure step 4: Full Academic Trajectory & Cumulative Engine (CGPA)
-             */
             evaluateCumulative(semesters) {
                 let cumulativeUnits = 0;
                 let cumulativeQP = 0;
@@ -376,14 +290,10 @@
                 };
             },
 
-            /**
-             * Reverse-engineering engine for Result Detective, strictly bound to engine rules
-             */
             detectiveAnalysis(gpa1, targetCGPA, existingCumulativeUnits = 0, existingCumulativeQP = 0, assumedSem2Units = 20) {
-                const sem1Units = 20; // Default baseline unit assumption if unknown
+                const sem1Units = 20; 
                 const sem1QP = gpa1 * sem1Units;
                 
-                // Cumulative equation: (existingQP + sem1QP + sem2QP) / (existingUnits + sem1Units + sem2Units) = targetCGPA
                 const totalUnits = existingCumulativeUnits + sem1Units + assumedSem2Units;
                 const targetTotalQP = targetCGPA * totalUnits;
                 const requiredSem2QP = targetTotalQP - (existingCumulativeQP + sem1QP);
@@ -410,7 +320,6 @@
             localStorage.setItem('as_unified_db_v5', JSON.stringify(DB));
         }
 
-        // Synchronize local database models with the AcademicEngine
         function recomputeUserData() {
             if (!currentUser || !currentUser.academic) return;
             const evalResult = AcademicEngine.evaluateCumulative(currentUser.academic.semesters || []);
@@ -418,7 +327,6 @@
             currentUser.academic.totalUnits = evalResult.cumulativeUnits;
             currentUser.academic.cumulativeQP = evalResult.cumulativeQP;
             
-            // Update individual semester calculated attributes
             evalResult.semesters.forEach((s, idx) => {
                 if (currentUser.academic.semesters[idx]) {
                     currentUser.academic.semesters[idx].gpa = s.gpa;
@@ -429,7 +337,7 @@
             saveDB();
         }
 
-        // THEME ENGINE
+        // THEME CONTROLLER
         function toggleTheme() {
             const html = document.documentElement;
             const isDark = html.classList.contains('dark');
@@ -440,17 +348,9 @@
                 html.classList.add('dark');
                 localStorage.setItem('as_theme', 'dark');
             }
-            updateThemeIcons();
         }
 
-        function updateThemeIcons() {
-            const isDark = document.documentElement.classList.contains('dark');
-            const icon = isDark ? '☀️' : '🌙';
-            if (document.getElementById('theme-icon')) document.getElementById('theme-icon').textContent = icon;
-            if (document.getElementById('theme-icon-desktop')) document.getElementById('theme-icon-desktop').textContent = icon;
-        }
-
-        // AUTH ENGINE
+        // AUTH & NAVIGATION SCREENS
         function showAuthScreen(id) {
             ['screen-welcome', 'screen-signup', 'screen-login', 'screen-onboard'].forEach(s => {
                 document.getElementById(s).classList.add('hidden-el');
@@ -463,7 +363,7 @@
             const email = document.getElementById('su-email').value.trim().toLowerCase();
             const pass = document.getElementById('su-pass').value;
 
-            if (!name || !email || !pass) return alert("Please complete all fields.");
+            if (!name || !email || pass.length < 6) return alert("Please complete all fields with a valid password (6+ chars).");
             if (DB.users[email]) return alert("Account with this email already exists.");
 
             DB.users[email] = {
@@ -527,20 +427,25 @@
             switchView('home');
         }
 
-        // NAVIGATION ENGINE
         function switchView(viewName) {
-            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(b => {
+                b.classList.remove('bg-brand-500/10', 'text-brand-600', 'dark:text-brand-500');
+                b.classList.add('text-slate-600', 'dark:text-slate-400');
+            });
             const activeSide = document.querySelector(`.nav-item[data-target="${viewName}"]`);
-            if (activeSide) activeSide.classList.add('active');
+            if (activeSide) {
+                activeSide.classList.remove('text-slate-600', 'dark:text-slate-400');
+                activeSide.classList.add('bg-brand-500/10', 'text-brand-600', 'dark:text-brand-500');
+            }
 
             document.querySelectorAll('.nav-btn').forEach(b => {
-                b.className = b.className.replace(/text-brand-\w+/g, 'text-gray-400');
+                b.classList.remove('text-brand-600', 'dark:text-brand-500');
+                b.classList.add('text-slate-400');
             });
             const activeBtn = document.querySelector(`.nav-btn[data-target="${viewName}"]`);
             if (activeBtn) {
-                const colors = { home: 'text-brand-blue', academics: 'text-brand-purple', planner: 'text-brand-cyan', finance: 'text-brand-green', more: 'text-brand-amber' };
-                activeBtn.classList.remove('text-gray-400');
-                activeBtn.classList.add(colors[viewName]);
+                activeBtn.classList.remove('text-slate-400');
+                activeBtn.classList.add('text-brand-600', 'dark:text-brand-500');
             }
 
             const main = document.getElementById('main-content');
@@ -567,74 +472,81 @@
             const remaining = fin.semesterBudget - expenses;
             const pendingTasks = currentUser.planner.tasks.filter(t => !t.done).length;
 
+            const hr = new Date().getHours();
+            const greeting = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+
+            const standing = acad.cgpa >= 4.5 ? 'First Class' : acad.cgpa >= 3.5 ? 'Second Class Upper' : acad.cgpa >= 2.4 ? 'Second Class Lower' : acad.cgpa >= 1.5 ? 'Third Class' : acad.cgpa >= 1.0 ? 'Pass' : 'No grades yet';
+
             const lastSem = acad.semesters.length > 0 ? acad.semesters[acad.semesters.length - 1] : null;
-            const lastGPA = lastSem ? lastSem.gpa.toFixed(2) : "0.00";
-            
             let diffText = "No previous semester data";
             if (acad.semesters.length > 1) {
                 const prevGPA = acad.semesters[acad.semesters.length - 2].gpa;
                 const diff = (lastSem.gpa - prevGPA).toFixed(2);
-                diffText = diff >= 0 ? `↑ +${diff} from last semester` : `↓ ${diff} from last semester`;
+                diffText = diff >= 0 ? `↑ +${diff} shift` : `↓ ${diff} shift`;
             }
 
             container.innerHTML = `
-                <div class="fade-in space-y-6 max-w-6xl mx-auto">
-                    <!-- HERO BANNER -->
-                    <div class="glass-heavy p-6 md:p-8 rounded-3xl relative overflow-hidden border-l-4 border-brand-blue">
-                        <div class="absolute top-0 right-0 w-72 h-72 bg-brand-blue/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
-                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">WELCOME BACK</p>
-                        <h2 class="text-3xl md:text-4xl font-extrabold mb-2">Good day, ${currentUser.name.split(' ')[0]} 👋</h2>
-                        <p class="text-xs md:text-sm text-gray-500 dark:text-slate-400 max-w-2xl leading-relaxed mb-6">
-                            Unified Academic Summit OS powered by single authoritative engine logic.
-                        </p>
-                        <div class="flex flex-wrap gap-2">
-                            <span class="pill-badge px-3.5 py-1.5 rounded-full text-xs font-semibold text-gray-700 dark:text-gray-300">${currentUser.profile.uni}</span>
-                            <span class="pill-badge px-3.5 py-1.5 rounded-full text-xs font-semibold text-gray-700 dark:text-gray-300">${currentUser.profile.level} Level</span>
-                            <span class="pill-badge px-3.5 py-1.5 rounded-full text-xs font-semibold text-gray-700 dark:text-gray-300">${currentUser.profile.program}</span>
+                <div class="fade-in space-y-5">
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight">${greeting}, ${currentUser.name.split(' ')[0]} 👋</h2>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Academic Summit OS baseline dashboard.</p>
+                    </div>
+
+                    <!-- HERO CGPA CARD -->
+                    <div class="card flex flex-wrap items-center justify-between gap-4">
+                        <div>
+                            <p class="text-xs text-slate-400 font-semibold">Cumulative CGPA</p>
+                            <p class="text-5xl font-black text-brand-600 dark:text-brand-500">${acad.cgpa.toFixed(2)}<span class="text-base text-slate-400 font-semibold"> / 5.00</span></p>
+                            <p class="text-xs font-semibold text-brand-600 dark:text-brand-500 mt-1">${diffText}</p>
                         </div>
+                        <span class="px-3 py-1 rounded-full text-xs font-bold bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-400">${standing}</span>
                     </div>
 
                     <!-- STATS GRID -->
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div class="glass p-5 rounded-3xl border-l-4 border-brand-purple">
-                            <p class="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">CURRENT CGPA</p>
-                            <p class="text-4xl font-black tracking-tight mb-1">${acad.cgpa.toFixed(2)}</p>
-                            <p class="text-[11px] font-semibold text-brand-green">${diffText}</p>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div class="card">
+                            <p class="text-[11px] text-slate-400 font-semibold">Completed Units</p>
+                            <p class="text-xl font-extrabold mt-1">${acad.totalUnits} <span class="text-xs font-semibold text-slate-400">/ ${totalReq}</span></p>
+                            <p class="text-[10px] text-slate-500 mt-1">${progressPct}% completed</p>
                         </div>
-                        <div class="glass p-5 rounded-3xl border-l-4 border-brand-blue">
-                            <p class="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">COMPLETED UNITS</p>
-                            <p class="text-3xl font-black tracking-tight mb-1">${acad.totalUnits} <span class="text-sm font-bold text-gray-400">/ ${totalReq}</span></p>
-                            <p class="text-[11px] font-semibold text-gray-500">${progressPct}% completed</p>
+                        <div class="card">
+                            <p class="text-[11px] text-slate-400 font-semibold">Quality Points</p>
+                            <p class="text-xl font-extrabold mt-1">${acad.cumulativeQP.toFixed(1)}</p>
+                            <p class="text-[10px] text-slate-500 mt-1">Total earned</p>
                         </div>
-                        <div class="glass p-5 rounded-3xl border-l-4 border-brand-green">
-                            <p class="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">BUDGET LEFT</p>
-                            <p class="text-3xl font-black tracking-tight text-brand-green mb-1">₦${remaining.toLocaleString()}</p>
-                            <p class="text-[11px] font-semibold text-gray-500">Semester Balance</p>
+                        <div class="card">
+                            <p class="text-[11px] text-slate-400 font-semibold">Budget Left</p>
+                            <p class="text-xl font-extrabold text-brand-600 dark:text-brand-500 mt-1">₦${remaining.toLocaleString()}</p>
+                            <p class="text-[10px] text-slate-500 mt-1">Semester balance</p>
                         </div>
-                        <div class="glass p-5 rounded-3xl border-l-4 border-brand-amber">
-                            <p class="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">PENDING TASKS</p>
-                            <p class="text-3xl font-black tracking-tight text-brand-amber mb-1">${pendingTasks}</p>
-                            <p class="text-[11px] font-semibold text-gray-500">In Planner</p>
+                        <div class="card">
+                            <p class="text-[11px] text-slate-400 font-semibold">Pending Tasks</p>
+                            <p class="text-xl font-extrabold text-amber-500 mt-1">${pendingTasks}</p>
+                            <p class="text-[10px] text-slate-500 mt-1">In planner</p>
                         </div>
                     </div>
 
-                    <!-- QUICK ACTIONS -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <button onclick="switchView('academics'); setTimeout(renderCalcSub, 50);" class="glass p-5 rounded-3xl text-center hover:scale-[1.02] transition">
+                    <!-- QUICK NAVIGATION GRID -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <button onclick="switchView('academics'); setTimeout(renderCalcSub, 50);" class="card text-left hover:border-brand-500 transition">
                             <div class="text-3xl mb-2">🧮</div>
-                            <div class="text-xs font-bold">GPA Calculator</div>
+                            <p class="font-extrabold text-sm">GPA Calculator</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Calculate semester GPA</p>
                         </button>
-                        <button onclick="switchView('academics'); setTimeout(renderDetectiveSub, 50);" class="glass p-5 rounded-3xl text-center hover:scale-[1.02] transition">
+                        <button onclick="switchView('academics'); setTimeout(renderDetectiveSub, 50);" class="card text-left hover:border-brand-500 transition">
                             <div class="text-3xl mb-2">🔍</div>
-                            <div class="text-xs font-bold">Result Detective</div>
+                            <p class="font-extrabold text-sm">Result Detective</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Analyze CGPA shifts</p>
                         </button>
-                        <button onclick="switchView('planner')" class="glass p-5 rounded-3xl text-center hover:scale-[1.02] transition">
-                            <div class="text-3xl mb-2">📅</div>
-                            <div class="text-xs font-bold">Planner Tasks</div>
+                        <button onclick="switchView('academics'); setTimeout(renderDecimalsSub, 50);" class="card text-left hover:border-brand-500 transition">
+                            <div class="text-3xl mb-2">🔢</div>
+                            <p class="font-extrabold text-sm">Menu of Decimals</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Course weight impact</p>
                         </button>
-                        <button onclick="switchView('finance')" class="glass p-5 rounded-3xl text-center hover:scale-[1.02] transition">
-                            <div class="text-3xl mb-2">💰</div>
-                            <div class="text-xs font-bold">Finance Centre</div>
+                        <button onclick="switchView('academics'); setTimeout(renderRecordSub, 50);" class="card text-left hover:border-brand-500 transition">
+                            <div class="text-3xl mb-2">📄</div>
+                            <p class="font-extrabold text-sm">My Record</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Full academic summary</p>
                         </button>
                     </div>
                 </div>
@@ -646,12 +558,19 @@
         // =========================================================================
         function renderAcademics(container) {
             container.innerHTML = `
-                <div class="fade-in space-y-6 max-w-5xl mx-auto">
-                    <div class="flex gap-2 border-b border-gray-200 dark:border-white/5 pb-3 overflow-x-auto custom-scroll">
-                        <button onclick="renderCalcSub()" id="tab-calc" class="px-5 py-2.5 rounded-2xl text-xs font-bold grad-primary text-white shadow-md whitespace-nowrap">GPA Calculator</button>
-                        <button onclick="renderDetectiveSub()" id="tab-det" class="px-5 py-2.5 rounded-2xl text-xs font-bold glass text-gray-600 dark:text-gray-300 whitespace-nowrap">Result Detective</button>
-                        <button onclick="renderProgressSub()" id="tab-prog" class="px-5 py-2.5 rounded-2xl text-xs font-bold glass text-gray-600 dark:text-gray-300 whitespace-nowrap">Degree Progress</button>
-                        <button onclick="renderHistorySub()" id="tab-hist" class="px-5 py-2.5 rounded-2xl text-xs font-bold glass text-gray-600 dark:text-gray-300 whitespace-nowrap">Academic History</button>
+                <div class="fade-in space-y-5">
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight">Academics</h2>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage scores, run calculations, and audit history.</p>
+                    </div>
+
+                    <div class="flex gap-2 border-b border-slate-200 dark:border-darkborder pb-3 overflow-x-auto">
+                        <button onclick="renderCalcSub()" id="tab-calc" class="acad-tab px-4 py-2 rounded-xl text-xs font-bold bg-brand-600 text-white whitespace-nowrap">GPA Calculator</button>
+                        <button onclick="renderDetectiveSub()" id="tab-det" class="acad-tab px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap">Result Detective</button>
+                        <button onclick="renderDecimalsSub()" id="tab-dec" class="acad-tab px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap">Menu of Decimals</button>
+                        <button onclick="renderRecordSub()" id="tab-rec" class="acad-tab px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap">My Record</button>
+                        <button onclick="renderProgressSub()" id="tab-prog" class="acad-tab px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap">Degree Progress</button>
+                        <button onclick="renderHistorySub()" id="tab-hist" class="acad-tab px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap">Academic History</button>
                     </div>
                     <div id="acad-sub-content"></div>
                 </div>
@@ -659,41 +578,50 @@
             renderCalcSub();
         }
 
+        function highlightAcadTab(activeId) {
+            document.querySelectorAll('.acad-tab').forEach(b => {
+                b.className = "acad-tab px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap";
+            });
+            const act = document.getElementById(activeId);
+            if(act) act.className = "acad-tab px-4 py-2 rounded-xl text-xs font-bold bg-brand-600 text-white whitespace-nowrap";
+        }
+
         let calcRows = 0;
         function renderCalcSub() {
+            highlightAcadTab('tab-calc');
             recomputeUserData();
             const sub = document.getElementById('acad-sub-content');
             sub.innerHTML = `
-                <div class="glass p-6 md:p-8 rounded-3xl fade-in space-y-6 max-w-4xl">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="card space-y-5 fade-in">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label class="text-[10px] font-black uppercase tracking-wider text-gray-400">Current CGPA</label>
-                            <input type="number" id="calc-cgpa" step="0.01" readonly value="${currentUser.academic.cgpa.toFixed(2)}" class="w-full p-3.5 rounded-2xl text-sm font-semibold mt-1 bg-black/10 dark:bg-white/5 cursor-not-allowed">
+                            <label class="text-[11px] font-bold text-slate-400">Current CGPA</label>
+                            <input type="number" id="calc-cgpa" step="0.01" readonly value="${currentUser.academic.cgpa.toFixed(2)}" class="opacity-75 cursor-not-allowed">
                         </div>
                         <div>
-                            <label class="text-[10px] font-black uppercase tracking-wider text-gray-400">Target CGPA Goal</label>
-                            <input type="number" id="calc-target" step="0.01" value="${currentUser.academic.targetCGPA.toFixed(2)}" class="w-full p-3.5 rounded-2xl text-sm font-semibold mt-1">
+                            <label class="text-[11px] font-bold text-slate-400">Target CGPA Goal</label>
+                            <input type="number" id="calc-target" step="0.01" value="${currentUser.academic.targetCGPA.toFixed(2)}">
                         </div>
                     </div>
 
                     <!-- DEEP SCAN PORTAL PASTE SECTION -->
-                    <div class="p-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-dashed border-gray-300 dark:border-white/10">
-                        <button onclick="togglePasteModal()" class="w-full py-3.5 rounded-xl text-xs font-bold grad-primary text-white shadow-md flex items-center justify-center gap-2">
+                    <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-dashed border-slate-200 dark:border-darkborder space-y-2">
+                        <button onclick="togglePasteModal()" class="w-full py-2.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-darkcard border border-slate-200 dark:border-darkborder flex items-center justify-center gap-2">
                             <span>📋</span> Paste Portal Results Page Text
                         </button>
-                        <div id="paste-modal" class="hidden-el mt-3 space-y-3">
-                            <textarea id="paste-area" rows="5" placeholder="Paste raw text from university portal page..." class="w-full p-3 rounded-xl text-xs font-mono"></textarea>
-                            <button onclick="processPaste()" class="w-full py-2.5 rounded-xl text-xs font-bold bg-brand-green text-white shadow-md">Run Deep Scan & Parse</button>
+                        <div id="paste-modal" class="hidden-el space-y-2 pt-2">
+                            <textarea id="paste-area" rows="4" placeholder="Paste raw text from university portal page..." class="font-mono text-xs"></textarea>
+                            <button onclick="processPaste()" class="w-full py-2 rounded-xl text-xs font-bold bg-brand-600 text-white">Run Deep Scan & Parse</button>
                         </div>
                     </div>
 
-                    <div class="flex justify-between items-center pt-2">
-                        <h3 class="text-xs font-black uppercase tracking-wider text-gray-400">Courses & Scores</h3>
-                        <button onclick="addCalcRow()" class="text-xs font-bold text-brand-purple hover:underline">+ Add Course</button>
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Courses & Scores</h3>
+                        <button onclick="addCalcRow()" class="text-xs font-bold text-brand-600 dark:text-brand-500 hover:underline">+ Add Course</button>
                     </div>
-                    <div id="calc-rows" class="space-y-3"></div>
+                    <div id="calc-rows" class="space-y-2"></div>
 
-                    <button onclick="submitCalc()" class="w-full py-4 rounded-2xl font-extrabold text-white grad-primary shadow-lg text-sm uppercase tracking-wider">
+                    <button onclick="submitCalc()" class="w-full py-3 rounded-xl font-bold text-sm text-white bg-brand-600 hover:bg-brand-700 transition">
                         Calculate & Save Semester Results
                     </button>
                 </div>
@@ -705,14 +633,14 @@
         function addCalcRow(code='', unit=3, score='') {
             calcRows++;
             const div = document.createElement('div');
-            div.className = "grid grid-cols-12 gap-2 md:gap-3 glass p-3 rounded-2xl items-center fade-in border border-white/5";
+            div.className = "grid grid-cols-12 gap-2 card p-2.5 items-center fade-in";
             div.id = `cr-${calcRows}`;
             div.innerHTML = `
-                <input type="text" placeholder="Code" value="${code}" class="col-span-4 md:col-span-3 p-2.5 rounded-xl text-xs font-bold uppercase c-code font-mono">
-                <input type="number" placeholder="Unit" value="${unit}" class="col-span-2 p-2.5 rounded-xl text-xs text-center font-bold c-unit">
-                <input type="number" placeholder="Score" value="${score}" class="col-span-4 md:col-span-5 p-2.5 rounded-xl text-xs text-center font-bold c-score" oninput="updateRowGrade(this)">
-                <span class="col-span-1 text-xs font-black text-center c-grade text-gray-400">-</span>
-                <button onclick="document.getElementById('cr-${calcRows}').remove()" class="col-span-1 text-brand-red text-base font-bold">✕</button>
+                <input type="text" placeholder="Code" value="${code}" class="col-span-4 md:col-span-3 p-2 text-xs font-bold uppercase c-code font-mono">
+                <input type="number" placeholder="Unit" value="${unit}" class="col-span-2 p-2 text-xs text-center font-bold c-unit">
+                <input type="number" placeholder="Score" value="${score}" class="col-span-4 md:col-span-5 p-2 text-xs text-center font-bold c-score" oninput="updateRowGrade(this)">
+                <span class="col-span-1 text-xs font-black text-center c-grade text-slate-400">-</span>
+                <button onclick="document.getElementById('cr-${calcRows}').remove()" class="col-span-1 text-red-500 text-sm font-bold text-center">✕</button>
             `;
             document.getElementById('calc-rows').appendChild(div);
             if(score !== '') updateRowGrade(div.querySelector('.c-score'));
@@ -726,7 +654,7 @@
             const span = row.querySelector('.c-grade');
             span.textContent = resolved.letter;
             span.className = `col-span-1 text-xs font-black text-center c-grade ${
-                resolved.letter === 'A' ? 'text-brand-green' : resolved.letter === 'B' ? 'text-brand-blue' : resolved.letter === 'C' ? 'text-brand-amber' : resolved.letter === 'F' ? 'text-brand-red' : 'text-gray-400'
+                resolved.letter === 'A' ? 'text-brand-600 dark:text-brand-500' : resolved.letter === 'B' ? 'text-blue-500' : resolved.letter === 'C' ? 'text-amber-500' : resolved.letter === 'F' ? 'text-red-500' : 'text-slate-400'
             }`;
         }
 
@@ -768,7 +696,6 @@
 
             if (coursesToEvaluate.length === 0) return alert("Please enter at least one valid course with unit and score.");
 
-            // Evaluate via Central Engine
             const semEval = AcademicEngine.evaluateSemester(coursesToEvaluate);
 
             currentUser.academic.semesters.push({
@@ -783,12 +710,12 @@
             currentUser.academic.targetCGPA = parseFloat(document.getElementById('calc-target').value) || currentUser.academic.targetCGPA;
 
             recomputeUserData();
-            alert(`✅ Calculated Semester GPA: ${semEval.gpa.toFixed(2)}\n📈 New Cumulative CGPA: ${currentUser.academic.cgpa.toFixed(2)}`);
+            alert(`Calculated Semester GPA: ${semEval.gpa.toFixed(2)}\nNew Cumulative CGPA: ${currentUser.academic.cgpa.toFixed(2)}`);
             switchView('home');
         }
 
-        // RESULT DETECTIVE ENGINE (POWERED BY AUTHORITATIVE ACADEMIC ENGINE)
         function renderDetectiveSub() {
+            highlightAcadTab('tab-det');
             recomputeUserData();
             const sub = document.getElementById('acad-sub-content');
             
@@ -797,30 +724,30 @@
             const currentCGPA = currentUser.academic.cgpa > 0 ? currentUser.academic.cgpa.toFixed(2) : "";
 
             sub.innerHTML = `
-                <div class="glass p-6 md:p-8 rounded-3xl fade-in space-y-6 max-w-4xl">
-                    <div class="border-l-4 border-brand-amber pl-4 py-1">
-                        <h3 class="font-extrabold text-brand-amber text-lg">🔍 Result Detective Engine</h3>
-                        <p class="text-xs text-gray-500 dark:text-slate-400 mt-1 leading-relaxed">
-                            Powered by the Authoritative Academic Engine pipeline. Enter missing portal CGPA shifts to reverse engineer required Quality Points.
+                <div class="card space-y-4 fade-in">
+                    <div>
+                        <h3 class="font-extrabold text-lg">Result Detective Engine</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            Enter missing portal CGPA shifts to reverse engineer required Quality Points.
                         </p>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label class="text-[10px] font-black uppercase tracking-wider text-gray-400">1st Semester GPA</label>
-                            <input type="number" id="det-1st" step="0.01" value="${lastGPA}" placeholder="e.g. 4.10" class="w-full p-3.5 rounded-2xl text-sm font-semibold mt-1">
+                            <label class="text-[11px] font-bold text-slate-400">1st Semester GPA</label>
+                            <input type="number" id="det-1st" step="0.01" value="${lastGPA}" placeholder="e.g. 4.10">
                         </div>
                         <div>
-                            <label class="text-[10px] font-black uppercase tracking-wider text-gray-400">Current Portal CGPA</label>
-                            <input type="number" id="det-curr" step="0.01" value="${currentCGPA}" placeholder="e.g. 3.82" class="w-full p-3.5 rounded-2xl text-sm font-semibold mt-1">
+                            <label class="text-[11px] font-bold text-slate-400">Current Portal CGPA</label>
+                            <input type="number" id="det-curr" step="0.01" value="${currentCGPA}" placeholder="e.g. 3.82">
                         </div>
                     </div>
 
-                    <button onclick="runDetective()" class="w-full py-4 rounded-2xl font-extrabold text-white bg-brand-amber hover:opacity-90 shadow-lg transition text-xs uppercase tracking-wider">
+                    <button onclick="runDetective()" class="w-full py-3 rounded-xl font-bold text-sm text-white bg-brand-600 hover:bg-brand-700 transition">
                         Run Authoritative Engine Analysis
                     </button>
 
-                    <div id="det-results" class="space-y-4 pt-2"></div>
+                    <div id="det-results" class="space-y-3 pt-2"></div>
                 </div>
             `;
         }
@@ -832,7 +759,6 @@
 
             if (isNaN(gpa1) || isNaN(cgpa)) return alert("Please enter both GPA values.");
 
-            // Request detective calculation from Central Engine
             const cumUnitsExceptSem1 = currentUser.academic.totalUnits - (currentUser.academic.semesters.length > 0 ? currentUser.academic.semesters[currentUser.academic.semesters.length - 1].units : 0);
             const cumQPExceptSem1 = currentUser.academic.cumulativeQP - (currentUser.academic.semesters.length > 0 ? currentUser.academic.semesters[currentUser.academic.semesters.length - 1].qp : 0);
 
@@ -840,55 +766,43 @@
 
             let html = '';
             
-            // Engine Pipeline Trace Step
             html += `
-                <div class="glass p-5 rounded-2xl border-l-4 border-brand-purple">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-[10px] font-black text-brand-purple uppercase tracking-widest">Engine Pipeline Trace</span>
-                        <span class="text-[10px] font-bold text-brand-green bg-brand-green/10 px-2.5 py-1 rounded-full">Authoritative Pipeline</span>
-                    </div>
-                    <div class="text-xs font-mono space-y-1 text-gray-500 dark:text-slate-400">
-                        <p>Sem 1 Evaluation: ${analysis.sem1Units} Units × ${gpa1.toFixed(2)} GPA = ${analysis.sem1QP.toFixed(1)} QP</p>
-                        <p>Target CGPA Equation: Total QP Required / (${analysis.sem1Units + analysis.assumedSem2Units + cumUnitsExceptSem1} Total Units) = ${cgpa.toFixed(2)}</p>
+                <div class="card space-y-1">
+                    <p class="text-xs font-bold text-brand-600 dark:text-brand-500 uppercase tracking-wider">Pipeline Trace</p>
+                    <div class="text-xs font-mono text-slate-500 dark:text-slate-400 space-y-0.5">
+                        <p>Sem 1: ${analysis.sem1Units} Units × ${gpa1.toFixed(2)} GPA = ${analysis.sem1QP.toFixed(1)} QP</p>
+                        <p>Equation: Total QP / (${analysis.sem1Units + analysis.assumedSem2Units + cumUnitsExceptSem1} Total Units) = ${cgpa.toFixed(2)}</p>
                     </div>
                 </div>
             `;
 
             if (!analysis.isPossible) {
                 html += `
-                    <div class="glass p-5 rounded-2xl border-l-4 border-brand-red">
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="text-[10px] font-black text-brand-red uppercase tracking-widest">Engine Sanity Alert ⚠️</span>
-                        </div>
-                        <p class="text-xs text-brand-red leading-relaxed">
-                            Engine determined required 2nd Semester GPA is <b>${analysis.requiredSem2GPA.toFixed(2)}</b>, which is mathematically out of 0.00-5.00 bounds. Please double check portal entries.
+                    <div class="card border-red-500/40 text-red-500">
+                        <p class="font-bold text-xs uppercase tracking-wider">Sanity Alert ⚠️</p>
+                        <p class="text-xs mt-1">
+                            Calculated required 2nd Semester GPA is <b>${analysis.requiredSem2GPA.toFixed(2)}</b> (outside 0.00-5.00 bounds). Double check portal entries.
                         </p>
                     </div>
                 `;
             } else {
                 html += `
-                    <div class="glass p-5 rounded-2xl border-l-4 border-brand-blue">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-[10px] font-black text-brand-blue uppercase tracking-widest">Reverse Computed 2nd Sem GPA</span>
-                            <span class="text-[10px] font-bold text-brand-green bg-brand-green/10 px-2.5 py-1 rounded-full">Confidence: High</span>
-                        </div>
-                        <p class="text-xs md:text-sm leading-relaxed">
-                            Authoritative Engine calculates required 2nd Semester GPA as <b>${analysis.requiredSem2GPA.toFixed(2)}</b> (${analysis.requiredSem2QP.toFixed(0)} Quality Points across ${analysis.assumedSem2Units} units).
+                    <div class="card space-y-1">
+                        <p class="text-xs font-bold text-brand-600 dark:text-brand-500 uppercase tracking-wider">Reverse Computed 2nd Sem GPA</p>
+                        <p class="text-sm">
+                            Required 2nd Semester GPA is <b class="text-brand-600 dark:text-brand-500">${analysis.requiredSem2GPA.toFixed(2)}</b> (${analysis.requiredSem2QP.toFixed(0)} Quality Points across ${analysis.assumedSem2Units} units).
                         </p>
                     </div>
                 `;
 
-                // Estimated Scenarios using Engine grade mappings
                 const targetPoints = analysis.requiredSem2QP;
                 html += `
-                    <div class="glass p-5 rounded-2xl border-l-4 border-brand-cyan">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-[10px] font-black text-brand-cyan uppercase tracking-widest">Engine Grade Distribution Scenarios</span>
-                        </div>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Predicted grade patterns to reach ${targetPoints.toFixed(0)} QP over 20 units:</p>
-                        <div class="flex flex-wrap gap-2">
-                            <span class="px-3 py-1 rounded-xl text-xs font-bold text-brand-green bg-brand-green/10">A Grades (5GP): ~${Math.max(0, Math.round((analysis.requiredSem2GPA - 3) * 5))}</span>
-                            <span class="px-3 py-1 rounded-xl text-xs font-bold text-brand-blue bg-brand-blue/10">B Grades (4GP): Balance</span>
+                    <div class="card space-y-2">
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Grade Scenarios</p>
+                        <p class="text-xs text-slate-500">Predicted grade patterns to reach ${targetPoints.toFixed(0)} QP over 20 units:</p>
+                        <div class="flex flex-wrap gap-2 text-xs font-semibold">
+                            <span class="px-2.5 py-1 rounded-lg bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-400">A Grades (5GP): ~${Math.max(0, Math.round((analysis.requiredSem2GPA - 3) * 5))}</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800">B Grades (4GP): Balance</span>
                         </div>
                     </div>
                 `;
@@ -897,37 +811,113 @@
             res.innerHTML = html;
         }
 
+        function renderDecimalsSub() {
+            highlightAcadTab('tab-dec');
+            recomputeUserData();
+            const sub = document.getElementById('acad-sub-content');
+            
+            const totalUnits = currentUser.academic.totalUnits || 20;
+
+            sub.innerHTML = `
+                <div class="card space-y-4 fade-in">
+                    <div>
+                        <h3 class="font-extrabold text-lg">Menu of Decimals</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            Shows how each course unit grade impacts your total CGPA.
+                        </p>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left">
+                            <thead>
+                                <tr class="border-b border-slate-200 dark:border-darkborder text-slate-400">
+                                    <th class="p-2">Course Unit Weight</th>
+                                    <th class="p-2">Grade A (+5 GP)</th>
+                                    <th class="p-2">Grade B (+4 GP)</th>
+                                    <th class="p-2">Grade C (+3 GP)</th>
+                                    <th class="p-2">Grade D (+2 GP)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 dark:divide-darkborder font-mono">
+                                ${[1, 2, 3, 4, 6].map(u => `
+                                    <tr>
+                                        <td class="p-2 font-bold text-brand-600 dark:text-brand-500 font-sans">${u} Unit Course</td>
+                                        <td class="p-2">+${((u * 5) / totalUnits).toFixed(3)}</td>
+                                        <td class="p-2">+${((u * 4) / totalUnits).toFixed(3)}</td>
+                                        <td class="p-2">+${((u * 3) / totalUnits).toFixed(3)}</td>
+                                        <td class="p-2">+${((u * 2) / totalUnits).toFixed(3)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderRecordSub() {
+            highlightAcadTab('tab-rec');
+            recomputeUserData();
+            const sub = document.getElementById('acad-sub-content');
+            const p = currentUser.profile;
+            const acad = currentUser.academic;
+
+            sub.innerHTML = `
+                <div class="card space-y-4 fade-in">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-extrabold text-lg">${currentUser.name}</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">${p.uni} • ${p.program} • ${p.level}L</p>
+                        </div>
+                        <button onclick="window.print()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 transition">🖨️ Print Record</button>
+                    </div>
+
+                    <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-darkborder flex justify-between items-center">
+                        <div>
+                            <p class="text-xs text-slate-400 font-semibold">Overall CGPA</p>
+                            <p class="text-2xl font-black text-brand-600 dark:text-brand-500">${acad.cgpa.toFixed(2)}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-slate-400 font-semibold">Total Completed</p>
+                            <p class="text-sm font-bold">${acad.totalUnits} Units (${acad.cumulativeQP.toFixed(1)} QP)</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         function renderProgressSub() {
+            highlightAcadTab('tab-prog');
             recomputeUserData();
             const sub = document.getElementById('acad-sub-content');
             const totalExpected = currentUser.profile.totalUnits || 160;
             const progressPct = Math.min((currentUser.academic.totalUnits / totalExpected) * 100, 100).toFixed(0);
             
             sub.innerHTML = `
-                <div class="glass p-6 md:p-8 rounded-3xl fade-in space-y-6 max-w-4xl">
+                <div class="card space-y-5 fade-in">
                     <div>
-                        <div class="flex justify-between items-end mb-3">
+                        <div class="flex justify-between items-end mb-2">
                             <h3 class="font-extrabold text-lg">${currentUser.profile.program}</h3>
-                            <span class="text-sm font-bold text-brand-blue">${progressPct}% Complete</span>
+                            <span class="text-xs font-bold text-brand-600 dark:text-brand-500">${progressPct}% Complete</span>
                         </div>
-                        <div class="w-full bg-black/10 dark:bg-white/10 rounded-full h-3 overflow-hidden">
-                            <div class="progress-bar h-3 rounded-full transition-all duration-1000" style="width: ${progressPct}%"></div>
+                        <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                            <div class="bg-brand-600 h-2.5 rounded-full transition-all duration-500" style="width: ${progressPct}%"></div>
                         </div>
-                        <div class="flex justify-between mt-3 text-xs text-gray-500 dark:text-slate-400">
+                        <div class="flex justify-between mt-2 text-xs text-slate-500">
                             <span>Completed: ${currentUser.academic.totalUnits} units</span>
                             <span>Remaining: ~${totalExpected - currentUser.academic.totalUnits} units</span>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                         ${['100', '200', '300', '400'].map(level => {
                             const isDone = parseInt(currentUser.profile.level) > parseInt(level);
                             const isCurrent = parseInt(currentUser.profile.level) === parseInt(level);
                             return `
-                                <div class="p-4 rounded-2xl border ${isDone ? 'bg-brand-green/5 border-brand-green/20' : isCurrent ? 'bg-brand-blue/5 border-brand-blue/20' : 'bg-black/5 dark:bg-white/5 border-white/5 opacity-60'}">
+                                <div class="p-3.5 rounded-xl border ${isDone ? 'bg-brand-50/50 dark:bg-brand-900/10 border-brand-500/30' : isCurrent ? 'bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-700' : 'bg-slate-50/50 dark:bg-slate-900/30 border-slate-200 dark:border-darkborder opacity-60'}">
                                     <div class="flex justify-between items-center">
-                                        <span class="text-sm font-bold ${isDone ? 'text-brand-green' : isCurrent ? 'text-brand-blue' : 'text-gray-400'}">${level} Level</span>
-                                        <span class="text-[10px] px-2.5 py-1 rounded-full ${isDone ? 'bg-brand-green/20 text-brand-green' : isCurrent ? 'bg-brand-blue/20 text-brand-blue' : 'bg-gray-200 dark:bg-slate-700 text-gray-500'}">
+                                        <span class="text-xs font-bold ${isDone ? 'text-brand-600 dark:text-brand-500' : ''}">${level} Level</span>
+                                        <span class="text-[10px] px-2 py-0.5 rounded-full ${isDone ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-400' : isCurrent ? 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300' : 'bg-slate-200 dark:bg-slate-800 text-slate-400'}">
                                             ${isDone ? 'Completed' : isCurrent ? 'In Progress' : 'Locked'}
                                         </span>
                                     </div>
@@ -940,25 +930,26 @@
         }
 
         function renderHistorySub() {
+            highlightAcadTab('tab-hist');
             recomputeUserData();
             const sub = document.getElementById('acad-sub-content');
             const sems = currentUser.academic.semesters;
 
             sub.innerHTML = `
-                <div class="glass p-6 md:p-8 rounded-3xl fade-in space-y-6 max-w-4xl">
+                <div class="card space-y-4 fade-in">
                     <h3 class="font-extrabold text-lg">Academic Semester Records</h3>
-                    ${sems.length === 0 ? '<p class="text-xs text-gray-400 text-center py-8">No semesters calculated yet.</p>' : 
+                    ${sems.length === 0 ? '<p class="text-xs text-slate-500 text-center py-6">No semesters calculated yet.</p>' : 
                         sems.map(s => `
-                            <div class="p-5 rounded-2xl bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/5">
-                                <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-200 dark:border-white/5">
+                            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-darkborder space-y-2">
+                                <div class="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-darkborder">
                                     <span class="text-xs font-bold">${s.name}</span>
-                                    <span class="text-sm font-black text-brand-purple">GPA: ${s.gpa.toFixed(2)} (${s.qp} QP / ${s.units} Units)</span>
+                                    <span class="text-xs font-bold text-brand-600 dark:text-brand-500">GPA: ${s.gpa.toFixed(2)} (${s.qp} QP / ${s.units} Units)</span>
                                 </div>
-                                <div class="space-y-1.5">
+                                <div class="space-y-1">
                                     ${s.courses.map(c => `
-                                        <div class="flex justify-between text-xs font-medium">
-                                            <span class="font-mono text-gray-500">${c.code} (${c.unit} Units)</span>
-                                            <span class="font-bold">${c.score !== null ? c.score : '-'} / <span class="${c.grade==='A'?'text-brand-green':'text-brand-blue'}">${c.grade} (${c.qp} QP)</span></span>
+                                        <div class="flex justify-between text-xs">
+                                            <span class="font-mono text-slate-500">${c.code} (${c.unit} Units)</span>
+                                            <span class="font-bold">${c.score !== null ? c.score : '-'} / <span class="${c.grade==='A'?'text-brand-600 dark:text-brand-500':''}">${c.grade} (${c.qp} QP)</span></span>
                                         </div>
                                     `).join('')}
                                 </div>
@@ -969,34 +960,85 @@
             `;
         }
 
-        // VIEW 3: PLANNER
+        // VIEW 3: PLANNER & CALENDAR
         function renderPlanner(container) {
             container.innerHTML = `
-                <div class="fade-in space-y-6 max-w-4xl mx-auto">
-                    <div class="glass p-6 rounded-3xl space-y-3">
-                        <h3 class="font-bold text-sm uppercase tracking-wider text-gray-400">Add Academic Task</h3>
-                        <div class="flex gap-2">
-                            <input type="text" id="task-input" placeholder="e.g., Read Chapter 4 of POS 201" class="flex-1 p-3.5 rounded-2xl text-xs font-semibold">
-                            <button onclick="addTask()" class="px-6 py-3.5 rounded-2xl text-xs font-bold text-white grad-primary shadow-md">Add</button>
+                <div class="fade-in space-y-5">
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight">Planner & Calendar</h2>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Organize your academic tasks and track upcoming exam dates.</p>
+                    </div>
+
+                    <div class="card space-y-3">
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Add Exam / Event</label>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                            <input type="text" id="ev-code" placeholder="Course / Title (e.g. POS201)">
+                            <select id="ev-type">
+                                <option>Exam</option>
+                                <option>Test</option>
+                                <option>Assignment</option>
+                            </select>
+                            <input type="date" id="ev-date">
+                        </div>
+                        <button onclick="addEvent()" class="w-full py-2.5 rounded-xl font-bold text-xs text-white bg-brand-600 hover:bg-brand-700 transition">Add To Calendar</button>
+                    </div>
+
+                    <div class="card space-y-3">
+                        <h3 class="font-extrabold text-base">Calendar Schedules</h3>
+                        <div id="event-list" class="space-y-2">
+                            ${(currentUser.planner.events || []).map((e, i) => `
+                                <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-darkborder text-xs">
+                                    <div>
+                                        <p class="font-bold">${e.code} <span class="text-[10px] text-slate-400">(${e.type})</span></p>
+                                        <p class="text-slate-500">${e.date}</p>
+                                    </div>
+                                    <button onclick="deleteEvent(${i})" class="text-red-500 font-bold px-2">✕</button>
+                                </div>
+                            `).join('') || '<p class="text-xs text-slate-500 text-center py-2">No calendar events added.</p>'}
                         </div>
                     </div>
 
-                    <div class="glass p-6 rounded-3xl">
-                        <h3 class="font-extrabold text-lg mb-4">Task List</h3>
+                    <div class="card space-y-3">
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Add Academic Task</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="task-input" placeholder="e.g., Read Chapter 4 of POS 201">
+                            <button onclick="addTask()" class="px-5 py-3 rounded-xl font-bold text-xs text-white bg-brand-600 hover:bg-brand-700 transition shrink-0">Add</button>
+                        </div>
+                    </div>
+
+                    <div class="card space-y-3">
+                        <h3 class="font-extrabold text-base">Task List</h3>
                         <div id="task-list" class="space-y-2">
                             ${currentUser.planner.tasks.map((t, i) => `
-                                <div class="flex items-center justify-between p-3.5 rounded-2xl glass hover:opacity-90 transition">
+                                <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-darkborder">
                                     <div class="flex items-center gap-3">
-                                        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask(${i})" class="w-4 h-4 rounded accent-purple-600">
-                                        <span class="text-xs font-semibold ${t.done ? 'line-through text-gray-400' : ''}">${t.title}</span>
+                                        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask(${i})" class="w-4 h-4 rounded accent-brand-600">
+                                        <span class="text-xs font-semibold ${t.done ? 'line-through text-slate-400' : ''}">${t.title}</span>
                                     </div>
-                                    <button onclick="deleteTask(${i})" class="text-brand-red text-xs font-bold px-2">✕</button>
+                                    <button onclick="deleteTask(${i})" class="text-red-500 text-xs font-bold px-2">✕</button>
                                 </div>
-                            `).join('') || '<p class="text-xs text-gray-400 text-center py-6">No tasks added yet.</p>'}
+                            `).join('') || '<p class="text-xs text-slate-500 text-center py-4">No tasks added yet.</p>'}
                         </div>
                     </div>
                 </div>
             `;
+        }
+
+        function addEvent() {
+            const code = document.getElementById('ev-code').value.trim();
+            const type = document.getElementById('ev-type').value;
+            const date = document.getElementById('ev-date').value;
+            if(!code || !date) return alert('Enter course title and date.');
+            currentUser.planner.events = currentUser.planner.events || [];
+            currentUser.planner.events.push({ code, type, date });
+            saveDB();
+            switchView('planner');
+        }
+
+        function deleteEvent(i) {
+            currentUser.planner.events.splice(i, 1);
+            saveDB();
+            switchView('planner');
         }
 
         function addTask() {
@@ -1026,32 +1068,53 @@
             const remaining = fin.semesterBudget - spent;
 
             container.innerHTML = `
-                <div class="fade-in space-y-6 max-w-4xl mx-auto">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                        <div class="glass p-6 rounded-3xl">
-                            <p class="text-[10px] font-black uppercase tracking-wider text-gray-400">SEMESTER BUDGET</p>
-                            <p class="text-3xl font-black mt-2">₦${fin.semesterBudget.toLocaleString()}</p>
+                <div class="fade-in space-y-5">
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight">Finance & Budget</h2>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Set your allowance and track expenses.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div class="card">
+                            <p class="text-[11px] text-slate-400 font-semibold">Semester Budget</p>
+                            <p class="text-2xl font-extrabold mt-1">₦${fin.semesterBudget.toLocaleString()}</p>
                         </div>
-                        <div class="glass p-6 rounded-3xl border-l-4 border-brand-red">
-                            <p class="text-[10px] font-black uppercase tracking-wider text-gray-400">TOTAL SPENT</p>
-                            <p class="text-3xl font-black text-brand-red mt-2">₦${spent.toLocaleString()}</p>
+                        <div class="card">
+                            <p class="text-[11px] text-slate-400 font-semibold">Total Spent</p>
+                            <p class="text-2xl font-extrabold text-red-500 mt-1">₦${spent.toLocaleString()}</p>
                         </div>
-                        <div class="glass p-6 rounded-3xl border-l-4 border-brand-green">
-                            <p class="text-[10px] font-black uppercase tracking-wider text-gray-400">REMAINING</p>
-                            <p class="text-3xl font-black text-brand-green mt-2">₦${remaining.toLocaleString()}</p>
+                        <div class="card">
+                            <p class="text-[11px] text-slate-400 font-semibold">Remaining Balance</p>
+                            <p class="text-2xl font-extrabold text-brand-600 dark:text-brand-500 mt-1">₦${remaining.toLocaleString()}</p>
                         </div>
                     </div>
 
-                    <div class="glass p-6 rounded-3xl space-y-4">
-                        <h3 class="font-extrabold text-lg">Log Expense / Allowance</h3>
+                    <div class="card space-y-3">
+                        <h3 class="font-extrabold text-base">Update Budget Limit</h3>
+                        <div class="flex gap-2">
+                            <input type="number" id="budget-input" value="${fin.semesterBudget}" placeholder="Semester Budget (₦)">
+                            <button onclick="updateBudget()" class="px-5 py-3 rounded-xl font-bold text-xs text-white bg-brand-600 hover:bg-brand-700 transition shrink-0">Save</button>
+                        </div>
+                    </div>
+
+                    <div class="card space-y-3">
+                        <h3 class="font-extrabold text-base">Log Expense</h3>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <input type="number" id="fin-amt" placeholder="Amount (₦)" class="p-3.5 rounded-2xl text-xs font-semibold">
-                            <input type="text" id="fin-desc" placeholder="Description (e.g., Handouts)" class="p-3.5 rounded-2xl text-xs font-semibold">
-                            <button onclick="addTransaction()" class="py-3.5 rounded-2xl text-xs font-bold text-white bg-brand-green shadow-md">Log Transaction</button>
+                            <input type="number" id="fin-amt" placeholder="Amount (₦)">
+                            <input type="text" id="fin-desc" placeholder="Description (e.g., Handouts)">
+                            <button onclick="addTransaction()" class="py-3 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 transition">Log Transaction</button>
                         </div>
                     </div>
                 </div>
             `;
+        }
+
+        function updateBudget() {
+            const val = parseFloat(document.getElementById('budget-input').value);
+            if(isNaN(val) || val < 0) return alert('Enter a valid budget amount.');
+            currentUser.finance.semesterBudget = val;
+            saveDB();
+            switchView('finance');
         }
 
         function addTransaction() {
@@ -1064,23 +1127,37 @@
             switchView('finance');
         }
 
-        // VIEW 5: MORE
+        // VIEW 5: MORE / SETTINGS / BACKUP
         function renderMore(container) {
             container.innerHTML = `
-                <div class="fade-in space-y-6 max-w-4xl mx-auto">
-                    <div class="glass p-6 rounded-3xl space-y-4">
-                        <h3 class="font-extrabold text-lg">Profile & System Preferences</h3>
-                        <div class="text-xs space-y-2 text-gray-500 dark:text-slate-400">
+                <div class="fade-in space-y-5">
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight">Settings & Materials</h2>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">System status, backup, and account settings.</p>
+                    </div>
+
+                    <div class="card space-y-3">
+                        <h3 class="font-extrabold text-base">Profile Info</h3>
+                        <div class="text-xs space-y-1.5 text-slate-500 dark:text-slate-400">
                             <p><b>User:</b> ${currentUser.name} (${DB.current})</p>
                             <p><b>Institution:</b> ${currentUser.profile.uni}</p>
                             <p><b>Program:</b> ${currentUser.profile.program}</p>
-                            <p><b>Core Engine Version:</b> Authoritative Academic Engine v5.0</p>
+                            <p><b>Engine:</b> Authoritative Academic Engine v5.0</p>
                         </div>
                     </div>
 
-                    <div class="glass p-6 rounded-3xl border border-brand-red/20 space-y-3">
-                        <h3 class="font-bold text-sm text-brand-red uppercase tracking-wider">Danger Zone</h3>
-                        <button onclick="if(confirm('Reset all academic data?')){localStorage.clear(); location.reload();}" class="w-full py-3.5 rounded-2xl text-xs font-bold text-brand-red bg-brand-red/10 hover:bg-brand-red/20 transition">
+                    <div class="card space-y-3">
+                        <h3 class="font-extrabold text-base">Backup & Restore</h3>
+                        <textarea id="bk-area" rows="3" class="font-mono text-[11px]" placeholder="Backup text will appear here..."></textarea>
+                        <div class="flex gap-2">
+                            <button onclick="createBackup()" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200">Create Backup</button>
+                            <button onclick="restoreBackup()" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200">Restore Data</button>
+                        </div>
+                    </div>
+
+                    <div class="card border-red-500/20 space-y-3">
+                        <h3 class="font-bold text-xs text-red-500 uppercase tracking-wider">Danger Zone</h3>
+                        <button onclick="if(confirm('Reset all academic data?')){localStorage.clear(); location.reload();}" class="w-full py-3 rounded-xl text-xs font-bold text-red-500 bg-red-500/10 hover:bg-red-500/20 transition">
                             Clear Local Storage Data
                         </button>
                     </div>
@@ -1088,13 +1165,26 @@
             `;
         }
 
-        // INITIALIZATION
-        window.onload = function() {
-            const savedTheme = localStorage.getItem('as_theme') || 'dark';
-            if (savedTheme === 'dark') document.documentElement.classList.add('dark');
-            else document.documentElement.classList.remove('dark');
-            updateThemeIcons();
+        function createBackup() {
+            document.getElementById('bk-area').value = JSON.stringify(currentUser);
+        }
 
+        function restoreBackup() {
+            try {
+                const data = JSON.parse(document.getElementById('bk-area').value);
+                if(!data.academic || !data.profile) throw new Error();
+                DB.users[DB.current] = data;
+                currentUser = data;
+                saveDB();
+                alert('Backup successfully restored!');
+                switchView('home');
+            } catch(e) {
+                alert('Invalid backup data format.');
+            }
+        }
+
+        // APPLICATION INITIALIZATION
+        window.onload = function() {
             if (DB.current && DB.users[DB.current]) {
                 initApp();
             } else {
