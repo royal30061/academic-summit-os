@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Academic Summit OS</title>
+<script>(function(){var t=null;try{t=localStorage.getItem('so_theme')}catch(e){}if(t?t==='d':matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.classList.add('dark')})();</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{colors:{brand:{50:'#f0fdf4',100:'#dcfce7',500:'#22c55e',600:'#16a34a',700:'#15803d',900:'#14532d'},darkbg:'#090d16',darkcard:'#111827',darkborder:'#1f2937'}}}}</script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif}
+@media print{.np{display:none!important}body,.card{background:#fff!important;color:#000!important;border-color:#ccc!important}:root{padding:0}}
+</style>
+</head>
+<body class="bg-slate-50 dark:bg-darkbg text-slate-900 dark:text-slate-100 min-h-screen">
+<div id="toast" class="np fixed top-4 left-1/2 -translate-x-1/2 z-50 hidden px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold shadow-lg max-w-[90vw] text-center"></div>
+<div id="auth" class="min-h-screen flex items-center justify-center p-5"></div>
+<div id="app" class="hidden">
+  <header class="np lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-darkcard border-b border-slate-200 dark:border-darkborder sticky top-0 z-30">
+    <b class="tracking-tight">🏔️ Summit OS</b>
+    <button onclick="theme()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800" aria-label="Toggle theme">🌓</button>
+  </header>
+  <div class="flex">
+    <aside id="side" class="np hidden lg:flex flex-col w-60 shrink-0 bg-white dark:bg-darkcard border-r border-slate-200 dark:border-darkborder p-4 sticky top-0 h-screen gap-1"></aside>
+    <main id="v" class="flex-1 min-w-0 p-4 md:p-8 max-w-5xl mx-auto pb-28 lg:pb-8 space-y-5"></main>
+  </div>
+  <nav id="bot" class="np lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-darkcard border-t border-slate-200 dark:border-darkborder flex overflow-x-auto z-30" style="padding-bottom:env(safe-area-inset-bottom,0px)"></nav>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const LS={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){toast('Could not save on this device (storage blocked or full)');return false}}};
+const CARD='card bg-white dark:bg-darkcard border border-slate-200 dark:border-darkborder rounded-2xl p-4';
+const IN='w-full p-3 rounded-xl text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-darkborder focus:outline-none focus:border-brand-500';
+const BTN='px-4 py-2.5 rounded-xl font-bold text-sm text-white bg-brand-600 hover:bg-brand-700';
+const BTN2='px-4 py-2.5 rounded-xl font-bold text-sm bg-slate-100 dark:bg-slate-800';
+const GP={A:5,B:4,C:3,D:2,E:1,F:0},L=['F','E','D','C','B','A'];
+const sum=(a,f)=>a.reduce((s,x)=>s+f(x),0), f2=n=>n.toFixed(2), f3=n=>n.toFixed(3);
+let users=LS.get('so_users')||{},me=null,D=null,tab='home',sel=null,sem=0,armed='';
+
+function toast(m){const t=$('toast');t.textContent=m;t.classList.remove('hidden');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.add('hidden'),3200)}
+function theme(){const d=document.documentElement.classList.toggle('dark');try{localStorage.setItem('so_theme',d?'d':'l')}catch(e){}}
+function save(){users[me].d=D;LS.set('so_users',users)}
+
+/* ---------- AUTH (accounts live only on this device) ---------- */
+async function hash(s){try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('summit|'+s));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){return 'b'+btoa(unescape(encodeURIComponent(s)))}}
+function authView(m){
+  const a=$('auth');$('app').classList.add('hidden');a.classList.remove('hidden');
+  if(m==='welcome'){a.innerHTML=`<div class="w-full max-w-sm text-center space-y-5">
+    <div class="w-16 h-16 mx-auto rounded-2xl bg-brand-600 text-white text-3xl font-black flex items-center justify-center shadow-lg shadow-brand-600/30">S</div>
+    <h1 class="text-5xl font-black tracking-tight leading-[1.05]">Academic<br><span class="text-brand-600 dark:text-brand-500">Summit</span></h1>
+    <p class="text-lg text-slate-600 dark:text-slate-300 leading-snug">The only companion you need for your academic journey.</p>
+    <div class="flex flex-wrap justify-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400"><span class="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800">GPA calculator</span><span class="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800">Exam calendar</span><span class="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800">Result detective</span><span class="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800">Budget</span></div>
+    <button class="${BTN} w-full py-3" onclick="authView('reg')">Create account</button>
+    <button class="${BTN2} w-full py-3 border border-slate-200 dark:border-darkborder" onclick="authView('login')">Log in</button></div>`;return}
+  a.innerHTML=`<div class="w-full max-w-sm ${CARD} p-6 space-y-3">
+    <h2 class="text-xl font-extrabold">${m==='reg'?'Create your account':'Welcome back'}</h2>
+    ${m==='reg'?`<input id="a-n" class="${IN}" placeholder="Full name">`:''}
+    <input id="a-e" type="email" class="${IN}" placeholder="Email">
+    <input id="a-p" type="password" class="${IN}" placeholder="Password (6+ characters)">
+    <p id="a-x" class="text-xs text-red-500 min-h-[1rem]"></p>
+    <button class="${BTN} w-full py-3" onclick="${m==='reg'?'reg()':'login()'}">${m==='reg'?'Sign up':'Log in'}</button>
+    <button class="w-full text-xs text-slate-500" onclick="authView('welcome')">Back</button></div>`}
+const aerr=m=>{$('a-x').textContent=m};
+async function reg(){const n=$('a-n').value.trim(),e=$('a-e').value.trim().toLowerCase(),p=$('a-p').value;
+  if(!n||!e||p.length<6)return aerr('Enter your name, an email and a password of 6+ characters.');
+  if(users[e])return aerr('That email already has an account on this device. Log in instead.');
+  const d={profile:{name:n,matric:'',dept:'',uni:'',level:'100',target:4.5},sessions:[],budget:0,exp:[]};
+  users[e]={name:n,pw:await hash(e+p),d};if(!LS.set('so_users',users))return;enter(e)}
+async function login(){const e=$('a-e').value.trim().toLowerCase(),p=$('a-p').value;
+  if(!users[e]||users[e].pw!==await hash(e+p))return aerr('Email or password is incorrect.');enter(e)}
+function enter(e){me=e;D=users[e].d;LS.set('so_me',e);$('auth').classList.add('hidden');$('app').classList.remove('hidden');sel=D.sessions.length?D.sessions[D.sessions.length-1].id:null;go('home')}
+function logout(){LS.set('so_me',null);me=D=null;authView('welcome')}
+
+/* ---------- MATH: everything resolves to the 5-point scale ---------- */
+function semStat(cs){const g=cs.filter(c=>c.grade),u=sum(cs,c=>c.units),gu=sum(g,c=>c.units),qp=sum(g,c=>c.units*GP[c.grade]);return{u,gu,qp,gpa:gu?qp/gu:0,pend:u-gu}}
+function sesStat(s){const a=semStat(s.s[0]),b=semStat(s.s[1]),gu=a.gu+b.gu,qp=a.qp+b.qp;return{a,b,u:a.u+b.u,gu,qp,cgpa:gu?qp/gu:0,pend:a.pend+b.pend}}
+function allStat(){const x=D.sessions.map(sesStat),gu=sum(x,y=>y.gu),qp=sum(x,y=>y.qp);return{gu,qp,u:sum(x,y=>y.u),cgpa:gu?qp/gu:0,pend:sum(x,y=>y.pend)}}
+const standing=c=>c>=4.5?'First Class':c>=3.5?'Second Class Upper':c>=2.4?'Second Class Lower':c>=1.5?'Third Class':c>=1?'Pass':'No grades yet';
+const cur=()=>D.sessions.find(s=>s.id===sel)||D.sessions[D.sessions.length-1];
+function prevOf(s){const i=D.sessions.indexOf(s),p=D.sessions.slice(0,i).map(sesStat);return{u:sum(p,x=>x.gu),qp:sum(p,x=>x.qp)}}
+
+/* ---------- PORTAL TEXT PARSER ---------- */
+function parse(t){
+  const r={meta:{},sems:[[],[]]},m=re=>(t.match(re)||[])[1];
+  r.meta.matric=(t.match(/\b\d{2}\/\d{2,3}[A-Z]{2,6}\/\d{3,5}\b/)||[])[0];
+  let n=m(/Full-?\s?Name[ \t:]+([^\n\t]+)/i);
+  if(n){n=n.trim();if(n.includes(',')){const q=n.split(',');n=q[1].trim()+' '+q[0].trim()}r.meta.name=n.replace(/\w\S*/g,w=>w[0].toUpperCase()+w.slice(1).toLowerCase())}
+  r.meta.dept=(m(/Department[ \t:]+([^\n\t]+)/i)||'').trim();
+  r.meta.level=m(/Current\s+Level\s*[:\s]\s*(\d{3})/i);
+  r.meta.sess=m(/Session[ \t:]+(\d{4}\/\d{4})/i);
+  const re=/^\s*(?:(\d{1,2})[ \t]+)?((?:UA-)?[A-Z]{2,4}\s?\d{3}[A-Z]?)[ \t]+(.*?)[ \t]+([1-9])[ \t]+([CER])\s*$/i;
+  let si=0,flag=false;
+  for(const line of t.split(/\r?\n/)){
+    if(/^\s*total/i.test(line)){if(r.sems[si].length)flag=true;continue}
+    const x=line.match(re);if(!x)continue;
+    if((flag||(x[1]==='1'&&r.sems[si].length))&&si<1)si=1;flag=false;
+    r.sems[si].push({code:x[2].replace(/\s/g,'').toUpperCase(),title:x[3].trim(),units:+x[4],status:x[5].toUpperCase(),grade:''});
+  }
+  return r}
+const DEMO={
+ 200:'CSC200|Introduction to Computer Science|2|C;ENT211|Entrepreneurship and Innovation|2|C;FSS201|Introduction to Statistics|2|C;POS201|Nigeria Politics|2|C;POS203|Introduction to Political Analysis|2|C;POS205|Introduction to Public Administration|2|C;POS207|Introduction To Political Economy|2|C;POS209|Introduction to Local Government|2|E;POS211|Democracy and Development in Nigeria|2|C;POS213|Traditional Institutions and Development|2|C;POS215|Russia in World Politics|2|C;UA-GNS201|Information, Literacy and Library Use|2|C;UA-GNS211P|Introduction to Portuguese|2|E#FSS202|Introduction to Statistics II|2|C;GST212|Philosophy, Logic and Human Existence|2|E;HIS204|History of Islam and Christianity in West Africa|3|C;POL108|Resettlement Policy in the FCT|2|E;POS202|Nigeria Politics II|2|C;POS204|Introduction to International Relations|2|C;POS206|Political Ideas|2|C;POS208|Politics in Africa|2|C;POS210|Introduction to Comparative Politics|2|C;UA-CES222|Practical Enterprise Creation|2|E;UA-GNS212P|Introduction to Portuguese Phonetics|2|E',
+ 100:'GST111|Communication in English|2|C;HIS101|Introduction to History|2|C;POS101|Introduction to Political Science|3|C;POS103|Nigerian Constitutional Development|3|C;POS105|Organization of Government|2|C;POS107|Nigerian Legal System|2|C;POS111|Political History of the FCT|2|C;POS113|Rural Development in the FCT|2|C;UA-GNS104|Science and Society|2|C#GST112|Nigerian peoples and Culture|2|C;HIS102|History of West Africa From 1000-1500 AD|3|C;POL108|Resettlement Policy in the FCT|2|E;POS102|Introduction to African Politics II|3|C;POS106|Citizenship and State|2|C;POS108|Nigerian Legal System II|2|C;POS110|Africa Continental Free Trade Area|2|C;POS112|World Politics|2|C;UA-GNS122|Communication in English II|2|C'};
+function demoText(l){return DEMO[l].split('#').map(h=>h.split(';').map((c,i)=>{const p=c.split('|');return `${i+1}\t${p[0]}\t${p[1]}\t${p[2]}\t${p[3]}`}).join('\n')).join('\nTotal:\n')+'\nTotal:'}
+
+/* ---------- NAV / ROUTER ---------- */
+const TABS=[['home','Home','🏠'],['courses','GPA','🧮'],['cal','Calendar','📅'],['dec','Decimals','🔢'],['det','Detective','🔍'],['trans','Record','📄'],['fin','Finance','💰'],['prof','Profile','👤']];
+function nav(){
+  $('side').innerHTML=`<div class="font-extrabold text-lg px-2 mb-3">🏔️ Summit OS</div>`+TABS.map(([k,l,i])=>`<button onclick="go('${k}')" class="text-left px-3 py-2.5 rounded-xl text-sm font-semibold ${k===tab?'bg-brand-500/10 text-brand-600 dark:text-brand-500':'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}">${i} ${l}</button>`).join('')+`<button onclick="theme()" class="mt-auto px-3 py-2 rounded-xl text-xs ${BTN2}">🌓 Toggle theme</button>`;
+  $('bot').innerHTML=TABS.map(([k,l,i])=>`<button onclick="go('${k}')" class="flex-1 min-w-[64px] py-2 flex flex-col items-center text-[10px] font-semibold ${k===tab?'text-brand-600 dark:text-brand-500':'text-slate-400'}"><span class="text-lg">${i}</span>${l}</button>`).join('')}
+function go(t){tab=t;armed='';render();scrollTo(0,0)}
+function render(){nav();$('v').innerHTML=({home:vHome,courses:vCourses,cal:vCal,dec:vDec,det:vDet,trans:vTrans,fin:vFin,prof:vProf})[tab]()}
+const sessSel=()=>`<select onchange="sel=+this.value;render()" class="${IN}">${D.sessions.map(s=>`<option value="${s.id}" ${s.id===cur().id?'selected':''}>${esc(s.label)}</option>`).join('')}</select>`;
+const none=()=>`<div class="${CARD} text-center space-y-3"><p class="text-sm text-slate-500">Add your first session and course registration to get started.</p><button class="${BTN}" onclick="go('courses')">Go to Courses</button></div>`;
+const head=(t,s)=>`<div><h2 class="text-2xl md:text-3xl font-extrabold tracking-tight">${t}</h2><p class="text-sm text-slate-500 dark:text-slate-400 mt-1">${s}</p></div>`;
+
+/* ---------- HOME ---------- */
+function vHome(){
+  const A=allStat(),s=cur(),fin=sum(D.exp,e=>e.amt);
+  const hr=new Date().getHours(),gr=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening',td=new Date().toISOString().slice(0,10);
+  const nx=(D.cal||[]).filter(e=>e.d>=td).sort((a,b)=>a.d.localeCompare(b.d))[0];
+  const T=[['courses','🧮','Calculate GPA','Enter grades and see your CGPA'],['cal','📅','Exam calendar',nx?'Next: '+esc(nx.c)+' · '+esc(nx.d):'Exams, tests and deadlines'],['det','🔍','Result detective','Portal CGPA changed? Find out why'],['dec','🔢','Menu of decimals','What every course adds to your GPA'],['trans','📄','My record','Every semester in one place'],['fin','💰','Budget','Track your allowance and spending']];
+  let h=head(`${gr}, ${esc(D.profile.name.split(' ')[0]||'there')}`,'What would you like to do today?')+`<div class="grid grid-cols-2 md:grid-cols-3 gap-3">${T.map(t=>`<button onclick="go('${t[0]}')" class="${CARD} text-left hover:border-brand-500 transition"><div class="text-3xl mb-2">${t[1]}</div><p class="font-extrabold text-sm">${t[2]}</p><p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${t[3]}</p></button>`).join('')}</div>`;
+  if(!s)return h;
+  const S=sesStat(s),tg=+D.profile.target||0;
+  let proj='All registered courses are graded.';
+  if(A.pend){const need=(tg*(A.gu+A.pend)-A.qp)/A.pend;proj=need>5?`Even straight A's on the ${A.pend} ungraded units won't reach ${tg.toFixed(2)}.`:need<=0?`You've already secured ${tg.toFixed(2)}.`:`To finish on ${tg.toFixed(2)} you need an average grade point of <b>${f2(need)}</b> across ${A.pend} ungraded units.`}
+  h+=`<div class="${CARD} flex flex-wrap items-center justify-between gap-4"><div><p class="text-xs text-slate-400 font-semibold">Cumulative CGPA</p><p class="text-5xl font-black text-brand-600 dark:text-brand-500">${f2(A.cgpa)}<span class="text-base text-slate-400 font-semibold"> / 5.00</span></p></div><span class="px-3 py-1 rounded-full text-xs font-bold bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-400">${standing(A.cgpa)}</span></div>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+   ${[['Graded units',A.gu+' / '+A.u],['Quality points',f2(A.qp)],['Sem 1 GPA · '+esc(s.label.split(' ')[0]),S.a.gu?f2(S.a.gpa):'–'],['Sem 2 GPA · '+esc(s.label.split(' ')[0]),S.b.gu?f2(S.b.gpa):'–']].map(x=>`<div class="${CARD}"><p class="text-[11px] text-slate-400 font-semibold">${x[0]}</p><p class="text-xl font-extrabold mt-1">${x[1]}</p></div>`).join('')}</div>
+  <div class="${CARD}"><p class="font-bold text-sm">Target ${tg.toFixed(2)}</p><p class="text-sm text-slate-500 dark:text-slate-400 mt-1">${proj}</p></div>
+  <div class="${CARD} flex justify-between items-center"><div><p class="text-[11px] text-slate-400 font-semibold">Budget left</p><p class="text-xl font-extrabold">₦${(D.budget-fin).toLocaleString()}</p></div><button class="${BTN2}" onclick="go('fin')">Finance</button></div>`;
+  return h}
+
+/* ---------- COURSES ---------- */
+function vCourses(){
+  const s=cur();let h=head('Courses & grades','Paste your portal registration, then pick a grade for each course. Leave a grade blank if it is not out yet.');
+  h+=`<div class="${CARD} space-y-3"><p class="font-bold text-sm">${s?'Add another session':'Create your first session'}</p><div class="grid grid-cols-2 gap-2"><select id="ns-l" class="${IN}">${[100,200,300,400,500].map(l=>`<option value="${l}" ${l==D.profile.level?'selected':''}>${l} Level</option>`).join('')}</select><input id="ns-y" class="${IN}" placeholder="2025/2026"></div><button class="${BTN}" onclick="newSes()">Create session</button></div>`;
+  if(!s)return h;
+  const cs=s.s[sem],st=semStat(cs);
+  h+=`<div class="${CARD} space-y-3"><div class="flex gap-2 items-center"><div class="flex-1">${sessSel()}</div><button class="${BTN2} text-red-500" onclick="delSes()">${armed==='ses'?'Tap to confirm':'Delete'}</button></div>
+  <div class="flex gap-2">${[0,1].map(i=>`<button onclick="sem=${i};render()" class="flex-1 py-2 rounded-xl text-sm font-bold ${sem===i?'bg-brand-600 text-white':'bg-slate-100 dark:bg-slate-800'}">${i?'2nd':'1st'} semester · ${semStat(s.s[i]).u} units</button>`).join('')}</div>
+  ${cs.length?cs.map((c,i)=>`<div class="flex items-center gap-2 py-2 border-t border-slate-100 dark:border-darkborder"><div class="flex-1 min-w-0"><div class="font-bold text-sm">${esc(c.code)} <span class="text-[11px] font-medium text-slate-400">${c.units} units${c.status?', '+c.status:''}</span></div><div class="text-[11px] text-slate-500 truncate">${esc(c.title)}</div></div><select onchange="setG(${i},this.value)" class="w-16 p-2 rounded-lg text-sm font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-darkborder"><option value="">–</option>${'ABCDEF'.split('').map(g=>`<option ${c.grade===g?'selected':''}>${g}</option>`).join('')}</select><button onclick="rm(${i})" class="text-slate-400 hover:text-red-500 px-1" aria-label="Remove">✕</button></div>`).join(''):'<p class="text-sm text-slate-500">No courses in this semester yet.</p>'}
+  <p class="text-xs text-slate-500">Total registered: <b>${st.u} units</b> · graded: ${st.gu} · semester GPA: <b>${st.gu?f2(st.gpa):'–'}</b></p>
+  <div class="grid grid-cols-5 gap-2 pt-2"><input id="m-c" class="${IN} col-span-2" placeholder="Code"><input id="m-u" type="number" class="${IN}" placeholder="Units"><button class="${BTN} col-span-2" onclick="addC()">Add course</button></div></div>
+  <div class="${CARD} space-y-3"><p class="font-bold text-sm">Import from portal text</p><textarea id="imp" rows="5" class="${IN} font-mono text-xs" placeholder="Paste the whole registration page. Course codes, units, both semesters and your details are picked up automatically."></textarea><div class="flex flex-wrap gap-2"><button class="${BTN}" onclick="scan($('imp').value)">Scan and import</button><button class="${BTN2}" onclick="scan(demoText(200))">Example: 200L</button><button class="${BTN2}" onclick="scan(demoText(100))">Example: 100L</button></div><p class="text-xs text-slate-500">Compare the unit totals shown after import with the “Total” on your portal page.</p></div>`;
+  return h}
+function mk(level,y){const s={id:Date.now(),level,label:level+' Level'+(y?' · '+y:''),s:[[],[]]};D.sessions.push(s);sel=s.id;return s}
+function newSes(){mk($('ns-l').value,$('ns-y').value.trim());save();sem=0;render();toast('Session created')}
+function delSes(){if(armed!=='ses'){armed='ses';return render()}D.sessions=D.sessions.filter(s=>s.id!==cur().id);sel=D.sessions.length?D.sessions[D.sessions.length-1].id:null;armed='';save();render()}
+function setG(i,g){cur().s[sem][i].grade=g;save();render()}
+function rm(i){cur().s[sem].splice(i,1);save();render()}
+function addC(){const c=$('m-c').value.trim().toUpperCase().replace(/\s/g,''),u=+$('m-u').value;if(!c||!(u>0&&u<=9))return toast('Enter a course code and units (1-9)');cur().s[sem].push({code:c,title:'',units:u,status:'',grade:''});save();render()}
+function scan(t){
+  const r=parse(t),n=r.sems[0].length+r.sems[1].length;if(!n)return toast('No courses found. Paste the registration table including code, units and status.');
+  let s=cur();if(!s)s=mk(r.meta.level||D.profile.level||'100',r.meta.sess||'');
+  [0,1].forEach(i=>{if(!r.sems[i].length)return;const old=Object.fromEntries(s.s[i].map(c=>[c.code,c.grade]));s.s[i]=r.sems[i].map(c=>({...c,grade:old[c.code]||''}))});
+  const p=D.profile,m=r.meta;if(m.matric&&!p.matric)p.matric=m.matric;if(m.dept&&!p.dept)p.dept=m.dept;
+  save();render();toast(`Imported: 1st sem ${semStat(s.s[0]).u} units, 2nd sem ${semStat(s.s[1]).u} units`)}
+
+/* ---------- MENU OF DECIMALS ---------- */
+function scaleTbl(title,den,ws){
+  return `<div class="${CARD}"><p class="font-bold text-sm mb-2">${title} <span class="font-normal text-slate-400">÷ ${den} units</span></p><div class="overflow-x-auto"><table class="w-full text-xs"><thead class="text-slate-400"><tr><th class="text-left p-1">Course</th>${'ABCDEF'.split('').map(g=>`<th class="p-1">${g}</th>`).join('')}</tr></thead><tbody>${ws.map(w=>`<tr class="border-t border-slate-100 dark:border-darkborder"><td class="p-1 font-bold text-brand-600 dark:text-brand-500">${w}-unit</td>${[5,4,3,2,1,0].map(p=>`<td class="p-1 text-center font-mono">${f3(w*p/den)}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`}
+function vDec(){
+  let h=head('Menu of decimals','What each course adds to your semester GPA and your session CGPA. Straight A\'s always add up to exactly 5.000.');
+  const s=cur();if(!s)return h+none();
+  const a=semStat(s.s[0]).u,b=semStat(s.s[1]).u,U=a+b;
+  if(!U)return h+`<div class="${CARD} text-sm text-slate-500">Add courses to this session first.</div>`+sessSel();
+  const rows=[0,1].flatMap(i=>s.s[i].map(c=>({c,i,den:i?b:a})));
+  const ws=x=>[...new Set(x)].sort((p,q)=>q-p);
+  h+=sessSel();
+  h+=`<div class="grid grid-cols-3 gap-3">${[['1st sem',a],['2nd sem',b],['Session',U]].map(x=>`<div class="${CARD}"><p class="text-[11px] text-slate-400 font-semibold">${x[0]}</p><p class="text-xl font-extrabold">${x[1]} units</p></div>`).join('')}</div>`;
+  h+=`<div class="${CARD}"><p class="font-bold text-sm mb-2">An “A” in each course</p><div class="overflow-x-auto"><table class="w-full text-xs"><thead class="text-slate-400"><tr><th class="text-left p-1">Course</th><th class="p-1">Sem</th><th class="p-1">Units</th><th class="p-1">GPA adds</th><th class="p-1">CGPA adds</th></tr></thead><tbody>${rows.map(r=>`<tr class="border-t border-slate-100 dark:border-darkborder"><td class="p-1 font-bold">${esc(r.c.code)}</td><td class="p-1 text-center">${r.i+1}</td><td class="p-1 text-center">${r.c.units}</td><td class="p-1 text-center font-mono">${f3(r.c.units*5/r.den)}</td><td class="p-1 text-center font-mono text-brand-600 dark:text-brand-500 font-bold">${f3(r.c.units*5/U)}</td></tr>`).join('')}</tbody><tfoot><tr class="border-t-2 border-slate-200 dark:border-darkborder font-bold"><td class="p-1" colspan="3">Check: all A's</td><td class="p-1 text-center font-mono">${f3(sum(rows,r=>r.c.units*5/r.den)/(a&&b?2:1))} per sem</td><td class="p-1 text-center font-mono text-brand-600">${f3(sum(rows,r=>r.c.units*5/U))}</td></tr></tfoot></table></div></div>`;
+  h+=scaleTbl('Session CGPA',U,ws(rows.map(r=>r.c.units)));
+  if(a)h+=scaleTbl('1st semester GPA',a,ws(s.s[0].map(c=>c.units)));
+  if(b)h+=scaleTbl('2nd semester GPA',b,ws(s.s[1].map(c=>c.units)));
+  return h}
+
+/* ---------- RESULT DETECTIVE ---------- */
+function vDet(){
+  let h=head('Result detective','Portal CGPA changed but your 2nd semester courses are not showing? This works out what the number means, using your own registered units.');
+  const s=cur();if(!s)return h+none();
+  const a=semStat(s.s[0]),p=prevOf(s);
+  h+=`<div class="${CARD} space-y-3">${sessSel()}
+  <p class="text-xs text-slate-500">1st sem: ${a.u} units registered, ${a.gu} graded${a.gu?`, GPA <b>${f2(a.gpa)}</b>`:''}. 2nd sem registered: ${semStat(s.s[1]).u} units.</p>
+  <div class="grid grid-cols-2 gap-3"><div><label class="text-[11px] font-bold text-slate-400">Portal CGPA now</label><input id="d-p" type="number" step="0.01" class="${IN}" placeholder="e.g. 4.65"></div>
+  <div><label class="text-[11px] font-bold text-slate-400">Portal CGPA covers</label><select id="d-m" class="${IN}"><option value="c">All sessions</option><option value="s">This session only</option></select></div>
+  <div><label class="text-[11px] font-bold text-slate-400">Earlier units</label><input id="d-pu" type="number" class="${IN}" value="${p.u}"></div>
+  <div><label class="text-[11px] font-bold text-slate-400">Earlier CGPA</label><input id="d-pc" type="number" step="0.01" class="${IN}" value="${p.u?f2(p.qp/p.u):''}"></div></div>
+  <button class="${BTN} w-full" onclick="runDet()">Analyse</button></div><div id="d-out" class="space-y-4"></div>`;
+  return h}
+function solve(cs,Q,cost){
+  const n=cs.length,M=sum(cs,c=>c.units)*5,I=1e9,dp=[...Array(n+1)].map(()=>Array(M+1).fill(I)),ch=[...Array(n+1)].map(()=>Array(M+1).fill(0));dp[0][0]=0;
+  for(let i=0;i<n;i++)for(let q=0;q<=M;q++){if(dp[i][q]>=I)continue;for(let g=0;g<=5;g++){const nq=q+g*cs[i].units;if(nq>M)continue;const v=dp[i][q]+cost(g);if(v<dp[i+1][nq]){dp[i+1][nq]=v;ch[i+1][nq]=g}}}
+  if(Q<0||Q>M||dp[n][Q]>=I)return null;const o=[];let q=Q;for(let i=n;i>0;i--){const g=ch[i][q];o.unshift(g);q-=g*cs[i-1].units}return o}
+function runDet(){
+  const s=cur(),a=semStat(s.s[0]),cs=s.s[1],u2=sum(cs,c=>c.units),P=+$('d-p').value,o=$('d-out');
+  if(!P)return toast('Enter the portal CGPA first');if(!u2)return toast('Add your 2nd semester courses in Courses first');
+  let pu=+$('d-pu').value||0,pc=+$('d-pc').value||0;if($('d-m').value==='s'){pu=0;pc=0}
+  const U0=pu+a.u,Q0=pu*pc+a.qp,T=U0+u2;let h='';
+  if(a.pend)h+=`<div class="${CARD} text-sm text-amber-600 border-amber-500/40">Some 1st semester courses have no grade yet, so the maths below is less exact. Grade them in Courses.</div>`;
+  const c1=Q0/U0;
+  h+=`<div class="${CARD} text-sm space-y-1"><p class="font-bold">1. Are 2nd semester results on the portal at all?</p><p class="text-slate-500">If nothing from 2nd semester is counted, your CGPA would be ${f2(c1)}. Portal shows ${f2(P)}. ${Math.abs(c1-P)<=.006?'<b class="text-brand-600">Match: no 2nd semester grades are counted yet.</b>':'Not a match, so some 2nd semester units are being counted.'}</p></div>`;
+  const lo=Math.max(0,Math.ceil((P-.005)*T-Q0-1e-9)),hi=Math.min(u2*5,Math.floor((P+.005)*T-Q0+1e-9));
+  if(lo>hi)h+=`<div class="${CARD} text-sm"><p class="font-bold">2. All ${u2} units counted</p><p class="text-slate-500">No grade combination gives ${f2(P)}. Check the earlier units/CGPA fields and the portal figure.</p></div>`;
+  else{
+    const mid=(P*T-Q0),qs=[];for(let q=lo;q<=hi;q++)qs.push(q);qs.sort((x,y)=>Math.abs(x-mid)-Math.abs(y-mid));
+    const g2=qs[0]/u2,exp=a.gu?a.gpa*u2:0,short=exp-qs[0];
+    h+=`<div class="${CARD} text-sm space-y-2"><p class="font-bold">2. If all ${u2} registered units are counted (missing grades = 0)</p><p>Your 2nd semester GPA would be <b class="text-brand-600">${f2(g2)}</b> (${qs[0]} quality points out of ${u2*5}).</p>${a.gu&&a.gpa>=3.5&&short>2&&g2<a.gpa-1?`<p class="text-amber-600">That is far below your 1st semester GPA of ${f2(a.gpa)}. It is about ${f2(short)} points short, similar to ${Math.round(short/a.gpa*10)/10} units of grades not yet uploaded. A missing script is more likely than real failures.</p>`:''}</div>`;
+    const L2=g=>g.map((x,i)=>cs[i].code+':'+L[x]).join(', '),tl=g=>{const t={};g.forEach(x=>t[x]=(t[x]||0)+1);return[5,4,3,2,1,0].filter(x=>t[x]).map(x=>t[x]+'×'+L[x]).join(' · ')};
+    const defs=[['Closest to your 1st semester level',g=>(g-Math.round(a.gpa||4))**2],['One or two weak courses, rest strong',g=>Math.sqrt(5-g)],['Evenly spread',g=>(5-g)**2]];
+    const sc=defs.map(([t,fn])=>{for(const q of qs){const r=solve(cs,q,fn);if(r)return[t,r]}return null}).filter(Boolean);
+    h+=`<div class="${CARD} space-y-3"><p class="font-bold text-sm">Grade combinations that give exactly this result</p>${sc.length?sc.map(([t,g])=>`<div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 text-sm"><p class="font-bold">${t}</p><p class="text-brand-600 dark:text-brand-500 font-semibold">${tl(g)}</p><p class="text-[11px] text-slate-500 mt-1">${esc(L2(g))}</p></div>`).join(''):'<p class="text-sm text-slate-500">No combination fits your unit sizes.</p>'}<p class="text-[11px] text-slate-400">These are possibilities worked out from the maths, not your real grades. Many combinations give the same CGPA.</p></div>`}
+  const ks=[];for(let k=1;k<u2;k++){const v=(P*(U0+k)-Q0)/k;if(v>=0&&v<=5)ks.push([k,v])}
+  h+=`<div class="${CARD} text-sm space-y-2"><p class="font-bold">3. If the portal only averages the units it has uploaded</p><p class="text-slate-500">Average grade point on the uploaded units, depending on how many are in:</p><div class="flex flex-wrap gap-2">${ks.length?ks.map(([k,v])=>`<span class="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs"><b>${k}u</b> → ${f2(v)}</span>`).join(''):'<span class="text-slate-500">No realistic value fits.</span>'}</div></div>`;
+  o.innerHTML=h}
+
+/* ---------- RECORD ---------- */
+function vTrans(){
+  const p=D.profile,A=allStat();let h=`<div class="np flex justify-between items-start gap-3">${head('Personal academic record','Built from the grades you entered. It is not an official transcript.')}<button class="${BTN2} shrink-0" onclick="window.print()">🖨️ Print</button></div>`;
+  if(!D.sessions.length)return h+none();
+  h+=`<div class="${CARD}"><p class="font-extrabold text-lg">${esc(p.name)}</p><p class="text-xs text-slate-500">${esc(p.matric)} ${esc(p.dept)} ${p.uni?'· '+esc(p.uni):''}</p><p class="mt-2 text-sm">Cumulative CGPA <b class="text-brand-600 dark:text-brand-500">${f2(A.cgpa)} / 5.00</b> · ${standing(A.cgpa)} · ${A.gu} graded units</p></div>`;
+  let ru=0,rq=0;
+  D.sessions.forEach(s=>{const S=sesStat(s);ru+=S.gu;rq+=S.qp;
+    h+=`<div class="${CARD} space-y-3"><div class="flex justify-between flex-wrap gap-1"><p class="font-bold">${esc(s.label)}</p><p class="text-xs text-slate-500">Session CGPA <b>${S.gu?f2(S.cgpa):'–'}</b> · cumulative <b>${ru?f2(rq/ru):'–'}</b></p></div>
+    ${[0,1].map(i=>{const st=i?S.b:S.a;return st.u?`<div><p class="text-xs font-bold text-brand-600 dark:text-brand-500 mb-1">${i?'2nd':'1st'} semester · ${st.u} units · GPA ${st.gu?f2(st.gpa):'–'}</p><table class="w-full text-xs">${s.s[i].map(c=>`<tr class="border-t border-slate-100 dark:border-darkborder"><td class="py-1 font-bold">${esc(c.code)}</td><td class="py-1 text-slate-500 truncate max-w-[40vw]">${esc(c.title)}</td><td class="py-1 text-center">${c.units}</td><td class="py-1 text-right font-bold">${c.grade||'–'}</td></tr>`).join('')}</table></div>`:''}).join('')}</div>`});
+  return h}
+
+/* ---------- CALENDAR ---------- */
+function vCal(){
+  const ev=[...(D.cal||[])].sort((a,b)=>(a.d+(a.t||'')).localeCompare(b.d+(b.t||''))),td=new Date().toISOString().slice(0,10);
+  const days=d=>Math.round((new Date(d+'T00:00')-new Date(td+'T00:00'))/864e5);
+  return head('Exam calendar','Exams, tests and assignment deadlines in one place.')+`<div class="${CARD} space-y-2"><div class="grid grid-cols-2 gap-2"><input id="c-c" class="${IN}" placeholder="Course code"><select id="c-k" class="${IN}"><option>Exam</option><option>Test</option><option>Assignment</option></select><input id="c-d" type="date" class="${IN}"><input id="c-t" type="time" class="${IN}"></div><input id="c-v" class="${IN}" placeholder="Venue (optional)"><button class="${BTN} w-full" onclick="addEv()">Add to calendar</button></div>`+(ev.length?ev.map(e=>{const n=days(e.d);return `<div class="${CARD} flex items-center justify-between gap-3"><div class="min-w-0"><p class="font-bold text-sm">${esc(e.c)} <span class="text-[11px] font-medium text-slate-400">${esc(e.k)}</span></p><p class="text-xs text-slate-500">${esc(e.d)}${e.t?' · '+esc(e.t):''}${e.v?' · '+esc(e.v):''}</p></div><div class="text-right shrink-0"><p class="text-sm font-extrabold ${n<0?'text-slate-400':n<=3?'text-red-500':'text-brand-600 dark:text-brand-500'}">${n<0?'Past':n===0?'Today':n+(n>1?' days':' day')}</p><button onclick="delEv(${e.id})" class="text-[11px] text-slate-400">Remove</button></div></div>`}).join(''):`<div class="${CARD} text-sm text-slate-500">Nothing scheduled yet. Add your first exam above.</div>`)}
+function addEv(){const c=$('c-c').value.trim().toUpperCase(),d=$('c-d').value;if(!c||!d)return toast('Add a course code and a date');(D.cal=D.cal||[]).push({id:Date.now(),c,k:$('c-k').value,d,t:$('c-t').value,v:$('c-v').value.trim()});save();render()}
+function delEv(id){D.cal=(D.cal||[]).filter(e=>e.id!==id);save();render()}
+
+/* ---------- FINANCE ---------- */
+function vFin(){
+  const f=sum(D.exp,e=>e.amt),n=x=>'₦'+x.toLocaleString();
+  return head('Finance & budget','Set your allowance and log what you spend.')+`<div class="grid grid-cols-3 gap-3">${[['Budget',n(D.budget),''],['Spent',n(f),'text-red-500'],['Left',n(D.budget-f),'text-brand-600 dark:text-brand-500']].map(x=>`<div class="${CARD}"><p class="text-[11px] text-slate-400 font-semibold">${x[0]}</p><p class="text-lg font-extrabold ${x[2]}">${x[1]}</p></div>`).join('')}</div>
+  <div class="${CARD} flex gap-2"><input id="f-b" type="number" class="${IN}" placeholder="Set budget (₦)"><button class="${BTN}" onclick="setB()">Save</button></div>
+  <div class="${CARD} space-y-2"><div class="grid grid-cols-5 gap-2"><input id="f-t" class="${IN} col-span-2" placeholder="Item"><input id="f-a" type="number" class="${IN} col-span-2" placeholder="₦"><button class="${BTN}" onclick="addE()">Add</button></div>
+  ${D.exp.map((e,i)=>`<div class="flex justify-between items-center py-2 border-t border-slate-100 dark:border-darkborder text-sm"><span>${esc(e.t)}</span><span class="font-bold text-red-500">${n(e.amt)} <button onclick="delE(${i})" class="text-slate-400 ml-2">✕</button></span></div>`).join('')||'<p class="text-sm text-slate-500">No expenses logged.</p>'}</div>`}
+function setB(){const v=+$('f-b').value;if(v>=0&&$('f-b').value!==''){D.budget=v;save();render()}}
+function addE(){const t=$('f-t').value.trim(),a=+$('f-a').value;if(t&&a>0){D.exp.push({t,amt:a});save();render()}}
+function delE(i){D.exp.splice(i,1);save();render()}
+
+/* ---------- PROFILE ---------- */
+function vProf(){
+  const p=D.profile,f=(id,l,v,t)=>`<div><label class="text-[11px] font-bold text-slate-400">${l}</label><input id="${id}" ${t||''} class="${IN}" value="${esc(v)}"></div>`;
+  return head('Profile & data','Keep your details up to date and back them up before changing phones.')+`<div class="${CARD} space-y-3"><div class="grid md:grid-cols-2 gap-3">${f('p-n','Full name',p.name)}${f('p-m','Matric number',p.matric)}${f('p-d','Department',p.dept)}${f('p-u','University',p.uni)}
+  <div><label class="text-[11px] font-bold text-slate-400">Current level</label><select id="p-l" class="${IN}">${[100,200,300,400,500].map(l=>`<option value="${l}" ${l==p.level?'selected':''}>${l} Level</option>`).join('')}</select></div>${f('p-t','Target CGPA',p.target,'type="number" step="0.01"')}</div><button class="${BTN}" onclick="saveP()">Save profile</button></div>
+  <div class="${CARD} space-y-3"><p class="font-bold text-sm">Backup and restore</p><textarea id="bk" rows="3" class="${IN} font-mono text-[10px]" placeholder="Tap Create backup, copy the text and keep it safe. Paste it here and tap Restore to load it."></textarea><div class="flex gap-2"><button class="${BTN2}" onclick="$('bk').value=JSON.stringify(D);$('bk').select()">Create backup</button><button class="${BTN2}" onclick="restore()">Restore</button></div></div>
+  <div class="${CARD} flex flex-wrap gap-2"><button class="${BTN2}" onclick="logout()">Log out</button><button class="${BTN2} text-red-500" onclick="wipe()">${armed==='wipe'?'Tap again to erase everything':'Erase my account'}</button></div>`}
+function saveP(){const p=D.profile;p.name=$('p-n').value.trim()||p.name;p.matric=$('p-m').value.trim();p.dept=$('p-d').value.trim();p.uni=$('p-u').value.trim();p.level=$('p-l').value;p.target=+$('p-t').value||4.5;save();render();toast('Profile saved')}
+function restore(){try{const d=JSON.parse($('bk').value);if(!d.profile||!Array.isArray(d.sessions))throw 0;D=d;save();sel=null;render();toast('Backup restored')}catch(e){toast('That backup text is not valid')}}
+function wipe(){if(armed!=='wipe'){armed='wipe';return render()}delete users[me];LS.set('so_users',users);logout()}
+
+/* ---------- BOOT ---------- */
+(function(){const e=LS.get('so_me');if(e&&users[e])enter(e);else authView('welcome')})();
+</script>
+</body>
+</html>
+
