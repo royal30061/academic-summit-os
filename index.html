@@ -1,1060 +1,1475 @@
 <!DOCTYPE html>
 <html lang="en" class="light">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>Academic Summit OS</title>
-    <script>(function(){var t=null;try{t=localStorage.getItem('as_theme')}catch(e){}if(t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.classList.add('dark')})();</script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        emerald: { 50:'#ecfdf5', 100:'#d1fae5', 200:'#a7f3d0', 300:'#6ee7b7', 400:'#34d399', 500:'#10b981', 600:'#059669', 700:'#047857', 800:'#065f46', 900:'#064e3b', 950:'#022c22' },
-                        slate: { 50:'#f8fafc', 100:'#f1f5f9', 200:'#e2e8f0', 300:'#cbd5e1', 400:'#94a3b8', 500:'#64748b', 600:'#475569', 700:'#334155', 800:'#1e293b', 900:'#0f172a', 950:'#020617' }
-                    },
-                    fontFamily: {
-                        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace']
-                    }
-                }
-            }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Academic Summit - Complete Academic Operating System</title>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          brand: {
+            50: '#ecfdf5',
+            100: '#d1fae5',
+            200: '#a7f3d0',
+            300: '#6ee7b7',
+            400: '#34d399',
+            500: '#10b981',
+            600: '#059669',
+            700: '#047857',
+            800: '#065f46',
+            900: '#064e3b',
+            950: '#022c22',
+          }
         }
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-main: #f8fafc;
-            --bg-card: rgba(255, 255, 255, 0.85);
-            --bg-card-hover: rgba(255, 255, 255, 0.95);
-            --border-card: rgba(226, 232, 240, 0.8);
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.03), 0 4px 12px -2px rgba(0, 0, 0, 0.02);
-            --pill-bg: rgba(255, 255, 255, 0.75);
-        }
+      }
+    }
+  }
+</script>
+<!-- Supabase Client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
-        html.dark {
-            --bg-main: #020617;
-            --bg-card: rgba(15, 23, 42, 0.65);
-            --bg-card-hover: rgba(15, 23, 42, 0.85);
-            --border-card: rgba(255, 255, 255, 0.08);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.4);
-            --pill-bg: rgba(255, 255, 255, 0.05);
-        }
+<style>
+/* ==========================================================================
+   DESIGN SYSTEM & CSS VARIABLES
+   ========================================================================== */
+:root {
+  --bg-app: #f2fdf7;
+  --bg-card: #ffffff;
+  --bg-card-subtle: #f8fafc;
+  --border-card: #e2e8f0;
+  --border-accent: #a7f3d0;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --shadow-card: 0 10px 30px -12px rgba(16, 185, 129, 0.12);
+  --shadow-hover: 0 15px 35px -10px rgba(16, 185, 129, 0.2);
+}
 
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-            -webkit-tap-highlight-color: transparent;
-            background-image: radial-gradient(at 0% 0%, rgba(224, 231, 255, 0.4) 0px, transparent 50%),
-                              radial-gradient(at 100% 0%, rgba(209, 250, 229, 0.4) 0px, transparent 50%);
-            background-attachment: fixed;
-        }
+.dark {
+  --bg-app: #020617;
+  --bg-card: #0f172a;
+  --bg-card-subtle: #1e293b;
+  --border-card: #1e293b;
+  --border-accent: #064e3b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --shadow-card: 0 10px 30px -12px rgba(0, 0, 0, 0.5);
+  --shadow-hover: 0 15px 35px -10px rgba(0, 0, 0, 0.7);
+}
 
-        html.dark body {
-            background-image: radial-gradient(at 0% 0%, rgba(30, 27, 75, 0.3) 0px, transparent 50%),
-                              radial-gradient(at 100% 0%, rgba(6, 78, 59, 0.25) 0px, transparent 50%);
-        }
+body {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  transition: background-color 0.25s ease, color 0.25s ease;
+  min-height: 100vh;
+}
 
-        .glass-card {
-            background: var(--bg-card);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border-card);
-            border-radius: 1.5rem;
-            box-shadow: var(--shadow-card);
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        }
+/* Card Foundations */
+.card {
+  background: var(--bg-card);
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-card);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-        .glass-card-hover:hover {
-            background: var(--bg-card-hover);
-            transform: translateY(-2px);
-        }
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
 
-        .pill-badge {
-            background: var(--pill-bg);
-            border: 1px solid var(--border-card);
-            backdrop-filter: blur(8px);
-        }
+/* Emerald Gradient Themes */
+.grad {
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #ffffff;
+}
 
-        .hidden-el { display: none !important; }
-        .fade-in { animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.grad-emerald-dark {
+  background: linear-gradient(135deg, #064e3b, #047857);
+  color: #ffffff;
+}
 
-        input, select, textarea {
-            width: 100%;
-            padding: 0.875rem 1rem;
-            border-radius: 1rem;
-            font-size: 0.875rem;
-            background-color: rgba(255, 255, 255, 0.7);
-            border: 1px solid var(--border-card);
-            color: var(--text-main);
-            transition: all 0.2s ease;
-        }
-        html.dark input, html.dark select, html.dark textarea {
-            background-color: rgba(15, 23, 42, 0.5);
-        }
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: #059669;
-            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
-        }
+.grad-sidebar {
+  background: #022c22;
+}
+.dark .grad-sidebar {
+  background: #01140e;
+}
 
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 10px; }
+/* UI Controls */
+.inp {
+  width: 100%;
+  padding: .75rem 1rem;
+  border-radius: .9rem;
+  border: 1px solid var(--border-card);
+  font-size: .875rem;
+  background: var(--bg-card);
+  color: var(--text-main);
+  transition: all 0.2s ease;
+}
 
-        @media print {
-            .np { display: none !important; }
-            body, .glass-card { background: #fff !important; color: #000 !important; border-color: #ccc !important; box-shadow: none !important; }
-        }
-    </style>
+.inp:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.btn {
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: .85rem;
+  padding: .75rem 1.25rem;
+  border-radius: .9rem;
+  transition: transform 0.15s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+.btn:hover { opacity: 0.95; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25); }
+.btn:active { transform: scale(0.97); }
+
+.btn2 {
+  background: #ecfdf5;
+  color: #047857;
+  font-weight: 700;
+  font-size: .85rem;
+  padding: .65rem 1.1rem;
+  border-radius: .9rem;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+.dark .btn2 {
+  background: #064e3b;
+  color: #a7f3d0;
+}
+.btn2:hover { filter: brightness(0.96); }
+.btn2:active { transform: scale(0.97); }
+
+.btn-danger {
+  background: #fef2f2;
+  color: #dc2626;
+  font-weight: 700;
+  font-size: .85rem;
+  padding: .65rem 1.1rem;
+  border-radius: .9rem;
+  transition: all 0.2s ease;
+}
+.dark .btn-danger {
+  background: #450a0a;
+  color: #fca5a5;
+}
+
+.lbl {
+  font-size: .65rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.nav-on {
+  background: linear-gradient(135deg, #059669, #10b981) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+.dark ::webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+/* Donut Chart Graphics */
+.donut {
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  transition: background 0.3s ease;
+}
+.donut > div {
+  background: var(--bg-card);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  transition: background 0.3s ease;
+}
+
+/* Toast Notifications */
+#toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@media print {
+  aside, nav, .np, header, #bnav, #toast-container { display: none !important; }
+  body { background: white !important; color: black !important; }
+  .card { box-shadow: none !important; border: 1px solid #ccc !important; }
+}
+</style>
 </head>
-<body class="min-h-screen antialiased flex flex-col">
+<body class="antialiased">
 
-    <!-- AUTH OVERLAY -->
-    <div id="auth-container" class="min-h-screen flex items-center justify-center p-5">
-        <!-- WELCOME SCREEN -->
-        <div id="screen-welcome" class="w-full max-w-sm text-center space-y-6 fade-in glass-card p-8">
-            <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-600/20">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-            </div>
-            <div>
-                <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Academic Summit</p>
-                <h1 class="text-3xl font-extrabold tracking-tight">Your academic<br><span class="text-emerald-600 dark:text-emerald-400">command center</span></h1>
-            </div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">Track your results, understand your academic trajectory, plan your semester, and keep your university life organized in one place.</p>
-            <div class="space-y-2.5 pt-2">
-                <button onclick="showAuthScreen('screen-signup')" class="w-full py-3.5 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-95 shadow-md shadow-emerald-600/15 transition">Create account</button>
-                <button onclick="showAuthScreen('screen-login')" class="w-full py-3.5 rounded-2xl font-bold text-sm text-slate-700 dark:text-slate-200 pill-badge hover:bg-white/80 transition">Log in</button>
-            </div>
+<!-- Toast Notification Container -->
+<div id="toast-container"></div>
+
+<!-- Authentication View Layer -->
+<div id="auth"></div>
+
+<!-- Main Application Layout Layer -->
+<div id="app" class="hidden">
+  <div class="lg:flex">
+    <!-- Desktop Sidebar Navigation -->
+    <aside id="side" class="hidden lg:flex flex-col w-64 shrink-0 min-h-screen sticky top-0 p-5 text-white grad-sidebar border-r border-emerald-900/40 z-30">
+      <!-- Generated dynamically by shell -->
+    </aside>
+    
+    <!-- Main Display Viewport -->
+    <div class="flex-1 min-w-0 flex flex-col min-h-screen">
+      <header id="top" class="flex items-center justify-between px-4 md:px-6 py-4 border-b border-slate-200/60 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md sticky top-0 z-20" style="padding-top:max(1rem,env(safe-area-inset-top))">
+        <!-- Generated dynamically by shell -->
+      </header>
+      <main id="main" class="flex-1 p-4 md:p-6 pb-28 lg:pb-8 max-w-6xl mx-auto w-full">
+        <!-- Active View rendered here -->
+      </main>
+    </div>
+  </div>
+
+  <!-- Mobile Navigation Bar -->
+  <nav id="bnav" class="lg:hidden fixed bottom-0 inset-x-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 flex items-end justify-around px-1 z-40 shadow-lg" style="padding-bottom:env(safe-area-inset-bottom,6px)">
+    <!-- Generated dynamically by shell -->
+  </nav>
+</div>
+
+<!-- Modal & Sheet Layer -->
+<div id="sheet"></div>
+<div id="modal-container"></div>
+
+<script>
+// ==========================================================================
+// SYSTEM CONFIGURATION & INITIALIZATION
+// ==========================================================================
+const SB_URL = 'https://YOUR-PROJECT.supabase.co';
+const SB_KEY = 'YOUR_ANON_KEY';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+// ==========================================================================
+// HELPER UTILITIES
+// ==========================================================================
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const naira = n => '₦' + Math.round(n || 0).toLocaleString();
+const days = d => Math.ceil((new Date(d) - new Date().setHours(0,0,0,0)) / 864e5);
+const fmtD = d => new Date(d).toLocaleDateString('en-GB', {day:'numeric', month:'short'});
+const fmtFullD = d => new Date(d).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+
+function showToast(msg, type = 'success') {
+  const container = $('toast-container');
+  const toast = document.createElement('div');
+  const bg = type === 'success' ? 'bg-emerald-600 text-white' : type === 'error' ? 'bg-rose-600 text-white' : 'bg-slate-800 text-white';
+  toast.className = `toast px-4 py-3 rounded-xl shadow-lg font-semibold text-xs flex items-center gap-2 ${bg}`;
+  toast.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${esc(msg)}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(-10px)';
+    toast.style.transition = 'all 0.2s ease';
+    setTimeout(() => toast.remove(), 200);
+  }, 3000);
+}
+
+// ==========================================================================
+// THEME ENGINE
+// ==========================================================================
+let isDark = localStorage.getItem('as_theme') === 'dark';
+
+function applyTheme() {
+  if (isDark) {
+    document.documentElement.classList.add('dark');
+    document.documentElement.classList.remove('light');
+  } else {
+    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.add('light');
+  }
+}
+
+function toggleTheme() {
+  isDark = !isDark;
+  localStorage.setItem('as_theme', isDark ? 'dark' : 'light');
+  applyTheme();
+  if (U) start(); 
+}
+applyTheme();
+
+// ==========================================================================
+// DATA ENGINE & LOCAL STORAGE BACKING
+// ==========================================================================
+let DB = { users: {} };
+try { 
+  DB = JSON.parse(localStorage.getItem('as_v7')) || DB; 
+} catch (e) { 
+  DB = { users: {} }; 
+}
+
+const save = () => { 
+  try { 
+    localStorage.setItem('as_v7', JSON.stringify(DB)); 
+  } catch (e) {
+    showToast('Failed to save data to local storage', 'error');
+  } 
+};
+
+const newUser = name => ({
+  name, 
+  profile: null, 
+  target: 4.5, 
+  semesters: [], 
+  tasks: [], 
+  events: [], 
+  tx: [], 
+  fees: { total: 0, paid: 0, due: '' },
+  materials: [],
+  attendance: [],
+  goals: [],
+  career: []
+});
+
+let U = null, email = '', view = 'home', aTab = 'calc', editing = null, dismissed = false;
+
+// ==========================================================================
+// ACADEMIC ENGINE & COMPUTATIONS
+// ==========================================================================
+const gr = s => { 
+  s = parseFloat(s); 
+  if (isNaN(s)) return ['-', 0]; 
+  return s>=70?['A',5]:s>=60?['B',4]:s>=50?['C',3]:s>=45?['D',2]:s>=40?['E',1]:['F',0]; 
+};
+
+const semS = s => { 
+  let u = 0, q = 0; 
+  if (!s || !s.courses) return { u: 0, q: 0, g: 0 };
+  s.courses.forEach(c => { 
+    u += +c.unit; 
+    q += c.unit * gr(c.score)[1]; 
+  }); 
+  return { u, q, g: u ? q/u : 0 }; 
+};
+
+const cum = () => { 
+  let u = 0, q = 0; 
+  if (!U || !U.semesters) return { u: 0, q: 0, g: 0 };
+  U.semesters.forEach(s => { 
+    const x = semS(s); 
+    u += x.u; 
+    q += x.q; 
+  }); 
+  return { u, q, g: u ? q/u : 0 }; 
+};
+
+const detective = (g1, cg, u1, u2) => { 
+  const need = (cg * (u1 + u2) - g1 * u1) / u2; 
+  return { need, ok: need >= 0 && need <= 5 }; 
+};
+
+const requiredAvg = () => { 
+  const c = cum(), tot = U?.profile?.totalUnits || 120, R = tot - c.u; 
+  return R > 0 ? (U.target * tot - c.q) / R : null; 
+};
+
+// ==========================================================================
+// AUTHENTICATION & ONBOARDING
+// ==========================================================================
+function authUI(mode, msg = '') {
+  const f = {
+    login: `
+      <div class="space-y-3">
+        <div>
+          <label class="lbl mb-1 block">Email Address</label>
+          <input id="a-email" type="email" class="inp" placeholder="student@uni.edu.ng">
+        </div>
+        <div>
+          <label class="lbl mb-1 block">Password</label>
+          <input id="a-pass" type="password" class="inp" placeholder="••••••••">
+        </div>
+        <button class="btn w-full py-3 mt-2" onclick="doLogin()">Log in</button>
+        <button class="text-xs text-slate-500 dark:text-slate-400 w-full hover:underline pt-2" onclick="authUI('signup')">New here? Create account</button>
+      </div>
+    `,
+    signup: `
+      <div class="space-y-3">
+        <div>
+          <label class="lbl mb-1 block">Full Name</label>
+          <input id="a-name" class="inp" placeholder="e.g. Miracle Moses">
+        </div>
+        <div>
+          <label class="lbl mb-1 block">Email Address</label>
+          <input id="a-email" type="email" class="inp" placeholder="student@uni.edu.ng">
+        </div>
+        <div>
+          <label class="lbl mb-1 block">Password</label>
+          <input id="a-pass" type="password" class="inp" placeholder="At least 6 characters">
+        </div>
+        <button class="btn w-full py-3 mt-2" onclick="doSignup()">Create Account</button>
+        <button class="text-xs text-slate-500 dark:text-slate-400 w-full hover:underline pt-2" onclick="authUI('login')">Have an account? Log in</button>
+      </div>
+    `,
+    onboard: `
+      <div class="space-y-3">
+        <div>
+          <label class="lbl mb-1 block">Institution Name</label>
+          <input id="o-uni" class="inp" placeholder="e.g. University of Abuja">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="lbl mb-1 block">Current Level</label>
+            <select id="o-level" class="inp">
+              ${[100,200,300,400,500,600].map(l => `<option ${l==200?'selected':''}>${l}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="lbl mb-1 block">Graduation Units</label>
+            <input id="o-units" type="number" class="inp" placeholder="120" value="120">
+          </div>
+        </div>
+        <div>
+          <label class="lbl mb-1 block">Academic Program / Course</label>
+          <input id="o-prog" class="inp" placeholder="e.g. Political Science & IR">
+        </div>
+        <button class="btn w-full py-3 mt-2" onclick="doOnboard()">Complete Setup</button>
+      </div>
+    `
+  }[mode];
+
+  $('auth').innerHTML = `
+    <div class="min-h-screen grid place-items-center p-5 bg-[#022c22] dark:bg-[#01140e]">
+      <div class="card p-8 w-full max-w-md space-y-6 border-emerald-800/40 dark:bg-slate-900 shadow-2xl">
+        <div class="text-center space-y-2">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+            ⛰ Academic Summit
+          </div>
+          <h1 class="text-2xl font-extrabold text-slate-900 dark:text-slate-100">
+            ${mode==='onboard'?'Setup Academic Profile':'Welcome Back'}
+          </h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            ${mode==='onboard'?'Tailor your command center to your university target.':'Manage your grades, schedules, attendance, and career path.'}
+          </p>
+        </div>
+        ${f}
+        ${msg ? `<p class="text-xs text-rose-500 text-center font-semibold bg-rose-500/10 py-2 rounded-lg">${esc(msg)}</p>` : ''}
+      </div>
+    </div>
+  `;
+  $('app').classList.add('hidden');
+}
+
+async function doSignup() {
+  const name = $('a-name').value.trim(), em = $('a-email').value.trim().toLowerCase(), pw = $('a-pass').value;
+  if (!name || !em || pw.length < 6) return authUI('signup', 'Complete all fields (password 6+ characters).');
+  const {data, error} = await sb.auth.signUp({email: em, password: pw, options: {data: {name}}});
+  if (error) return authUI('signup', error.message);
+  if (!data.session) return authUI('login', 'Check your email to confirm your account, then log in.');
+  boot(data.user);
+}
+
+async function doLogin() {
+  const em = $('a-email').value.trim().toLowerCase(), pw = $('a-pass').value;
+  if (!em || !pw) return authUI('login', 'Please enter your email and password.');
+  const {data, error} = await sb.auth.signInWithPassword({email: em, password: pw});
+  if (error) return authUI('login', error.message);
+  sb.from('profiles').update({last_seen: new Date().toISOString()}).eq('id', data.user.id).then(() => {});
+  boot(data.user);
+}
+
+async function doOnboard() {
+  U.profile = {
+    uni: $('o-uni').value.trim() || 'University of Abuja', 
+    level: $('o-level').value, 
+    program: $('o-prog').value.trim() || 'Political Science & IR', 
+    totalUnits: parseFloat($('o-units').value) || 120
+  };
+  save();
+  const {data: {user}} = await sb.auth.getUser();
+  if (user) { 
+    await sb.from('profiles').upsert({
+      id: user.id, 
+      name: U.name, 
+      email: user.email, 
+      uni: U.profile.uni, 
+      level: U.profile.level, 
+      program: U.profile.program
+    }); 
+  }
+  showToast('Profile setup completed successfully!');
+  start();
+}
+
+async function logout() { 
+  await sb.auth.signOut(); 
+  location.reload(); 
+}
+
+function boot(user) {
+  email = user.email;
+  U = DB.users[email] || (DB.users[email] = newUser(user.user_metadata?.name || email));
+  
+  // Ensure array data structures exist for upgraded data schemas
+  ['materials','attendance','goals','career','tasks','events','tx','semesters'].forEach(k => {
+    if (!U[k]) U[k] = [];
+  });
+  if (!U.fees) U.fees = { total: 0, paid: 0, due: '' };
+
+  save();
+  U.profile ? start() : authUI('onboard');
+}
+
+sb.auth.getSession().then(({data}) => data.session ? boot(data.session.user) : authUI('login'));
+
+// ==========================================================================
+// NAVIGATION STRUCTURE & ROUTING ENGINE
+// ==========================================================================
+const NAV = [
+  ['home', 'Dashboard', '🏠'],
+  ['acad', 'Academics', '🎓'],
+  ['plan', 'Planner', '🗓'],
+  ['fin', 'Finance', '💳'],
+  ['mat', 'Materials', '📚'],
+  ['att', 'Attendance', '☑️'],
+  ['goal', 'Goals', '🎯'],
+  ['car', 'Career & Portfolio', '💼'],
+  ['prof', 'Profile & Settings', '👤']
+];
+
+function start() {
+  $('auth').innerHTML = ''; 
+  $('app').classList.remove('hidden');
+
+  // Sidebar Render
+  $('side').innerHTML = `
+    <div class="flex items-center gap-3 mb-8 px-2">
+      <div class="w-10 h-10 rounded-2xl grad grid place-items-center font-extrabold text-xl shadow-lg">⛰</div>
+      <div>
+        <div class="font-extrabold text-lg leading-tight">Academic</div>
+        <div class="text-xs text-emerald-400 font-bold uppercase tracking-wider">Summit v7.0</div>
+      </div>
+    </div>
+
+    <div class="space-y-1 flex-1 overflow-y-auto pr-1">
+      ${NAV.map(n => `
+        <button data-n="${n[0]}" onclick="go('${n[0]}')" class="nv w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-100/70 hover:bg-emerald-900/40 hover:text-white transition-all flex items-center gap-3">
+          <span class="text-base">${n[2]}</span>
+          <span>${n[1]}</span>
+        </button>
+      `).join('')}
+    </div>
+
+    <div class="mt-auto pt-4 border-t border-emerald-900/60">
+      <div class="rounded-2xl p-4 text-xs text-emerald-200/80 bg-emerald-900/40 border border-emerald-800/40 space-y-1">
+        <b class="text-white block text-sm">Target GPA: ${U.target.toFixed(2)}</b>
+        <p class="text-[11px] text-emerald-300/80">Stay consistent. Every assignment builds your degree.</p>
+      </div>
+    </div>
+  `;
+
+  // Mobile Bottom Navigation Bar Render
+  const sh = {home:'Home', acad:'Academics', plan:'Planner', fin:'Finance', mat:'Materials', att:'Attendance', goal:'Goals', car:'Career', prof:'Profile'};
+  $('bnav').innerHTML = NAV.slice(0, 2).concat([['+']]).concat(NAV.slice(2, 4)).map(n => 
+    n[0] === '+' 
+      ? `<button onclick="openSheet()" class="grad w-12 h-12 -mt-5 rounded-full text-xl shadow-lg shrink-0 flex items-center justify-center font-bold text-white transition-transform active:scale-95">+</button>` 
+      : `<button data-n="${n[0]}" onclick="go('${n[0]}')" class="bn flex-1 py-2 text-[10px] font-semibold text-slate-400"><div class="text-base">${n[2]}</div>${sh[n[0]]}</button>`
+  ).join('');
+
+  // Top Bar User Header
+  const ini = U.name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+  $('top').innerHTML = `
+    <div>
+      <div class="text-xs text-slate-500 dark:text-slate-400 font-semibold">${new Date().toDateString()}</div>
+      <div class="text-sm font-extrabold text-slate-800 dark:text-slate-100">${esc(U.profile?.uni || 'Academic Summit')}</div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <button onclick="toggleTheme()" class="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 shadow-sm flex items-center gap-1.5 transition-all hover:border-emerald-500">
+        ${isDark ? '☀️ Light' : '🌙 Dark'}
+      </button>
+
+      <button onclick="go('prof')" class="flex items-center gap-2.5 pl-2 border-l border-slate-200 dark:border-slate-800">
+        <span class="text-right text-xs hidden sm:block">
+          <b class="block text-slate-800 dark:text-slate-100">${esc(U.name)}</b>
+          <span class="text-slate-400">${esc(U.profile?.program || 'Student')}</span>
+        </span>
+        <span class="grad w-9 h-9 rounded-full grid place-items-center text-xs font-bold text-white shadow-sm ring-2 ring-emerald-500/20">${esc(ini)}</span>
+      </button>
+    </div>
+  `;
+
+  go(view);
+}
+
+function go(v) {
+  view = v;
+  document.querySelectorAll('.nv').forEach(b => b.className = 'nv w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-3 transition-all ' + (b.dataset.n === v ? 'nav-on' : 'text-emerald-100/70 hover:bg-emerald-900/40 hover:text-white'));
+  document.querySelectorAll('.bn').forEach(b => b.className = 'bn flex-1 py-2 text-[10px] font-semibold ' + (b.dataset.n === v ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'));
+  
+  $('main').innerHTML = V[v] ? V[v]() : `<div class="card p-8 text-center text-slate-500">View under construction</div>`;
+  if (v === 'acad') ACAD[aTab]();
+  window.scrollTo(0, 0);
+}
+
+function openSheet() {
+  const b = (t, f) => `<button class="btn2 w-full text-left justify-start py-3" onclick="closeSheet();${f}">${t}</button>`;
+  $('sheet').innerHTML = `
+    <div class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end" onclick="closeSheet()">
+      <div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 space-y-3 border-t border-slate-200 dark:border-slate-800 shadow-2xl" onclick="event.stopPropagation()" style="padding-bottom:max(1.5rem,env(safe-area-inset-bottom))">
+        <div class="flex justify-between items-center mb-1">
+          <div class="lbl text-emerald-600 dark:text-emerald-400">Quick Actions Command</div>
+          <button onclick="closeSheet()" class="text-xs text-slate-400 font-bold">✕ Close</button>
+        </div>
+        ${b('🧮 Calculate Semester GPA',"aTab='calc';editing=null;go('acad')")}
+        ${b('✅ Add Task or Deadline',"go('plan')")}
+        ${b('📚 Upload Course Material',"go('mat')")}
+        ${b('☑️ Record Class Attendance',"go('att')")}
+        ${b('💸 Log Financial Expense',"go('fin')")}
+      </div>
+    </div>
+  `;
+}
+const closeSheet = () => $('sheet').innerHTML = '';
+
+// ==========================================================================
+// GRAPHICAL ENGINE & SVG CHART GENERATOR
+// ==========================================================================
+const donut = (p, c, size = 76, inner = 58, label = '') => `
+  <div class="donut shrink-0" style="width:${size}px;height:${size}px;background:conic-gradient(${c} ${p}%, ${isDark ? '#334155' : '#e2e8f0'} 0)">
+    <div style="width:${inner}px;height:${inner}px" class="text-xs font-extrabold text-slate-800 dark:text-slate-100">${label}</div>
+  </div>
+`;
+
+function chart() {
+  const g = U.semesters.map(s => semS(s).g), W = 400, Hh = 170, y = v => Hh - 20 - (v/5) * (Hh - 40), x = i => g.length < 2 ? W/2 : 30 + i * (W-60) / (g.length-1);
+  const req = requiredAvg();
+  if (!g.length) return `<div class="h-36 flex items-center justify-center text-xs text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">Save a semester to visualize trajectory</div>`;
+  return `
+    <svg viewBox="0 0 ${W} ${Hh}" class="w-full">
+      <line x1="0" x2="${W}" y1="${y(U.target)}" y2="${y(U.target)}" stroke="#059669" stroke-dasharray="5 4" stroke-width="1.5"/>
+      ${req ? `<line x1="0" x2="${W}" y1="${y(req)}" y2="${y(req)}" stroke="#34d399" stroke-dasharray="2 4" stroke-width="1"/>` : ''}
+      <polyline fill="none" stroke="#10b981" stroke-width="3" points="${g.map((v,i) => x(i)+','+y(v)).join(' ')}"/>
+      ${g.map((v,i) => `
+        <circle cx="${x(i)}" cy="${y(v)}" r="5" fill="#059669" stroke="#ffffff" stroke-width="2"/>
+        <text x="${x(i)}" y="${Hh-4}" font-size="9" font-weight="700" text-anchor="middle" fill="${isDark?'#94a3b8':'#64748b'}">${esc(U.semesters[i].name.slice(0,9))}</text>
+      `).join('')}
+    </svg>
+  `;
+}
+
+// ==========================================================================
+// CORE APP VIEWS MODULE
+// ==========================================================================
+const V = {
+  home() {
+    const c = cum(), tot = U.profile?.totalUnits || 120, pct = Math.min(100, Math.round(c.u / tot * 100));
+    const S = U.semesters, last = S.length ? semS(S[S.length-1]) : null, prev = S.length > 1 ? semS(S[S.length-2]) : null, req = requiredAvg();
+    const delta = last && prev ? last.g - prev.g : null;
+    
+    const up = [...U.events.filter(e => days(e.date) >= 0).map(e => ({t: e.title, s: e.type + ' • ' + fmtD(e.date), d: days(e.date)})), ...U.tasks.filter(t => !t.done).map(t => ({t: t.t, s: 'Task', d: null}))].sort((a,b) => (a.d ?? 999) - (b.d ?? 999)).slice(0,4);
+    
+    const notes = [];
+    U.events.filter(e => days(e.date) >= 0 && days(e.date) <= 14).forEach(e => notes.push(['📅', e.type + ' reminder', `${e.title} in ${days(e.date)} day(s).`]));
+    if (U.fees.total - U.fees.paid > 0 && U.fees.due) notes.push(['💳', 'Fee alert', `Balance of ${naira(U.fees.total - U.fees.paid)} due ${fmtD(U.fees.due)}.`]);
+    if (last) { const low = [...S[S.length-1].courses].sort((a,b) => a.score - b.score)[0]; if (low) notes.push(['💡', 'Academic insight', `Lowest score last semester: ${esc(low.code)} (${low.score}).`]); }
+    
+    return `
+      <div class="space-y-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <div>
+            <h1 class="text-2xl font-extrabold text-slate-800 dark:text-slate-100">Welcome back, ${esc(U.name.split(' ')[0])} 👋</h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400">${esc(U.profile?.program)} • ${esc(U.profile?.level)} Level</p>
+          </div>
+          <button onclick="aTab='calc';editing=null;go('acad')" class="btn">
+            <span>🧮</span> Calculate Semester
+          </button>
         </div>
 
-        <!-- SIGNUP SCREEN -->
-        <div id="screen-signup" class="w-full max-w-sm glass-card p-8 space-y-4 fade-in hidden-el">
-            <h2 class="text-xl font-extrabold">Create account</h2>
-            <div class="space-y-3">
-                <input type="text" id="su-name" placeholder="Full Name (e.g. Miracle Moses)">
-                <input type="email" id="su-email" placeholder="Email Address">
-                <input type="password" id="su-pass" placeholder="Password (6+ characters)">
+        <div class="grid md:grid-cols-3 gap-4">
+          <div class="grad rounded-3xl p-6 space-y-3 shadow-lg">
+            <div class="text-xs font-bold uppercase tracking-wider opacity-80">Cumulative GPA</div>
+            <div class="flex items-end justify-between">
+              <div class="text-4xl font-extrabold">${c.g.toFixed(2)}<span class="text-base opacity-75 font-normal"> / 5.00</span></div>
+              <span class="text-[11px] bg-white/20 backdrop-blur-md rounded-full px-3 py-1 font-bold">Target ${U.target.toFixed(2)}</span>
             </div>
-            <button onclick="handleSignup()" class="w-full py-3.5 rounded-2xl font-bold text-sm text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition">Sign Up</button>
-            <button onclick="showAuthScreen('screen-welcome')" class="w-full text-xs text-slate-400 py-1">Back</button>
+            <div class="h-2 rounded-full bg-white/30 overflow-hidden"><div class="h-2 rounded-full bg-white" style="width:${c.g/5*100}%"></div></div>
+            ${delta !== null ? `<div class="text-xs font-semibold">${delta>=0?'↑ +':'↓ '}${delta.toFixed(2)} from previous term</div>` : '<div class="text-xs text-white/70">Keep tracking semesters to view change</div>'}
+          </div>
+
+          <div class="card p-6 space-y-2 card-hover">
+            <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Last Semester GPA</div>
+            <div class="text-4xl font-extrabold text-slate-800 dark:text-slate-100">${last ? last.g.toFixed(2) : '—'}<span class="text-base text-slate-400 font-normal"> / 5.00</span></div>
+            <div class="text-xs text-slate-400">${last ? `${S[S.length-1].courses.length} courses completed • ${last.u} units` : 'No semester recorded yet'}</div>
+          </div>
+
+          <div class="card p-6 flex items-center justify-between gap-4 card-hover">
+            <div class="space-y-1">
+              <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Degree Progress</div>
+              <div class="text-3xl font-extrabold text-slate-800 dark:text-slate-100">${c.u}<span class="text-sm text-slate-400 font-normal"> / ${tot} units</span></div>
+              <div class="text-xs text-slate-400">${Math.max(0, tot - c.u)} credit units remaining</div>
+            </div>
+            ${donut(pct, '#10b981', 76, 58, pct + '%')}
+          </div>
         </div>
 
-        <!-- LOGIN SCREEN -->
-        <div id="screen-login" class="w-full max-w-sm glass-card p-8 space-y-4 fade-in hidden-el">
-            <h2 class="text-xl font-extrabold">Welcome back</h2>
-            <div class="space-y-3">
-                <input type="email" id="li-email" placeholder="Email Address">
-                <input type="password" id="li-pass" placeholder="Password">
+        <div class="grid lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 space-y-6">
+            <div class="card p-6 space-y-4">
+              <div class="flex justify-between items-center">
+                <div class="font-extrabold text-slate-800 dark:text-slate-100">GPA Trajectory & Goals</div>
+                <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">5.0 Scale System</span>
+              </div>
+              <div class="grid sm:grid-cols-3 gap-4 items-center">
+                <div class="sm:col-span-2">${chart()}</div>
+                <div class="text-xs space-y-3 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                  <div><div class="lbl">Current CGPA</div><b class="text-base text-slate-800 dark:text-slate-100">${c.g.toFixed(2)}</b></div>
+                  <div><div class="lbl">Target Goal</div><b class="text-base text-slate-800 dark:text-slate-100">${U.target.toFixed(2)}</b></div>
+                  <div><div class="lbl">Required Future Avg</div><b class="text-base text-slate-800 dark:text-slate-100">${req === null ? '—' : req.toFixed(2)}</b></div>
+                  ${req > 5 ? '<p class="text-[11px] text-rose-500 font-bold">Target mathematically unachievable in remaining units.</p>' : ''}
+                </div>
+              </div>
             </div>
-            <button onclick="handleLogin()" class="w-full py-3.5 rounded-2xl font-bold text-sm text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition">Log In</button>
-            <button onclick="showAuthScreen('screen-welcome')" class="w-full text-xs text-slate-400 py-1">Back</button>
-            <p id="auth-error" class="text-xs text-red-500 text-center hidden-el"></p>
-        </div>
 
-        <!-- ONBOARDING SCREEN -->
-        <div id="screen-onboard" class="w-full max-w-sm glass-card p-8 space-y-4 fade-in hidden-el">
-            <div>
-                <h2 class="text-xl font-extrabold">Academic Profile</h2>
-                <p class="text-xs text-slate-400 mt-0.5">Initialize core operating profile.</p>
+            <div class="card p-6 space-y-4">
+              <div class="font-extrabold text-slate-800 dark:text-slate-100">Quick Operations</div>
+              <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs font-bold text-center">
+                ${[
+                  ['🧮','GPA Calculator',"aTab='calc';editing=null;go('acad')"],
+                  ['📥','Import Portal',"aTab='calc';editing=null;go('acad');setTimeout(()=>$('paste').classList.remove('hidden'),30)"],
+                  ['✅','Add Task',"go('plan')"],
+                  ['📚','Upload Material',"go('mat')"],
+                  ['💸','Add Expense',"go('fin')"]
+                ].map(q => `
+                  <button onclick="${q[2]}" class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-100 dark:border-slate-800 transition-all space-y-2 card-hover">
+                    <div class="text-2xl">${q[0]}</div>
+                    <span class="text-slate-700 dark:text-slate-300 block text-[11px]">${q[1]}</span>
+                  </button>
+                `).join('')}
+              </div>
             </div>
+          </div>
+
+          <div class="space-y-6">
+            <div class="card p-6 space-y-3">
+              <div class="flex justify-between items-center">
+                <div class="font-extrabold text-slate-800 dark:text-slate-100">Next Up</div>
+                <button onclick="go('plan')" class="text-xs font-bold text-emerald-600 dark:text-emerald-400">View Planner</button>
+              </div>
+              ${up.map(u => `
+                <div class="flex justify-between items-center text-xs p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                  <div>
+                    <b class="text-slate-900 dark:text-slate-100 block">${esc(u.t)}</b>
+                    <span class="text-slate-400 text-[11px]">${esc(u.s)}</span>
+                  </div>
+                  ${u.d !== null ? `<span class="bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 font-extrabold px-2.5 py-1 rounded-full text-[10px]">${u.d === 0 ? 'Today' : u.d + ' d'}</span>` : ''}
+                </div>
+              `).join('') || '<p class="text-xs text-slate-400 py-2">No upcoming exams or pending tasks.</p>'}
+            </div>
+
+            <div class="card p-6 space-y-3">
+              <div class="font-extrabold text-slate-800 dark:text-slate-100">Smart Notifications</div>
+              ${notes.map(n => `
+                <div class="flex gap-3 text-xs p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                  <span class="text-xl">${n[0]}</span>
+                  <div>
+                    <b class="text-slate-800 dark:text-slate-200 block">${n[1]}</b>
+                    <span class="text-slate-500 dark:text-slate-400 text-[11px]">${n[2]}</span>
+                  </div>
+                </div>
+              `).join('') || '<p class="text-xs text-slate-400 py-2">All notifications clear.</p>'}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
+  acad() {
+    const t = [['calc','GPA Calculator'],['det','Result Detective'],['dec','Menu of Decimals'],['rec','My Academic Record']];
+    return `
+      <div class="space-y-6">
+        <div class="flex gap-2 overflow-x-auto pb-1">
+          ${t.map(x => `<button onclick="aTab='${x[0]}';editing=null;go('acad')" class="${aTab===x[0]?'btn':'btn2'} whitespace-nowrap">${x[1]}</button>`).join('')}
+        </div>
+        <div id="sub"></div>
+      </div>
+    `;
+  },
+
+  plan() {
+    return `
+      <div class="space-y-6">
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="card p-6 space-y-4">
+            <div class="font-extrabold text-slate-800 dark:text-slate-100">Task Manager</div>
+            <div class="flex gap-2">
+              <input id="t-in" class="inp" placeholder="e.g. Complete POS 204 Assignment">
+              <button class="btn shrink-0" onclick="addTask()">Add Task</button>
+            </div>
+            <div class="space-y-2 pt-2">
+              ${U.tasks.map((t,i) => `
+                <div class="flex items-center justify-between text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                  <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" ${t.done?'checked':''} onchange="U.tasks[${i}].done=!U.tasks[${i}].done;save();go('plan')" class="w-4 h-4 accent-emerald-600 rounded">
+                    <span class="${t.done?'line-through text-slate-400':'text-slate-800 dark:text-slate-200 font-semibold'}">${esc(t.t)}</span>
+                  </label>
+                  <button class="text-rose-500 font-bold px-2 py-1" onclick="U.tasks.splice(${i},1);save();go('plan')">✕</button>
+                </div>
+              `).join('') || '<p class="text-xs text-slate-400 py-4 text-center">No tasks added yet.</p>'}
+            </div>
+          </div>
+
+          <div class="card p-6 space-y-4">
+            <div class="font-extrabold text-slate-800 dark:text-slate-100">Exam & Lecture Deadlines</div>
             <div class="space-y-3">
-                <input type="text" id="ob-uni" placeholder="University (e.g., University of Abuja)">
-                <select id="ob-level">
-                    <option value="100">100 Level</option>
-                    <option value="200" selected>200 Level</option>
-                    <option value="300">300 Level</option>
-                    <option value="400">400 Level</option>
-                    <option value="500">500 Level</option>
+              <input id="e-t" class="inp" placeholder="Event Title (e.g. GST 112 Exam)">
+              <div class="grid grid-cols-2 gap-2">
+                <select id="e-k" class="inp">
+                  <option>Exam</option>
+                  <option>Test</option>
+                  <option>Assignment</option>
+                  <option>Lecture</option>
                 </select>
-                <input type="text" id="ob-program" placeholder="Program (e.g., Political Science & IR)">
-                <input type="number" id="ob-total-units" placeholder="Graduation Required Units (e.g., 120)">
-                <button onclick="completeOnboard()" class="w-full py-3.5 rounded-2xl font-bold text-sm text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition mt-2">Initialize Core Engine</button>
+                <input id="e-d" type="date" class="inp">
+              </div>
+              <button class="btn w-full" onclick="addEvent()">Schedule Event</button>
             </div>
-        </div>
-    </div>
 
-    <!-- MAIN OS APPLICATION -->
-    <div id="app-os" class="hidden-el min-h-screen flex flex-col">
-        <!-- TOP HEADER -->
-        <header class="px-5 py-4 flex items-center justify-between border-b border-slate-200/60 dark:border-white/5 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md sticky top-0 z-40">
-            <div class="flex items-center gap-3">
-                <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-xl pill-badge hover:bg-white/80 transition">
-                    <svg class="w-5 h-5 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                </button>
-                <div>
-                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Academic Summit</p>
-                    <h1 class="text-lg font-extrabold tracking-tight leading-none">Your academic command center</h1>
-                </div>
-            </div>
-            <div class="flex items-center gap-2">
-                <button onclick="toggleTheme()" class="p-2.5 rounded-2xl pill-badge hover:scale-105 transition">
-                    <svg class="w-4 h-4 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
-                </button>
-            </div>
-        </header>
-
-        <div class="flex-1 flex max-w-6xl w-full mx-auto">
-            <!-- DESKTOP SIDEBAR -->
-            <aside id="main-sidebar" class="hidden lg:flex flex-col w-64 shrink-0 p-6 space-y-6 border-r border-slate-200/60 dark:border-white/5">
-                <div class="space-y-1">
-                    <div id="sidebar-profile-name" class="font-extrabold text-slate-800 dark:text-slate-100">User</div>
-                    <div id="sidebar-profile-detail" class="text-xs text-slate-400 truncate">Academic Profile</div>
-                </div>
-
-                <nav class="space-y-1 flex-1">
-                    <button onclick="switchView('home')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition text-left" data-target="home">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 00-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                        Dashboard
-                    </button>
-                    <button onclick="switchView('academics')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition text-left" data-target="academics">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 01-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
-                        Academics
-                    </button>
-                    <button onclick="switchView('planner')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition text-left" data-target="planner">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                        Planner
-                    </button>
-                    <button onclick="switchView('finance')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition text-left" data-target="finance">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        Finance Centre
-                    </button>
-                    <button onclick="switchView('more')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition text-left" data-target="more">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                        Settings
-                    </button>
-                </nav>
-
-                <button onclick="logout()" class="w-full py-2.5 rounded-xl text-xs font-bold text-red-500 pill-badge hover:bg-red-500/10 transition">Log out</button>
-            </aside>
-
-            <!-- MAIN CONTENT CONTAINER -->
-            <main id="main-content" class="flex-1 p-5 md:p-8 space-y-6 pb-28 lg:pb-8 overflow-y-auto"></main>
-        </div>
-
-        <!-- MOBILE BOTTOM NAV -->
-        <nav class="lg:hidden fixed bottom-0 inset-x-0 bg-white/75 dark:bg-slate-900/75 backdrop-blur-xl border-t border-slate-200/60 dark:border-white/5 flex justify-around p-2 z-40" style="padding-bottom:env(safe-area-inset-bottom, 8px)">
-            <button onclick="switchView('home')" class="nav-btn flex-1 py-1.5 flex flex-col items-center gap-1 text-[11px] font-semibold text-slate-400" data-target="home">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 00-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                Home
-            </button>
-            <button onclick="switchView('academics')" class="nav-btn flex-1 py-1.5 flex flex-col items-center gap-1 text-[11px] font-semibold text-slate-400" data-target="academics">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 01-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
-                Academics
-            </button>
-            <button onclick="switchView('planner')" class="nav-btn flex-1 py-1.5 flex flex-col items-center gap-1 text-[11px] font-semibold text-slate-400" data-target="planner">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                Planner
-            </button>
-            <button onclick="switchView('finance')" class="nav-btn flex-1 py-1.5 flex flex-col items-center gap-1 text-[11px] font-semibold text-slate-400" data-target="finance">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                Finance
-            </button>
-            <button onclick="switchView('more')" class="nav-btn flex-1 py-1.5 flex flex-col items-center gap-1 text-[11px] font-semibold text-slate-400" data-target="more">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                More
-            </button>
-        </nav>
-    </div>
-
-    <script>
-        // =========================================================================
-        // 1. AUTHORITATIVE ACADEMIC ENGINE
-        // =========================================================================
-        const AcademicEngine = {
-            GRADE_MAP: [
-                { min: 70, max: 100, letter: 'A', gp: 5 },
-                { min: 60, max: 69,  letter: 'B', gp: 4 },
-                { min: 50, max: 59,  letter: 'C', gp: 3 },
-                { min: 45, max: 49,  letter: 'D', gp: 2 },
-                { min: 40, max: 44,  letter: 'E', gp: 1 },
-                { min: 0,  max: 39,  letter: 'F', gp: 0 }
-            ],
-
-            resolveGrade(scoreOrLetter) {
-                if (typeof scoreOrLetter === 'string') {
-                    const clean = scoreOrLetter.trim().toUpperCase();
-                    const match = this.GRADE_MAP.find(m => m.letter === clean);
-                    if (match) return { letter: match.letter, gp: match.gp };
-                }
-                const score = parseFloat(scoreOrLetter);
-                if (isNaN(score)) return { letter: '-', gp: 0 };
-                for (const range of this.GRADE_MAP) {
-                    if (score >= range.min) return { letter: range.letter, gp: range.gp };
-                }
-                return { letter: 'F', gp: 0 };
-            },
-
-            evaluateCourse(course) {
-                const units = parseFloat(course.unit || course.units) || 0;
-                const score = course.score !== undefined ? parseFloat(course.score) : null;
-                const { letter, gp } = this.resolveGrade(score !== null && !isNaN(score) ? score : course.grade);
-                return {
-                    code: (course.code || 'UNKNOWN').toUpperCase().trim(),
-                    unit: units,
-                    score: score,
-                    grade: letter,
-                    gp: gp,
-                    qp: units * gp
-                };
-            },
-
-            evaluateSemester(courses) {
-                let semesterUnits = 0, semesterQP = 0;
-                const evaluatedCourses = [];
-                courses.forEach(c => {
-                    const evalC = this.evaluateCourse(c);
-                    if (evalC.unit > 0) {
-                        evaluatedCourses.push(evalC);
-                        semesterUnits += evalC.unit;
-                        semesterQP += evalC.qp;
-                    }
-                });
-                return {
-                    courses: evaluatedCourses,
-                    units: semesterUnits,
-                    qp: semesterQP,
-                    gpa: semesterUnits > 0 ? semesterQP / semesterUnits : 0
-                };
-            },
-
-            evaluateCumulative(semesters) {
-                let cumulativeUnits = 0, cumulativeQP = 0;
-                const evaluatedSemesters = [];
-                semesters.forEach((sem, idx) => {
-                    const evalSem = this.evaluateSemester(sem.courses || []);
-                    cumulativeUnits += evalSem.units;
-                    cumulativeQP += evalSem.qp;
-                    evaluatedSemesters.push({
-                        id: sem.id || Date.now() + idx,
-                        name: sem.name || `Semester ${idx + 1}`,
-                        ...evalSem
-                    });
-                });
-                return {
-                    semesters: evaluatedSemesters,
-                    cumulativeUnits,
-                    cumulativeQP,
-                    cgpa: cumulativeUnits > 0 ? cumulativeQP / cumulativeUnits : 0
-                };
-            },
-
-            // CORRECT MATHEMATICAL DETECTIVE CALCULATION:
-            // QP1 = GPA1 * Units1
-            // QP_Total = Portal_CGPA * (Units1 + Units2)
-            // QP2 = QP_Total - QP1
-            // GPA2 = QP2 / Units2
-            detectiveAnalysis(gpa1, currentCGPA, sem1Units = 20, sem2Units = 20) {
-                const sem1QP = gpa1 * sem1Units;
-                const totalUnits = sem1Units + sem2Units;
-                const targetTotalQP = currentCGPA * totalUnits;
-                const requiredSem2QP = targetTotalQP - sem1QP;
-                const requiredSem2GPA = sem2Units > 0 ? requiredSem2QP / sem2Units : 0;
-
-                return {
-                    sem1Units,
-                    sem1QP,
-                    sem2Units,
-                    totalUnits,
-                    targetTotalQP,
-                    requiredSem2QP,
-                    requiredSem2GPA,
-                    isPossible: requiredSem2GPA >= 0 && requiredSem2GPA <= 5.0
-                };
-            }
-        };
-
-        // =========================================================================
-        // 2. STATE & DATABASE ENGINE (DYNAMIC & CLEAN BY DEFAULT)
-        // =========================================================================
-        let DB = JSON.parse(localStorage.getItem('as_unified_db_v5')) || { users: {}, current: null };
-        let currentUser = null;
-
-        function saveDB() {
-            localStorage.setItem('as_unified_db_v5', JSON.stringify(DB));
-        }
-
-        function recomputeUserData() {
-            if (!currentUser || !currentUser.academic) return;
-            const evalResult = AcademicEngine.evaluateCumulative(currentUser.academic.semesters || []);
-            currentUser.academic.cgpa = evalResult.cgpa;
-            currentUser.academic.totalUnits = evalResult.cumulativeUnits;
-            currentUser.academic.cumulativeQP = evalResult.cumulativeQP;
-            
-            evalResult.semesters.forEach((s, idx) => {
-                if (currentUser.academic.semesters[idx]) {
-                    currentUser.academic.semesters[idx].gpa = s.gpa;
-                    currentUser.academic.semesters[idx].units = s.units;
-                    currentUser.academic.semesters[idx].qp = s.qp;
-                }
-            });
-            saveDB();
-        }
-
-        // THEME CONTROLLER
-        function toggleTheme() {
-            const html = document.documentElement;
-            const isDark = html.classList.contains('dark');
-            if (isDark) {
-                html.classList.remove('dark');
-                localStorage.setItem('as_theme', 'light');
-            } else {
-                html.classList.add('dark');
-                localStorage.setItem('as_theme', 'dark');
-            }
-        }
-
-        function toggleSidebar() {
-            const side = document.getElementById('main-sidebar');
-            side.classList.toggle('hidden');
-            side.classList.toggle('flex');
-        }
-
-        // AUTH CONTROLLER
-        function showAuthScreen(id) {
-            ['screen-welcome', 'screen-signup', 'screen-login', 'screen-onboard'].forEach(s => {
-                document.getElementById(s).classList.add('hidden-el');
-            });
-            document.getElementById(id).classList.remove('hidden-el');
-        }
-
-        function handleSignup() {
-            const name = document.getElementById('su-name').value.trim();
-            const email = document.getElementById('su-email').value.trim().toLowerCase();
-            const pass = document.getElementById('su-pass').value;
-
-            if (!name || !email || pass.length < 6) return alert("Please complete all fields with a valid password.");
-            if (DB.users[email]) return alert("An account with this email already exists.");
-
-            DB.users[email] = {
-                name, pass, profile: null,
-                academic: { semesters: [], cgpa: 0.00, totalUnits: 0, cumulativeQP: 0, targetCGPA: 4.50 },
-                planner: { tasks: [], events: [] },
-                finance: { semesterBudget: 100000, transactions: [] }
-            };
-            DB.current = email;
-            saveDB();
-            showAuthScreen('screen-onboard');
-        }
-
-        function handleLogin() {
-            const email = document.getElementById('li-email').value.trim().toLowerCase();
-            const pass = document.getElementById('li-pass').value;
-
-            if (!DB.users[email] || DB.users[email].pass !== pass) {
-                const err = document.getElementById('auth-error');
-                err.textContent = "Invalid email or password.";
-                err.classList.remove('hidden-el');
-                return;
-            }
-            DB.current = email;
-            saveDB();
-            initApp();
-        }
-
-        function completeOnboard() {
-            const user = DB.users[DB.current];
-            user.profile = {
-                uni: document.getElementById('ob-uni').value || 'University of Abuja',
-                level: document.getElementById('ob-level').value,
-                program: document.getElementById('ob-program').value || 'Political Science & IR',
-                totalUnits: parseFloat(document.getElementById('ob-total-units').value) || 120
-            };
-            saveDB();
-            initApp();
-        }
-
-        function logout() {
-            DB.current = null;
-            saveDB();
-            location.reload();
-        }
-
-        function initApp() {
-            if (!DB.current || !DB.users[DB.current]) return showAuthScreen('screen-welcome');
-            currentUser = DB.users[DB.current];
-            if (!currentUser.profile) return showAuthScreen('screen-onboard');
-
-            recomputeUserData();
-
-            document.getElementById('auth-container').classList.add('hidden-el');
-            document.getElementById('app-os').classList.remove('hidden-el');
-
-            document.getElementById('sidebar-profile-name').textContent = currentUser.name;
-            document.getElementById('sidebar-profile-detail').textContent = `${currentUser.profile.uni} • ${currentUser.profile.level}L`;
-
-            switchView('home');
-        }
-
-        function switchView(viewName) {
-            document.querySelectorAll('.nav-item').forEach(b => {
-                b.classList.remove('bg-emerald-500/10', 'text-emerald-600', 'dark:text-emerald-400');
-                b.classList.add('text-slate-500', 'dark:text-slate-400');
-            });
-            const activeSide = document.querySelector(`.nav-item[data-target="${viewName}"]`);
-            if (activeSide) {
-                activeSide.classList.remove('text-slate-500', 'dark:text-slate-400');
-                activeSide.classList.add('bg-emerald-500/10', 'text-emerald-600', 'dark:text-emerald-400');
-            }
-
-            document.querySelectorAll('.nav-btn').forEach(b => {
-                b.classList.remove('text-emerald-600', 'dark:text-emerald-400');
-                b.classList.add('text-slate-400');
-            });
-            const activeBtn = document.querySelector(`.nav-btn[data-target="${viewName}"]`);
-            if (activeBtn) {
-                activeBtn.classList.remove('text-slate-400');
-                activeBtn.classList.add('text-emerald-600', 'dark:text-emerald-400');
-            }
-
-            const main = document.getElementById('main-content');
-            main.innerHTML = '';
-
-            if (viewName === 'home') renderHome(main);
-            else if (viewName === 'academics') renderAcademics(main);
-            else if (viewName === 'planner') renderPlanner(main);
-            else if (viewName === 'finance') renderFinance(main);
-            else if (viewName === 'more') renderMore(main);
-        }
-
-        // =========================================================================
-        // VIEW 1: DASHBOARD
-        // =========================================================================
-        function renderHome(container) {
-            recomputeUserData();
-            const acad = currentUser.academic;
-            const totalReq = currentUser.profile.totalUnits || 120;
-            const progressPct = totalReq > 0 ? Math.min(100, Math.round((acad.totalUnits / totalReq) * 100)) : 0;
-
-            const lastSem = acad.semesters.length > 0 ? acad.semesters[acad.semesters.length - 1] : null;
-            const lastGPA = lastSem ? lastSem.gpa.toFixed(2) : "0.00";
-
-            let diffText = "No previous semester records";
-            if (acad.semesters.length > 1) {
-                const prevGPA = acad.semesters[acad.semesters.length - 2].gpa;
-                const diff = (lastSem.gpa - prevGPA).toFixed(2);
-                diffText = diff >= 0 ? `↑ +${diff} from previous semester` : `↓ ${diff} from previous semester`;
-            }
-
-            const firstName = currentUser.name.split(' ')[0] || "Student";
-
-            container.innerHTML = `
-                <div class="fade-in space-y-5">
-                    <!-- HERO WELCOME BANNER -->
-                    <div class="glass-card p-6 md:p-8 space-y-4 relative overflow-hidden">
-                        <div class="absolute -top-10 -right-10 w-40 h-40 bg-emerald-400/15 rounded-full blur-3xl pointer-events-none"></div>
-                        <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">WELCOME BACK</p>
-                        <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight">Keep climbing, ${firstName}.</h2>
-                        <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-xl">
-                            Track your results, understand your academic trajectory, plan your semester, and keep your university life organized in one place.
-                        </p>
-                        <div class="flex flex-wrap gap-2 pt-2">
-                            <span class="pill-badge px-3.5 py-1.5 rounded-full text-xs font-semibold text-slate-600 dark:text-slate-300">${currentUser.profile.uni}</span>
-                            <span class="pill-badge px-3.5 py-1.5 rounded-full text-xs font-semibold text-slate-600 dark:text-slate-300">${currentUser.profile.level} Level</span>
-                            <span class="pill-badge px-3.5 py-1.5 rounded-full text-xs font-semibold text-slate-600 dark:text-slate-300">${currentUser.profile.program}</span>
-                        </div>
-                    </div>
-
-                    <!-- CURRENT CGPA MAIN CARD -->
-                    <div class="glass-card p-6 space-y-2">
-                        <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">CURRENT CGPA</p>
-                        <div class="text-5xl font-black tracking-tight">${acad.cgpa.toFixed(2)}</div>
-                        <p class="text-xs font-semibold ${acad.semesters.length > 1 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}">
-                            ${diffText}
-                        </p>
-                    </div>
-
-                    <!-- STATS ROW -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="glass-card p-5 space-y-1">
-                            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">CREDIT UNITS</p>
-                            <div class="text-2xl font-black tracking-tight">${acad.totalUnits} / ${totalReq}</div>
-                            <p class="text-[11px] font-medium text-slate-400">${progressPct}% completed</p>
-                        </div>
-                        <div class="glass-card p-5 space-y-1">
-                            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">LAST SEMESTER</p>
-                            <div class="text-2xl font-black tracking-tight">${lastGPA}</div>
-                            <p class="text-[11px] font-medium text-slate-400">Semester GPA</p>
-                        </div>
-                    </div>
-
-                    <!-- QUICK NAVIGATION MODULES -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <button onclick="switchView('academics'); setTimeout(renderCalcSub, 50);" class="glass-card glass-card-hover p-4 text-left space-y-2">
-                            <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                            </div>
-                            <p class="font-extrabold text-xs">GPA Calculator</p>
-                        </button>
-                        <button onclick="switchView('academics'); setTimeout(renderDetectiveSub, 50);" class="glass-card glass-card-hover p-4 text-left space-y-2">
-                            <div class="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                            </div>
-                            <p class="font-extrabold text-xs">Result Detective</p>
-                        </button>
-                        <button onclick="switchView('planner')" class="glass-card glass-card-hover p-4 text-left space-y-2">
-                            <div class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                            </div>
-                            <p class="font-extrabold text-xs">Planner</p>
-                        </button>
-                        <button onclick="switchView('finance')" class="glass-card glass-card-hover p-4 text-left space-y-2">
-                            <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            </div>
-                            <p class="font-extrabold text-xs">Finance</p>
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
-        // =========================================================================
-        // VIEW 2: ACADEMICS
-        // =========================================================================
-        function renderAcademics(container) {
-            container.innerHTML = `
-                <div class="fade-in space-y-5">
-                    <div class="flex gap-2 border-b border-slate-200/60 dark:border-white/5 pb-3 overflow-x-auto">
-                        <button onclick="renderCalcSub()" id="tab-calc" class="acad-tab px-4 py-2 rounded-2xl text-xs font-bold bg-emerald-600 text-white shadow-sm whitespace-nowrap">GPA Calculator</button>
-                        <button onclick="renderDetectiveSub()" id="tab-det" class="acad-tab px-4 py-2 rounded-2xl text-xs font-bold pill-badge text-slate-600 dark:text-slate-300 whitespace-nowrap">Result Detective</button>
-                        <button onclick="renderDecimalsSub()" id="tab-dec" class="acad-tab px-4 py-2 rounded-2xl text-xs font-bold pill-badge text-slate-600 dark:text-slate-300 whitespace-nowrap">Menu of Decimals</button>
-                        <button onclick="renderRecordSub()" id="tab-rec" class="acad-tab px-4 py-2 rounded-2xl text-xs font-bold pill-badge text-slate-600 dark:text-slate-300 whitespace-nowrap">My Record</button>
-                    </div>
-                    <div id="acad-sub-content"></div>
-                </div>
-            `;
-            renderCalcSub();
-        }
-
-        function highlightAcadTab(activeId) {
-            document.querySelectorAll('.acad-tab').forEach(b => {
-                b.className = "acad-tab px-4 py-2 rounded-2xl text-xs font-bold pill-badge text-slate-600 dark:text-slate-300 whitespace-nowrap";
-            });
-            const act = document.getElementById(activeId);
-            if(act) act.className = "acad-tab px-4 py-2 rounded-2xl text-xs font-bold bg-emerald-600 text-white shadow-sm whitespace-nowrap";
-        }
-
-        let calcRows = 0;
-        function renderCalcSub() {
-            highlightAcadTab('tab-calc');
-            recomputeUserData();
-            const sub = document.getElementById('acad-sub-content');
-            sub.innerHTML = `
-                <div class="glass-card p-6 space-y-5 fade-in">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Current CGPA</label>
-                            <input type="number" id="calc-cgpa" step="0.01" readonly value="${currentUser.academic.cgpa.toFixed(2)}" class="mt-1 opacity-75 cursor-not-allowed">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Target CGPA Goal</label>
-                            <input type="number" id="calc-target" step="0.01" value="${currentUser.academic.targetCGPA.toFixed(2)}" class="mt-1">
-                        </div>
-                    </div>
-
-                    <div class="p-4 rounded-2xl pill-badge border border-dashed border-slate-300/70 dark:border-white/10 space-y-2">
-                        <button onclick="togglePasteModal()" class="w-full py-2.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 pill-badge flex items-center justify-center gap-2">
-                            <span>📋</span> Paste Portal Results Text
-                        </button>
-                        <div id="paste-modal" class="hidden-el space-y-2 pt-2">
-                            <textarea id="paste-area" rows="4" placeholder="Paste raw text from university portal page..." class="font-mono text-xs"></textarea>
-                            <button onclick="processPaste()" class="w-full py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white">Parse & Auto-Fill Courses</button>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Courses & Grades</h3>
-                        <button onclick="addCalcRow()" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline">+ Add Row</button>
-                    </div>
-                    <div id="calc-rows" class="space-y-2"></div>
-
-                    <button onclick="submitCalc()" class="w-full py-3.5 rounded-2xl font-bold text-sm text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition">
-                        Calculate & Save Semester
-                    </button>
-                </div>
-            `;
-            calcRows = 0;
-            addCalcRow(); addCalcRow(); addCalcRow();
-        }
-
-        function addCalcRow(code='', unit=3, score='') {
-            calcRows++;
-            const div = document.createElement('div');
-            div.className = "grid grid-cols-12 gap-2 glass-card p-2.5 items-center fade-in";
-            div.id = `cr-${calcRows}`;
-            div.innerHTML = `
-                <input type="text" placeholder="Code" value="${code}" class="col-span-4 md:col-span-3 p-2 text-xs font-bold uppercase c-code font-mono">
-                <input type="number" placeholder="Unit" value="${unit}" class="col-span-2 p-2 text-xs text-center font-bold c-unit">
-                <input type="number" placeholder="Score" value="${score}" class="col-span-4 md:col-span-5 p-2 text-xs text-center font-bold c-score" oninput="updateRowGrade(this)">
-                <span class="col-span-1 text-xs font-black text-center c-grade text-slate-400">-</span>
-                <button onclick="document.getElementById('cr-${calcRows}').remove()" class="col-span-1 text-red-500 text-sm font-bold text-center">✕</button>
-            `;
-            document.getElementById('calc-rows').appendChild(div);
-            if(score !== '') updateRowGrade(div.querySelector('.c-score'));
-        }
-
-        function updateRowGrade(input) {
-            const row = input.closest('.grid');
-            const scoreVal = input.value.trim();
-            const resolved = AcademicEngine.resolveGrade(scoreVal);
-            const span = row.querySelector('.c-grade');
-            span.textContent = resolved.letter;
-            span.className = `col-span-1 text-xs font-black text-center c-grade ${
-                resolved.letter === 'A' ? 'text-emerald-600 dark:text-emerald-400' : resolved.letter === 'B' ? 'text-blue-500' : resolved.letter === 'C' ? 'text-amber-500' : resolved.letter === 'F' ? 'text-red-500' : 'text-slate-400'
-            }`;
-        }
-
-        function togglePasteModal() {
-            document.getElementById('paste-modal').classList.toggle('hidden-el');
-        }
-
-        function processPaste() {
-            const text = document.getElementById('paste-area').value;
-            const codes = [...text.matchAll(/\b([A-Z]{2,4}-?[A-Z]{0,3}\d{3})\b/g)].map(m => m[1]);
-            const unique = [...new Set(codes)].filter(c => /^[A-Z]/.test(c));
-
-            if (unique.length === 0) return alert("No valid course codes found.");
-
-            document.getElementById('calc-rows').innerHTML = '';
-            calcRows = 0;
-            unique.forEach(code => {
-                const idx = text.indexOf(code);
-                const snippet = text.substring(idx, idx + 60);
-                const unitMatch = snippet.match(/\b([1-6])\b/);
-                const scoreMatch = snippet.match(/\b([4-9][0-9]|100)\b/);
-                addCalcRow(code, unitMatch ? unitMatch[1] : 3, scoreMatch ? scoreMatch[1] : '');
-            });
-            togglePasteModal();
-        }
-
-        function submitCalc() {
-            const rows = document.querySelectorAll('#calc-rows > div');
-            const coursesToEvaluate = [];
-
-            rows.forEach(r => {
-                const code = r.querySelector('.c-code').value.toUpperCase().trim();
-                const unit = parseFloat(r.querySelector('.c-unit').value) || 0;
-                const scoreVal = r.querySelector('.c-score').value.trim();
-                if (code && unit > 0 && scoreVal !== '') {
-                    coursesToEvaluate.push({ code, unit, score: scoreVal });
-                }
-            });
-
-            if (coursesToEvaluate.length === 0) return alert("Enter at least one valid course.");
-
-            const semEval = AcademicEngine.evaluateSemester(coursesToEvaluate);
-
-            currentUser.academic.semesters.push({
-                id: Date.now(),
-                name: `Semester ${currentUser.academic.semesters.length + 1}`,
-                gpa: semEval.gpa,
-                courses: semEval.courses,
-                units: semEval.units,
-                qp: semEval.qp
-            });
-
-            recomputeUserData();
-            alert(`Semester GPA Calculated: ${semEval.gpa.toFixed(2)}\nUpdated Cumulative CGPA: ${currentUser.academic.cgpa.toFixed(2)}`);
-            switchView('home');
-        }
-
-        // =========================================================================
-        // RESULT DETECTIVE VIEW
-        // =========================================================================
-        function renderDetectiveSub() {
-            highlightAcadTab('tab-det');
-            recomputeUserData();
-            const sub = document.getElementById('acad-sub-content');
-
-            sub.innerHTML = `
-                <div class="glass-card p-6 space-y-4 fade-in">
+            <div class="space-y-2 pt-2">
+              ${[...U.events].sort((a,b) => a.date.localeCompare(b.date)).map(e => {
+                const i = U.events.indexOf(e), d = days(e.date);
+                return `
+                  <div class="flex items-center justify-between text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
                     <div>
-                        <h3 class="font-extrabold text-base">🔍 Result Detective Engine</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                            Reverse engine required Second Semester GPA using cumulative weighted Quality Points.
-                        </p>
+                      <b class="text-slate-800 dark:text-slate-100 block">${esc(e.title)}</b>
+                      <span class="text-slate-400">${esc(e.type)} • ${fmtD(e.date)} •${d < 0 ? 'Passed' : d === 0 ? 'Today' : d + ' days left'}</span>
                     </div>
+                    <button class="text-rose-500 font-bold px-2 py-1" onclick="U.events.splice(${i},1);save();go('plan')">✕</button>
+                  </div>
+                `;
+              }).join('') || '<p class="text-xs text-slate-400 py-4 text-center">No upcoming scheduled events.</p>'}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  },
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400">1st Semester GPA</label>
-                            <input type="number" id="det-1st" step="0.01" placeholder="e.g., 4.80" class="mt-1">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400">1st Sem Credit Units</label>
-                            <input type="number" id="det-1st-u" value="20" placeholder="20" class="mt-1">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Current Portal CGPA</label>
-                            <input type="number" id="det-curr" step="0.01" placeholder="e.g., 4.65" class="mt-1">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400">2nd Sem Credit Units</label>
-                            <input type="number" id="det-2nd-u" value="20" placeholder="20" class="mt-1">
-                        </div>
-                    </div>
+  fin() {
+    const inc = U.tx.filter(t => t.type === 'income').reduce((a,b) => a + b.amt, 0);
+    const exp = U.tx.filter(t => t.type === 'expense').reduce((a,b) => a + b.amt, 0);
+    const cats = ['Food','Transport','Data & Internet','Books','Other'];
+    const cols = ['#10b981','#059669','#34d399','#f59e0b','#ef4444'];
+    const by = cats.map(c => U.tx.filter(t => t.type === 'expense' && t.cat === c).reduce((a,b) => a + b.amt, 0));
+    
+    let acc = 0; 
+    const stops = exp ? by.map((v,i) => { 
+      const s = acc; 
+      acc += v / exp * 100; 
+      return `${cols[i]} ${s}% ${acc}%`; 
+    }).join(',') : '#e5e7eb 0 100%';
 
-                    <button onclick="runDetective()" class="w-full py-3.5 rounded-2xl font-bold text-sm text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition">
-                        Run Authoritative Engine Analysis
-                    </button>
+    const f = U.fees, fp = f.total ? Math.min(100, f.paid / f.total * 100) : 0;
 
-                    <div id="det-results" class="space-y-3 pt-2"></div>
+    return `
+      <div class="space-y-6">
+        <div class="grid md:grid-cols-3 gap-4">
+          <div class="card p-6">
+            <div class="lbl">Net Cash Balance</div>
+            <div class="text-3xl font-extrabold text-slate-800 dark:text-slate-100 mt-1">${naira(inc - exp)}</div>
+          </div>
+          <div class="card p-6">
+            <div class="lbl text-emerald-600 dark:text-emerald-400">Total Income</div>
+            <div class="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">${naira(inc)}</div>
+          </div>
+          <div class="card p-6">
+            <div class="lbl text-rose-500">Total Expenses</div>
+            <div class="text-3xl font-extrabold text-rose-500 mt-1">${naira(exp)}</div>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="card p-6 space-y-4">
+            <div class="font-extrabold text-slate-800 dark:text-slate-100">Log Transaction</div>
+            <div class="space-y-3">
+              <div class="grid grid-cols-2 gap-2">
+                <select id="f-k" class="inp"><option value="expense">Expense (-)</option><option value="income">Income (+)</option></select>
+                <input id="f-a" type="number" class="inp" placeholder="Amount (₦)">
+              </div>
+              <input id="f-d" class="inp" placeholder="Description (e.g. Textbooks, Bus fare)">
+              <select id="f-c" class="inp">${cats.map(c => `<option>${c}</option>`).join('')}</select>
+              <button class="btn w-full" onclick="addTx()">Record Transaction</button>
+            </div>
+          </div>
+
+          <div class="card p-6 space-y-4">
+            <div class="font-extrabold text-slate-800 dark:text-slate-100">Tuition & School Fees</div>
+            <div class="grid grid-cols-3 gap-2">
+              <div><label class="lbl block mb-1">Total Due</label><input type="number" class="inp" placeholder="₦0" value="${f.total || ''}" onchange="U.fees.total=+this.value;save();go('fin')"></div>
+              <div><label class="lbl block mb-1">Amount Paid</label><input type="number" class="inp" placeholder="₦0" value="${f.paid || ''}" onchange="U.fees.paid=+this.value;save();go('fin')"></div>
+              <div><label class="lbl block mb-1">Due Date</label><input type="date" class="inp" value="${esc(f.due)}" onchange="U.fees.due=this.value;save();go('fin')"></div>
+            </div>
+            <div class="space-y-2 pt-2">
+              <div class="flex justify-between text-xs font-semibold">
+                <span>Fee Progress (${fp.toFixed(0)}%)</span>
+                <span>${naira(Math.max(0, f.total - f.paid))} Outstanding</span>
+              </div>
+              <div class="h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:${fp}%"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card p-6 space-y-4">
+          <div class="font-extrabold text-slate-800 dark:text-slate-100">Transaction History</div>
+          <div class="space-y-2">
+            ${[...U.tx].reverse().map(t => {
+              const i = U.tx.indexOf(t);
+              return `
+                <div class="flex justify-between items-center text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                  <div>
+                    <b class="text-slate-800 dark:text-slate-200 block">${esc(t.desc)}</b>
+                    <span class="text-slate-400">${esc(t.cat \vert{}\vert{} 'General')} •${fmtD(t.date)}</span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span class="${t.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'} font-extrabold text-sm">
+                      ${t.type === 'income' ? '+' : '-'}${naira(t.amt)}
+                    </span>
+                    <button class="text-slate-400 hover:text-rose-500 font-bold" onclick="U.tx.splice(${i},1);save();go('fin')">✕</button>
+                  </div>
                 </div>
-            `;
-        }
+              `;
+            }).join('') || '<p class="text-xs text-slate-400 py-4 text-center">No transaction records logged.</p>'}
+          </div>
+        </div>
+      </div>
+    `;
+  },
 
-        function runDetective() {
-            const gpa1 = parseFloat(document.getElementById('det-1st').value);
-            const u1 = parseFloat(document.getElementById('det-1st-u').value) || 20;
-            const cgpa = parseFloat(document.getElementById('det-curr').value);
-            const u2 = parseFloat(document.getElementById('det-2nd-u').value) || 20;
-            const res = document.getElementById('det-results');
+  mat() {
+    return `
+      <div class="space-y-6">
+        <div class="card p-6 space-y-4">
+          <div class="font-extrabold text-slate-800 dark:text-slate-100">Course Materials & Notes Hub</div>
+          <div class="grid sm:grid-cols-3 gap-3">
+            <input id="m-c" class="inp" placeholder="Course Code (e.g. POS 201)">
+            <input id="m-t" class="inp" placeholder="Material Title">
+            <input id="m-l" class="inp" placeholder="Drive / Cloud Link (https://...)">
+          </div>
+          <button class="btn" onclick="addMaterial()">Save Course Material</button>
+        </div>
 
-            if (isNaN(gpa1) || isNaN(cgpa)) return alert("Enter both GPA values.");
-
-            const analysis = AcademicEngine.detectiveAnalysis(gpa1, cgpa, u1, u2);
-
-            let html = `
-                <div class="glass-card p-5 space-y-2 border-l-4 border-emerald-500">
-                    <p class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Quality Points Calculation Trace</p>
-                    <div class="text-xs font-mono text-slate-600 dark:text-slate-300 space-y-1">
-                        <p>1. Sem 1 Quality Points: ${gpa1.toFixed(2)} GPA × ${u1} Units = ${analysis.sem1QP.toFixed(2)} QP</p>
-                        <p>2. Target Total Quality Points: ${cgpa.toFixed(2)} CGPA × ${analysis.totalUnits} Total Units = ${analysis.targetTotalQP.toFixed(2)} QP</p>
-                        <p>3. Required Sem 2 Quality Points: ${analysis.targetTotalQP.toFixed(2)} - ${analysis.sem1QP.toFixed(2)} = ${analysis.requiredSem2QP.toFixed(2)} QP</p>
-                        <p>4. Required Sem 2 GPA: ${analysis.requiredSem2QP.toFixed(2)} ÷ ${u2} Units = <b>${analysis.requiredSem2GPA.toFixed(2)}</b></p>
-                    </div>
+        <div class="card p-6 space-y-4">
+          <div class="font-extrabold text-slate-800 dark:text-slate-100">Stored Materials Library</div>
+          <div class="grid sm:grid-cols-2 gap-4">
+            ${U.materials.map((m, i) => `
+              <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-2 card-hover">
+                <div class="flex justify-between items-start">
+                  <span class="px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold uppercase">${esc(m.code)}</span>
+                  <button class="text-slate-400 hover:text-rose-500 text-xs font-bold" onclick="U.materials.splice(${i},1);save();go('mat')">Delete</button>
                 </div>
+                <h4 class="font-extrabold text-sm text-slate-800 dark:text-slate-100">${esc(m.title)}</h4>
+                <a href="${esc(m.link)}" target="_blank" class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline">
+                  🔗 Open Link / Document
+                </a>
+              </div>
+            `).join('') || '<p class="text-xs text-slate-400 col-span-2 py-6 text-center">No materials added to your library yet.</p>'}
+          </div>
+        </div>
+      </div>
+    `;
+  },
 
-                <div class="glass-card p-5 space-y-1">
-                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">DETECTIVE VERDICT</p>
-                    <div class="text-3xl font-black ${analysis.isPossible ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}">${analysis.requiredSem2GPA.toFixed(2)}</div>
-                    <p class="text-xs text-slate-500 leading-relaxed">
-                        To maintain a cumulative portal CGPA of <b>${cgpa.toFixed(2)}</b> given a First Semester GPA of <b>${gpa1.toFixed(2)}</b> (${u1} units), your required second semester GPA across ${u2} units is <b>${analysis.requiredSem2GPA.toFixed(2)}</b>.
-                    </p>
+  att() {
+    return `
+      <div class="space-y-6">
+        <div class="card p-6 space-y-4">
+          <div class="font-extrabold text-slate-800 dark:text-slate-100">Course Attendance Tracker</div>
+          <div class="grid sm:grid-cols-3 gap-3">
+            <input id="at-c" class="inp" placeholder="Course Code (e.g. POS 204)">
+            <input id="at-a" type="number" class="inp" placeholder="Attended Classes">
+            <input id="at-t" type="number" class="inp" placeholder="Total Classes Held">
+          </div>
+          <button class="btn" onclick="addAttendance()">Update Attendance Record</button>
+        </div>
+
+        <div class="card p-6 space-y-4">
+          <div class="font-extrabold text-slate-800 dark:text-slate-100">Attendance Metrics</div>
+          <div class="space-y-3">
+            ${U.attendance.map((a, i) => {
+              const pct = a.total ? Math.round((a.attended / a.total) * 100) : 0;
+              const isLow = pct < 75;
+              return `
+                <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-2">
+                  <div class="flex justify-between items-center">
+                    <div>
+                      <b class="text-sm text-slate-800 dark:text-slate-100">${esc(a.code)}</b>
+                      <span class="text-xs text-slate-400 ml-2">${a.attended} /${a.total} lectures</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <span class="text-sm font-extrabold ${isLow ? 'text-rose-500' : 'text-emerald-600 dark:text-emerald-400'}">${pct}%</span>
+                      <button class="text-slate-400 hover:text-rose-500 text-xs" onclick="U.attendance.splice(${i},1);save();go('att')">✕</button>
+                    </div>
+                  </div>
+                  <div class="h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                    <div class="h-full ${isLow ? 'bg-rose-500' : 'bg-emerald-500'} rounded-full" style="width:${pct}%"></div>
+                  </div>
+                  ${isLow ? '<p class="text-[11px] text-rose-500 font-semibold">⚠️ Attendance below 75% exam eligibility requirement.</p>' : ''}
                 </div>
-            `;
+              `;
+            }).join('') || '<p class="text-xs text-slate-400 py-4 text-center">No attendance records being tracked.</p>'}
+          </div>
+        </div>
+      </div>
+    `;
+  },
 
-            res.innerHTML = html;
-        }
+  goal() {
+    return `
+      <div class="space-y-6">
+        <div class="card p-6 space-y-4">
+          <div class="font-extrabold text-slate-800 dark:text-slate-100">Academic Goals & Milestones</div>
+          <div class="flex gap-2">
+            <input id="g-t" class="inp" placeholder="Define Milestone (e.g. Publish Political Science Essay)">
+            <button class="btn shrink-0" onclick="addGoal()">Set Goal</button>
+          </div>
+        </div>
 
-        function renderDecimalsSub() {
-            highlightAcadTab('tab-dec');
-            const sub = document.getElementById('acad-sub-content');
-            const totalUnits = currentUser.academic.totalUnits > 0 ? currentUser.academic.totalUnits : 40;
-            sub.innerHTML = `
-                <div class="glass-card p-6 space-y-4 fade-in">
-                    <h3 class="font-extrabold text-base">Menu of Decimals</h3>
-                    <p class="text-xs text-slate-400">Impact of individual course grades based on ${totalUnits} accumulated units.</p>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-xs text-left">
-                            <thead>
-                                <tr class="border-b border-slate-200/60 dark:border-white/5 text-slate-400">
-                                    <th class="p-2">Unit</th>
-                                    <th class="p-2">Grade A (+5)</th>
-                                    <th class="p-2">Grade B (+4)</th>
-                                    <th class="p-2">Grade C (+3)</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100 dark:divide-white/5 font-mono">
-                                ${[1, 2, 3, 4, 6].map(u => `
-                                    <tr>
-                                        <td class="p-2 font-bold font-sans">${u} Unit</td>
-                                        <td class="p-2 text-emerald-600 dark:text-emerald-400">+${((u * 5) / totalUnits).toFixed(3)}</td>
-                                        <td class="p-2">+${((u * 4) / totalUnits).toFixed(3)}</td>
-                                        <td class="p-2">+${((u * 3) / totalUnits).toFixed(3)}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
+        <div class="card p-6 space-y-3">
+          <div class="font-extrabold text-slate-800 dark:text-slate-100">Active Academic Goals</div>
+          <div class="space-y-2">
+            ${U.goals.map((g, i) => `
+              <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" ${g.done?'checked':''} onchange="U.goals[${i}].done=!U.goals[${i}].done;save();go('goal')" class="w-4 h-4 accent-emerald-600 rounded">
+                  <span class="${g.done?'line-through text-slate-400':'text-slate-800 dark:text-slate-200 font-bold text-xs'}">${esc(g.title)}</span>
+                </label>
+                <button class="text-slate-400 hover:text-rose-500 font-bold text-xs" onclick="U.goals.splice(${i},1);save();go('goal')">✕</button>
+              </div>
+            `).join('') || '<p class="text-xs text-slate-400 py-4 text-center">No active academic goals set.</p>'}
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
+  car() {
+    return `
+      <div class="space-y-6">
+        <div class="card p-6 space-y-4">
+          <div class="font-extrabold text-slate-800 dark:text-slate-100">Career & Portfolio Tracker</div>
+          <div class="space-y-3">
+            <input id="c-t" class="inp" placeholder="Project / Essay / Achievement Title">
+            <textarea id="c-d" class="inp font-sans text-xs" rows="3" placeholder="Brief description of skills, research paper, or project output..."></textarea>
+            <button class="btn w-full" onclick="addCareer()">Add Portfolio Item</button>
+          </div>
+        </div>
+
+        <div class="card p-6 space-y-4">
+          <div class="font-extrabold text-slate-800 dark:text-slate-100">Portfolio Records</div>
+          <div class="space-y-3">
+            ${U.career.map((c, i) => `
+              <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-2">
+                <div class="flex justify-between items-start">
+                  <b class="text-sm text-slate-800 dark:text-slate-100">${esc(c.title)}</b>
+                  <button class="text-slate-400 hover:text-rose-500 text-xs" onclick="U.career.splice(${i},1);save();go('car')">✕ Remove</button>
                 </div>
-            `;
-        }
+                <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">${esc(c.desc)}</p>
+              </div>
+            `).join('') || '<p class="text-xs text-slate-400 py-4 text-center">No portfolio items logged yet.</p>'}
+          </div>
+        </div>
+      </div>
+    `;
+  },
 
-        function renderRecordSub() {
-            highlightAcadTab('tab-rec');
-            recomputeUserData();
-            const sub = document.getElementById('acad-sub-content');
-            const sems = currentUser.academic.semesters;
+  prof() {
+    const p = U.profile || {};
+    return `
+      <div class="space-y-6">
+        <div class="card p-6 space-y-4">
+          <div class="font-extrabold text-slate-800 dark:text-slate-100">Academic Profile & Target Settings</div>
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div><label class="lbl block mb-1">Full Name</label><input id="p-n" class="inp" value="${esc(U.name)}"></div>
+            <div><label class="lbl block mb-1">University / Institution</label><input id="p-u" class="inp" value="${esc(p.uni)}"></div>
+            <div><label class="lbl block mb-1">Academic Program</label><input id="p-p" class="inp" value="${esc(p.program)}"></div>
+            <div><label class="lbl block mb-1">Level</label><select id="p-l" class="inp">${[100,200,300,400,500,600].map(l => `<option ${l == p.level ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+            <div><label class="lbl block mb-1">Total Graduation Units Required</label><input id="p-t" type="number" class="inp" value="${p.totalUnits || 120}"></div>
+            <div><label class="lbl block mb-1">Target CGPA (Scale 5.0)</label><input id="p-g" type="number" step="0.01" min="0" max="5" class="inp" value="${U.target}"></div>
+          </div>
+          <button class="btn" onclick="saveProfile()">Save Profile Updates</button>
+          <p class="text-xs text-slate-400 pt-2">Authenticated Email: ${esc(email)}</p>
+        </div>
 
-            sub.innerHTML = `
-                <div class="glass-card p-6 space-y-4 fade-in">
-                    <h3 class="font-extrabold text-base">Academic Record Summary</h3>
-                    <p class="text-xs text-slate-500">${currentUser.name} • ${currentUser.profile.uni} • ${currentUser.profile.program}</p>
-                    <div class="p-4 rounded-2xl pill-badge flex justify-between items-center">
-                        <span class="text-xs font-bold">Current CGPA: ${currentUser.academic.cgpa.toFixed(2)}</span>
-                        <button onclick="window.print()" class="text-xs font-bold text-emerald-600 dark:text-emerald-400">Print</button>
-                    </div>
+        <div class="card p-6 space-y-3">
+          <div class="font-extrabold text-slate-800 dark:text-slate-100">Data Management & Local Backups</div>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Export your local JSON backup to keep your data safe or transfer to another device.</p>
+          <div class="flex gap-2">
+            <button class="btn2" onclick="exportData()">Download Backup (JSON)</button>
+          </div>
+        </div>
 
-                    ${sems.length === 0 ? '<p class="text-xs text-slate-400 text-center py-6">No semester records available.</p>' : 
-                        sems.map(s => `
-                            <div class="p-4 rounded-2xl pill-badge space-y-2">
-                                <div class="flex justify-between items-center pb-2 border-b border-slate-200/50 dark:border-white/5">
-                                    <span class="text-xs font-bold">${s.name}</span>
-                                    <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">GPA: ${s.gpa.toFixed(2)} (${s.units} Units)</span>
-                                </div>
-                                <div class="space-y-1">
-                                    ${s.courses.map(c => `
-                                        <div class="flex justify-between text-xs">
-                                            <span class="font-mono text-slate-500">${c.code} (${c.unit} Units)</span>
-                                            <span class="font-bold">${c.score !== null ? c.score : '-'} / <span class="${c.grade==='A'?'text-emerald-600 dark:text-emerald-400':''}">${c.grade}</span></span>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        `).join('')
-                    }
+        <button class="btn-danger w-full py-3" onclick="logout()">Log Out of Account</button>
+      </div>
+    `;
+  }
+};
+
+// ==========================================================================
+// ACADEMIC CALCULATOR, DETECTIVE, & RECORD SUB-VIEWS
+// ==========================================================================
+let rowN = 0;
+const ACAD = {
+  calc() {
+    const e = editing !== null ? U.semesters.find(s => s.id === editing) : null;
+    $('sub').innerHTML = `
+      <div class="card p-6 space-y-5">
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div>
+            <div class="lbl">Current Cumulative CGPA</div>
+            <input class="inp mt-1 bg-slate-50 dark:bg-slate-800/50 font-mono font-bold" readonly value="${cum().g.toFixed(2)} / 5.00">
+          </div>
+          <div>
+            <div class="lbl">Semester Title</div>
+            <input id="c-name" class="inp mt-1" value="${esc(e ? e.name : 'Semester ' + (U.semesters.length + 1))}">
+          </div>
+        </div>
+
+        <button class="btn2 w-full justify-center" onclick="$('paste').classList.toggle('hidden')">📋 Import / Paste Portal Result Text</button>
+        <div id="paste" class="hidden space-y-2 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <textarea id="paste-a" rows="4" class="inp font-mono text-xs" placeholder="Paste result text here (e.g. POS201 3 72)..."></textarea>
+          <button class="btn w-full" onclick="parsePaste()">Parse Text & Generate Rows</button>
+          <p class="text-[11px] text-slate-400">Verifies course codes, units, and raw scores automatically.</p>
+        </div>
+
+        <div class="space-y-3">
+          <div class="flex justify-between items-center">
+            <div class="lbl">Course Entry List</div>
+            <button class="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline" onclick="addRow()">+ Add Course Row</button>
+          </div>
+
+          <div id="rows" class="space-y-2"></div>
+        </div>
+
+        <button class="btn w-full py-3" onclick="saveSem()">${e ? 'Update Semester Record' : 'Calculate & Record Semester'}</button>
+      </div>
+    `;
+    rowN = 0;
+    if (e) e.courses.forEach(c => addRow(c.code, c.unit, c.score)); else { addRow(); addRow(); addRow(); }
+  },
+
+  det() {
+    $('sub').innerHTML = `
+      <div class="card p-6 space-y-4">
+        <div class="font-extrabold text-slate-800 dark:text-slate-100">🔍 Result Detective</div>
+        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">Computes your exact 2nd semester GPA based on your 1st semester GPA and final cumulative CGPA from your portal.</p>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div><div class="lbl">1st Semester GPA</div><input id="d1" type="number" step="0.01" class="inp mt-1" placeholder="e.g. 4.80"></div>
+          <div><div class="lbl">1st Semester Credit Units</div><input id="du1" type="number" class="inp mt-1" value="20"></div>
+          <div><div class="lbl">Portal Cumulative CGPA</div><input id="dc" type="number" step="0.01" class="inp mt-1" placeholder="e.g. 4.65"></div>
+          <div><div class="lbl">2nd Semester Credit Units</div><input id="du2" type="number" class="inp mt-1" value="20"></div>
+        </div>
+        <button class="btn w-full" onclick="runDet()">Calculate Missing GPA</button>
+        <div id="d-res"></div>
+      </div>
+    `;
+  },
+
+  dec() {
+    const c = cum(), G = [['A',5],['B',4],['C',3],['D',2],['F',0]], f = d => (d >= 0 ? '+' : '') + d.toFixed(3);
+    $('sub').innerHTML = `
+      <div class="card p-6 space-y-4">
+        <div class="font-extrabold text-slate-800 dark:text-slate-100">Menu of Decimals</div>
+        ${c.u ? `
+          <p class="text-xs text-slate-500 dark:text-slate-400">Impact matrix: How a single upcoming course grade shifts your current ${c.g.toFixed(2)} CGPA across${c.u} completed units.</p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400">
+                  <th class="p-2.5 font-extrabold">Unit</th>
+                  ${G.map(g => `<th class="p-2.5 font-extrabold">${g[0]} (${g[1]}pt)</th>`).join('')}
+                </tr>
+              </thead>
+              <tbody class="font-mono text-slate-800 dark:text-slate-200">
+                ${[1,2,3,4,6].map(u => `
+                  <tr class="border-b border-slate-100 dark:border-slate-800/60">
+                    <td class="p-2.5 font-extrabold">${u} Unit${u>1?'s':''}</td>
+                    ${G.map(g => { 
+                      const d = (c.q + u*g[1]) / (c.u + u) - c.g; 
+                      return `<td class="p-2.5 ${d >= 0 ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-rose-500 font-bold'}">${f(d)}</td>`; 
+                    }).join('')}
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        ` : '<p class="text-xs text-slate-400 py-4 text-center">Save at least one semester to compute impact matrix.</p>'}
+      </div>
+    `;
+  },
+
+  rec() {
+    const c = cum();
+    $('sub').innerHTML = `
+      <div class="card p-6 space-y-4">
+        <div class="flex justify-between items-center">
+          <div class="font-extrabold text-slate-800 dark:text-slate-100">Academic Transcript & History</div>
+          <button class="btn2 text-xs np" onclick="window.print()">🖨 Print Transcript</button>
+        </div>
+        <p class="text-xs text-slate-500 dark:text-slate-400">${esc(U.name)} • ${esc(U.profile?.uni)} • ${esc(U.profile?.program)}</p>
+        <div class="rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 p-4 text-sm font-extrabold text-emerald-900 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800">
+          Cumulative CGPA: ${c.g.toFixed(2)} / 5.00 (${c.u} Total Credit Units Completed)
+        </div>
+        <div class="space-y-3">
+          ${U.semesters.map(s => { 
+            const x = semS(s); 
+            return `
+              <div class="rounded-2xl bg-slate-50 dark:bg-slate-800/40 p-4 space-y-3 border border-slate-200 dark:border-slate-800">
+                <div class="flex justify-between text-sm font-extrabold text-slate-800 dark:text-slate-100">
+                  <span>${esc(s.name)}</span>
+                  <span class="text-emerald-600 dark:text-emerald-400">GPA ${x.g.toFixed(2)} (${x.u} Units)</span>
                 </div>
-            `;
-        }
-
-        // =========================================================================
-        // VIEW 3: PLANNER
-        // =========================================================================
-        function renderPlanner(container) {
-            container.innerHTML = `
-                <div class="fade-in space-y-5">
-                    <div class="glass-card p-6 space-y-3">
-                        <h3 class="font-extrabold text-base">Add Planner Task</h3>
-                        <div class="flex gap-2">
-                            <input type="text" id="task-input" placeholder="e.g., Read Chapter 4 POS 201">
-                            <button onclick="addTask()" class="px-5 py-3 rounded-2xl font-bold text-xs text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition shrink-0">Add Task</button>
-                        </div>
+                <div class="space-y-1">
+                  ${s.courses.map(k => `
+                    <div class="flex justify-between text-xs text-slate-700 dark:text-slate-300">
+                      <span class="font-mono text-slate-500">${esc(k.code)} (${k.unit}u)</span>
+                      <b>Score: ${k.score} (${gr(k.score)[0]})</b>
                     </div>
-
-                    <div class="glass-card p-6 space-y-3">
-                        <h3 class="font-extrabold text-base">Task List</h3>
-                        <div id="task-list" class="space-y-2">
-                            ${currentUser.planner.tasks.map((t, i) => `
-                                <div class="flex items-center justify-between p-3.5 rounded-2xl pill-badge">
-                                    <div class="flex items-center gap-3">
-                                        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask(${i})" class="w-4 h-4 rounded accent-emerald-600">
-                                        <span class="text-xs font-semibold ${t.done ? 'line-through text-slate-400' : ''}">${t.title}</span>
-                                    </div>
-                                    <button onclick="deleteTask(${i})" class="text-red-500 text-xs font-bold px-2">✕</button>
-                                </div>
-                            `).join('') || '<p class="text-xs text-slate-400 text-center py-4">No tasks pending.</p>'}
-                        </div>
-                    </div>
+                  `).join('')}
                 </div>
-            `;
-        }
-
-        function addTask() {
-            const input = document.getElementById('task-input');
-            if (!input.value.trim()) return;
-            currentUser.planner.tasks.push({ title: input.value.trim(), done: false });
-            saveDB();
-            switchView('planner');
-        }
-
-        function toggleTask(i) {
-            currentUser.planner.tasks[i].done = !currentUser.planner.tasks[i].done;
-            saveDB();
-            switchView('planner');
-        }
-
-        function deleteTask(i) {
-            currentUser.planner.tasks.splice(i, 1);
-            saveDB();
-            switchView('planner');
-        }
-
-        // =========================================================================
-        // VIEW 4: FINANCE
-        // =========================================================================
-        function renderFinance(container) {
-            const fin = currentUser.finance;
-            const spent = fin.transactions.filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0);
-            const remaining = fin.semesterBudget - spent;
-
-            container.innerHTML = `
-                <div class="fade-in space-y-5">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="glass-card p-6 space-y-1">
-                            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">SEMESTER BUDGET</p>
-                            <div class="text-2xl font-black">₦${fin.semesterBudget.toLocaleString()}</div>
-                        </div>
-                        <div class="glass-card p-6 space-y-1">
-                            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">SPENT</p>
-                            <div class="text-2xl font-black text-red-500">₦${spent.toLocaleString()}</div>
-                        </div>
-                        <div class="glass-card p-6 space-y-1">
-                            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">REMAINING</p>
-                            <div class="text-2xl font-black text-emerald-600 dark:text-emerald-400">₦${remaining.toLocaleString()}</div>
-                        </div>
-                    </div>
-
-                    <div class="glass-card p-6 space-y-3">
-                        <h3 class="font-extrabold text-base">Log Expense</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <input type="number" id="fin-amt" placeholder="Amount (₦)">
-                            <input type="text" id="fin-desc" placeholder="Description (e.g. Books)">
-                            <button onclick="addTransaction()" class="py-3.5 rounded-2xl font-bold text-xs text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition">Log Transaction</button>
-                        </div>
-                    </div>
+                <div class="flex gap-4 np pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                  <button class="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline" onclick="editSem(${s.id})">Edit Semester</button>
+                  <button class="text-xs font-bold text-rose-500 hover:underline" onclick="delSem(${s.id})">Delete</button>
                 </div>
-            `;
-        }
+              </div>
+            `; 
+          }).join('') || '<p class="text-xs text-slate-400 text-center py-6">No semester history stored.</p>'}
+        </div>
+      </div>
+    `;
+  }
+};
 
-        function addTransaction() {
-            const amt = parseFloat(document.getElementById('fin-amt').value);
-            const desc = document.getElementById('fin-desc').value.trim();
-            if (!amt || !desc) return alert("Please complete amount and description.");
+function addRow(code = '', unit = 3, score = '') {
+  const id = ++rowN, d = document.createElement('div');
+  d.id = 'r' + id; 
+  d.className = 'grid grid-cols-12 gap-2 items-center';
+  d.innerHTML = `
+    <input class="inp col-span-4 !py-2 uppercase font-mono font-bold c-code" placeholder="Code" value="${esc(code)}">
+    <input type="number" class="inp col-span-2 !py-2 text-center c-unit" value="${esc(unit)}">
+    <input type="number" class="inp col-span-4 !py-2 text-center c-score" placeholder="Score" value="${esc(score)}" oninput="this.closest('div').querySelector('.c-g').textContent=gr(this.value)[0]">
+    <b class="col-span-1 text-center text-xs c-g text-slate-800 dark:text-slate-200">${gr(score)[0]}</b>
+    <button class="col-span-1 text-rose-500 font-bold hover:bg-rose-50 dark:hover:bg-rose-950 p-2 rounded-lg" onclick="this.closest('div').remove()">✕</button>
+  `;
+  $('rows').appendChild(d);
+}
 
-            currentUser.finance.transactions.push({ amount: amt, desc, type: 'expense', date: Date.now() });
-            saveDB();
-            switchView('finance');
-        }
+function parsePaste() {
+  const lines = $('paste-a').value.split('\n'), out = [];
+  lines.forEach(l => {
+    const m = l.match(/\b([A-Z]{2,4})\s?(\d{3}[A-Z]?)\b/i); 
+    if (!m) return;
+    const nums = (l.slice(l.indexOf(m[0]) + m[0].length).match(/\b\d{1,3}\b/g) || []).map(Number);
+    const unit = nums.find(n => n >= 1 && n <= 6), rest = nums.slice(nums.indexOf(unit) + 1), score = rest.filter(n => n <= 100).pop();
+    out.push([m[1].toUpperCase() + m[2], unit || 3, score ?? '']);
+  });
+  if (!out.length) return showToast('No valid course formats found in text', 'error');
+  $('rows').innerHTML = ''; 
+  rowN = 0; 
+  out.forEach(o => addRow(...o)); 
+  $('paste').classList.add('hidden');
+  showToast(`Parsed ${out.length} courses from text!`);
+}
 
-        // =========================================================================
-        // VIEW 5: MORE / SETTINGS
-        // =========================================================================
-        function renderMore(container) {
-            container.innerHTML = `
-                <div class="fade-in space-y-5">
-                    <div class="glass-card p-6 space-y-3">
-                        <h3 class="font-extrabold text-base">Profile & Operating System</h3>
-                        <div class="text-xs space-y-1.5 text-slate-500 dark:text-slate-400">
-                            <p><b>User:</b> ${currentUser.name} (${DB.current})</p>
-                            <p><b>University:</b> ${currentUser.profile.uni}</p>
-                            <p><b>Program:</b> ${currentUser.profile.program}</p>
-                            <p><b>Engine:</b> Authoritative Academic Summit v5.0</p>
-                        </div>
-                    </div>
+function saveSem() {
+  const courses = [];
+  document.querySelectorAll('#rows > div').forEach(r => {
+    const code = r.querySelector('.c-code').value.trim().toUpperCase();
+    const unit = parseFloat(r.querySelector('.c-unit').value);
+    const sc = r.querySelector('.c-score').value;
+    if (code && unit > 0 && sc !== '' && +sc >= 0 && +sc <= 100) courses.push({code, unit, score: +sc});
+  });
+  if (!courses.length) return showToast('Enter at least one valid course with score (0-100)', 'error');
+  
+  const name = $('c-name').value.trim() || 'Semester ' + (U.semesters.length + 1);
+  if (editing !== null) { 
+    const s = U.semesters.find(x => x.id === editing); 
+    s.name = name; 
+    s.courses = courses; 
+    editing = null; 
+  } else {
+    U.semesters.push({id: Date.now(), name, courses});
+  }
+  
+  save();
+  const x = semS({courses}), c = cum();
+  go('home'); 
+  showToast(`Saved! Semester GPA: ${x.g.toFixed(2)} | New CGPA: ${c.g.toFixed(2)}`);
+}
 
-                    <div class="glass-card p-6 space-y-3 border-l-4 border-red-500">
-                        <h3 class="font-bold text-xs text-red-500 uppercase tracking-widest">Danger Zone</h3>
-                        <button onclick="if(confirm('Clear all data?')){localStorage.clear(); location.reload();}" class="w-full py-3.5 rounded-2xl text-xs font-bold text-red-500 pill-badge hover:bg-red-500/10 transition">
-                            Clear Local Storage Data
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
+function editSem(id) { editing = id; aTab = 'calc'; go('acad'); }
+function delSem(id) { 
+  if (!confirm('Are you sure you want to delete this semester record?')) return; 
+  U.semesters = U.semesters.filter(s => s.id !== id); 
+  save(); 
+  go('acad'); 
+  showToast('Semester record deleted.');
+}
 
-        // INITIALIZATION
-        window.onload = function() {
-            const savedTheme = localStorage.getItem('as_theme') || 'light';
-            if (savedTheme === 'dark') document.documentElement.classList.add('dark');
-            else document.documentElement.classList.remove('dark');
+function runDet() {
+  const g1 = parseFloat($('d1').value), cg = parseFloat($('dc').value);
+  const u1 = parseFloat($('du1').value) \vert{}\vert{} 20, u2 = parseFloat($('du2').value) || 20;
+  if (isNaN(g1) || isNaN(cg)) return showToast('Please enter valid GPA numbers', 'error');
+  
+  const r = detective(g1, cg, u1, u2), q1 = g1 * u1, qt = cg * (u1 + u2);
+  $('d-res').innerHTML = `
+    <div class="rounded-xl bg-slate-50 dark:bg-slate-800/40 p-4 text-xs font-mono space-y-1 text-slate-800 dark:text-slate-200 mt-3 border border-slate-200 dark:border-slate-800">
+      <p>1. Sem 1 Quality Points: ${g1.toFixed(2)} × ${u1} = ${q1.toFixed(2)}</p>
+      <p>2. Total Quality Points Required: ${cg.toFixed(2)} × ${u1 + u2} = ${qt.toFixed(2)}</p>
+      <p>3. Sem 2 Quality Points Difference: ${qt.toFixed(2)} − ${q1.toFixed(2)} = ${(qt - q1).toFixed(2)}</p>
+      <p>4. Calculated Sem 2 GPA: ${(qt - q1).toFixed(2)} ÷ ${u2} = <b>${r.need.toFixed(2)}</b></p>
+    </div>
+    <div class="mt-3 text-3xl font-extrabold ${r.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}">${r.need.toFixed(2)}</div>
+    ${r.ok ? '' : `<p class="text-xs text-rose-500 font-bold mt-1">${r.need > 5 ? 'Result out of range: above 5.00 scale.' : 'Result out of range: below 0.'} Recheck portal inputs.</p>`}
+  `;
+}
 
-            if (DB.current && DB.users[DB.current]) {
-                initApp();
-            } else {
-                showAuthScreen('screen-welcome');
-            }
-        };
-    </script>
+// ==========================================================================
+// ACTION HANDLERS & FORM DISPATCHERS
+// ==========================================================================
+function addTask() { 
+  const v = $('t-in').value.trim(); 
+  if (!v) return showToast('Enter a task description', 'error'); 
+  U.tasks.push({t: v, done: false}); 
+  save(); 
+  go('plan'); 
+  showToast('Task added');
+}
+
+function addEvent() { 
+  const t = $('e-t').value.trim(), d =$('e-d').value; 
+  if (!t || !d) return showToast('Title and date required', 'error'); 
+  U.events.push({title: t, type: $('e-k').value, date: d}); 
+  save(); 
+  go('plan'); 
+  showToast('Event scheduled');
+}
+
+function addTx() { 
+  const a = parseFloat($('f-a').value), d =$('f-d').value.trim(); 
+  if (!(a > 0) || !d) return showToast('Enter valid amount and description', 'error'); 
+  U.tx.push({type: $('f-k').value, amt: a, desc: d, cat:$('f-c').value, date: Date.now()}); 
+  save(); 
+  go('fin'); 
+  showToast('Transaction logged');
+}
+
+function addMaterial() {
+  const code = $('m-c').value.trim(), title = $('m-t').value.trim(), link =$('m-l').value.trim();
+  if (!code || !title || !link) return showToast('Complete material details', 'error');
+  U.materials.push({code, title, link});
+  save();
+  go('mat');
+  showToast('Material saved');
+}
+
+function addAttendance() {
+  const code = $('at-c').value.trim(), att = parseInt($('at-a').value), tot = parseInt($('at-t').value);
+  if (!code || isNaN(att) || isNaN(tot) || tot <= 0) return showToast('Enter valid attendance metrics', 'error');
+  const existing = U.attendance.find(a => a.code.toLowerCase() === code.toLowerCase());
+  if (existing) {
+    existing.attended = att;
+    existing.total = tot;
+  } else {
+    U.attendance.push({code, attended: att, total: tot});
+  }
+  save();
+  go('att');
+  showToast('Attendance recorded');
+}
+
+function addGoal() {
+  const t = $('g-t').value.trim();
+  if (!t) return showToast('Enter milestone description', 'error');
+  U.goals.push({title: t, done: false});
+  save();
+  go('goal');
+  showToast('Goal created');
+}
+
+function addCareer() {
+  const title = $('c-t').value.trim(), desc =$('c-d').value.trim();
+  if (!title || !desc) return showToast('Enter portfolio title and description', 'error');
+  U.career.push({title, desc});
+  save();
+  go('car');
+  showToast('Portfolio item saved');
+}
+
+function saveProfile() {
+  const t = parseFloat($('p-g').value); 
+  if (isNaN(t) || t < 0 || t > 5) return showToast('Target CGPA must be between 0 and 5', 'error');
+  U.name = $('p-n').value.trim() || U.name; 
+  U.target = t;
+  Object.assign(U.profile, {
+    uni: $('p-u').value.trim(), 
+    program: $('p-p').value.trim(), 
+    level: $('p-l').value, 
+    totalUnits: parseFloat($('p-t').value) || 120
+  });
+  save(); 
+  start(); 
+  go('prof');
+  showToast('Profile updated');
+}
+
+function exportData() { 
+  const a = document.createElement('a'); 
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(U, null, 2)], {type: 'application/json'})); 
+  a.download = `academic-summit-backup-${new Date().toISOString().slice(0,10)}.json`; 
+  a.click(); 
+  showToast('Backup JSON downloaded');
+}
+</script>
 </body>
 </html>
 
