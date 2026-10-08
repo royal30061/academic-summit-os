@@ -91,7 +91,6 @@ const ic=(n,c='w-4 h-4')=>'<svg class="'+c+'" fill="none" stroke="currentColor" 
 let isDark=localStorage.getItem('as_theme')==='dark';
 function applyTheme(){document.documentElement.classList.toggle('dark',isDark);}
 function toggleTheme(){isDark=!isDark;localStorage.setItem('as_theme',isDark?'dark':'light');applyTheme();if(U)start();}
-applyTheme();
 // state
 let DB={users:{}};
 try{DB=JSON.parse(localStorage.getItem('as_v8'))||DB;}catch(e){}
