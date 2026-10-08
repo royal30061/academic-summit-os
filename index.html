@@ -362,7 +362,7 @@ function runDet(){
   const u1=parseFloat($('du1').value)||20,u2=parseFloat($('du2').value)||20;
   if(isNaN(g1)||isNaN(cg))return showToast('Enter both GPA values','error');
   const r=detective(g1,cg,u1,u2),q1=g1*u1,qt=cg*(u1+u2);
-  $('d-res').innerHTML='<div class="p-5 rounded-2xl bg-violet-500/10 border border-violet-500/30 text-center space-y-2 mt-3"><div class="text-xs font-extrabold text-violet-600 dark:text-violet-400 uppercase tracking-wider">Predicted 2nd Sem GPA</div><div class="text-4xl font-extrabold text-violet-600 dark:text-violet-400">'+r.need.toFixed(2)+'</div></div>'+(r.ok?'':'<p class="text-xs text-rose-500 font-bold mt-2 text-center">Out of 0–5 range. Check portal entries.</p>');
+  $('d-res').innerHTML='<div class="p-5 rounded-2xl bg-violet-500/10 border border-violet-500/30 text-center space-y-2 mt-3"><div class="text-xs font-extrabold text-violet-600 dark:text-violet-400 uppercase tracking-wider">Predicted 2nd Sem GPA</div><div class="text-4xl font-extrabold text-violet-600 dark:text-violet-400">'+r.need.toFixed(2)+'</div>'+detMsg(r.need)+'</div>'+(r.ok?'':'<p class="text-xs text-rose-500 font-bold mt-2 text-center">Out of 0–5 range. Check portal entries.</p>');
 }
 // lecturer
 const LECTURER_VIEWS={
@@ -867,6 +867,23 @@ async function doReset(){
   if(error)return resetUI(null,error.message,true);
   history.replaceState(null,'',location.pathname);
   boot(resetUser);
+}
+</script>
+<script>
+function detMsg(n){
+  const g=Math.round(n*100)/100;
+  if(!(g>=0&&g<=5))return '';
+  const t=[
+    [4.5,'First Class range','Elite performance. Outstanding work: you are operating at the top of the class. Protect this standing and keep the discipline that got you here.'],
+    [3.5,'Second Class Upper range','Excellent work. You are in strong territory, and a couple of sharper semesters put First Class within reach. Keep pushing.'],
+    [2.4,'Second Class Lower range','Solid effort, and you can do more. Tighten your weakest courses and next semester can move you up a class.'],
+    [1.5,'Third Class range','You tried and you put in work. Now it is time to go harder next semester. Start your reading early and begin with your lowest-scoring courses.'],
+    [1.0,'Pass range','Warning: this is not over. You still have semesters left to boost this. Set a clear target, protect your attendance and start your academic comeback now.'],
+    [0,'Below Pass','Warning: this is serious, but it is recoverable. Meet your course adviser this week, build a recovery plan and make the next semester your comeback.']
+  ];
+  const x=t.find(function(r){return g>=r[0];});
+  const col=g>=3.5?'emerald':g>=1.5?'amber':'rose';
+  return '<div class="mt-3 space-y-1"><span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-'+col+'-100 dark:bg-'+col+'-950 text-'+col+'-600 dark:text-'+col+'-300">'+x[1]+'</span><p class="text-xs leading-relaxed pt-2" style="color:var(--mut)">'+x[2]+'</p></div>';
 }
 </script>
 </body>
