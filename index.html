@@ -398,11 +398,6 @@ function authUI(mode, msg = '') {
   const f = {
     login: `
       <div class="space-y-3">
-        <!-- Role Toggle Switcher -->
-        <div class="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl mb-3">
-          <button id="btn-role-student" type="button" onclick="setAuthRole('student')" class="flex-1 py-2 text-xs font-bold rounded-lg ${activeRole==='student'?'bg-emerald-600 text-white shadow':'text-slate-500'}">Student Portal</button>
-          <button id="btn-role-lecturer" type="button" onclick="setAuthRole('lecturer')" class="flex-1 py-2 text-xs font-bold rounded-lg ${activeRole==='lecturer'?'bg-emerald-600 text-white shadow':'text-slate-500'}">Lecturer Console</button>
-        </div>
         <div>
           <label class="lbl mb-1 block">Account Name / Email</label>
           <input id="a-email" type="email" class="inp" placeholder="user@uni.edu.ng">
@@ -417,10 +412,6 @@ function authUI(mode, msg = '') {
     `,
     signup: `
       <div class="space-y-3">
-        <div class="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl mb-3">
-          <button id="btn-role-student" type="button" onclick="setAuthRole('student')" class="flex-1 py-2 text-xs font-bold rounded-lg ${activeRole==='student'?'bg-emerald-600 text-white shadow':'text-slate-500'}">Student</button>
-          <button id="btn-role-lecturer" type="button" onclick="setAuthRole('lecturer')" class="flex-1 py-2 text-xs font-bold rounded-lg ${activeRole==='lecturer'?'bg-emerald-600 text-white shadow':'text-slate-500'}">Lecturer</button>
-        </div>
         <div>
           <label class="lbl mb-1 block">Full Name</label>
           <input id="a-name" class="inp" placeholder="e.g. Miracle Moses">
@@ -470,7 +461,7 @@ function setAuthRole(r) {
 async function doSignup() {
   const name = $('a-name').value.trim(), em = $('a-email').value.trim().toLowerCase(), pw = $('a-pass').value;
   if (!name || !em || pw.length < 6) return authUI('signup', 'Complete all fields (password 6+ characters).');
-  const {data, error} = await sb.auth.signUp({email: em, password: pw, options: {data: {name, role: activeRole}}});
+  const {data, error} = await sb.auth.signUp({email: em, password: pw, options: {data: {name}}});
   if (error) {
     // Local fallback if Supabase URL is default configuration
     bootLocal({email: em, user_metadata: {name, role: activeRole}});
@@ -500,21 +491,20 @@ function bootLocal(userObj) {
   U.profile ? start() : authOnboard();
 }
 
-function boot(user) {
+
+let uid = '';
+async function boot(user) {
+  uid = user.id;
   email = user.email;
-  const role = user.user_metadata?.role || activeRole;
+  const { data: p } = await sb.from('profiles').select('role').eq('id', uid).maybeSingle();
+  const role = p?.role || 'student';
   U = DB.users[email] || (DB.users[email] = newUser(user.user_metadata?.name || email, role));
   U.role = role;
-  
-  ['materials','attendance','goals','career','tasks','events','tx','semesters'].forEach(k => {
-    if (!U[k]) U[k] = [];
-  });
+  ['materials','attendance','goals','career','tasks','events','tx','semesters'].forEach(k => { if (!U[k]) U[k] = []; });
   if (!U.fees) U.fees = { total: 0, paid: 0, due: '' };
-
   save();
-  U.profile ? start() : authOnboard();
+  start();
 }
-
 sb.auth.getSession().then(({data}) => data.session ? boot(data.session.user) : authUI('login'));
 
 // ==========================================================================
@@ -615,6 +605,7 @@ function go(v) {
   } else {
     $('main').innerHTML = V[v] ? V[v]() : V.home();
     if (v === 'acad') ACAD[aTab]();
+    if (U.role === 'lecturer' && v === 'roster') loadRoster();
   }
   window.scrollTo(0, 0);
 }
@@ -636,6 +627,10 @@ function openSheet() {
           ${b('☑️ Fast Mark Class Attendance',"go('att')")}
           ${b('🧮 Calculate Semester GPA',"aTab='calc';editing=null;go('acad')")}
           ${b('💸 Log Financial Expense',"go('fin')")}
+          ${b('📚 Materials',"go('mat')")}
+          ${b('🎯 Goals',"go('goal')")}
+          ${b('💼 Career & Portfolio',"go('car')")}
+          ${b('👤 Profile & Settings',"go('prof')")}
         `}
       </div>
     </div>
@@ -1040,7 +1035,7 @@ const V = {
             <div><label class="lbl block mb-1">Total Graduation Units Required</label><input id="p-t" type="number" class="inp" value="${p.totalUnits || 120}"></div>
             <div><label class="lbl block mb-1">Target CGPA (Scale 5.0)</label><input id="p-g" type="number" step="0.01" min="0" max="5" class="inp" value="${U.target}"></div>
             <div class="sm:col-span-2">
-              <label class="lbl block mb-1">Extracted Matriculation Number (Trojan Horse Auto-Sync)</label>
+              <label class="lbl block mb-1">Matric number</label>
               <input id="p-m" class="inp font-mono bg-slate-50 dark:bg-slate-800/50 uppercase font-bold" value="${esc(p.matric || '')}" placeholder="Paste raw portal results in GPA Calculator to extract automatically">
             </div>
           </div>
@@ -1126,7 +1121,7 @@ const LECTURER_VIEWS = {
                   <th class="p-3 font-extrabold">Student Name</th>
                   <th class="p-3 font-extrabold">Matriculation No.</th>
                   <th class="p-3 font-extrabold">Course</th>
-                  <th class="p-3 font-extrabold">Status</th>
+                  <th class="p-3 font-extrabold">Date</th>
                 </tr>
               </thead>
               <tbody id="roster-body" class="divide-y divide-slate-100 dark:divide-slate-800 font-mono">
@@ -1179,7 +1174,7 @@ const ACAD = {
         <div id="paste" class="hidden space-y-2 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
           <textarea id="paste-a" rows="4" class="inp font-mono text-xs" placeholder="Paste full page text from your school portal (e.g. U2020/POS/1024 POS201 3 72)..."></textarea>
           <button class="btn w-full" onclick="parsePasteTrojan()">Parse Text & Auto-Extract Data</button>
-          <p class="text-[11px] text-slate-400">Automatically parses courses, grades, and extracts your verified matriculation number in the background.</p>
+          <p class="text-[11px] text-slate-400">Courses are parsed from your text. We'll ask before saving your matric number.</p>
         </div>
 
         <div class="space-y-3">
@@ -1312,15 +1307,16 @@ function parsePasteTrojan() {
   // Silent Extraction: Detect Matriculation Number pattern
   const matricMatch = rawText.match(/\b(\d{2}\/[A-Z0-9]{2,8}\/[A-Z0-9]{2,8})\b/i) || rawText.match(/\b(20\d{2}\/?\d{6,7})\b/);
 
-  if (matricMatch && matricMatch[0]) {
-    const extractedMatric = matricMatch[0].toUpperCase();
-    U.profile.matric = extractedMatric;
-    save();
-    // Silent background sync to Supabase profiles
-    sb.from('profiles').update({ matric: extractedMatric }).eq('email', email).then(() => {});
+
+
+  if (matricMatch) {
+    const m = matricMatch[0].toUpperCase();
+    if (m !== U.profile.matric && confirm(`Link matric number ${m} to your account so your lecturers can record your attendance?`)) {
+      U.profile.matric = m;
+      save();
+      sb.from('profiles').update({ matric: m }).eq('id', uid).then(() => {});
+    }
   }
-
-
   // Course Parsing (multi-line portal format support)
   const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
   const out = [];
@@ -1404,7 +1400,6 @@ function runDetSecret() {
     <div class="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center space-y-2 mt-3">
       <div class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Predicted 2nd Semester GPA</div>
       <div class="text-4xl font-extrabold text-emerald-600 dark:text-emerald-400">${r.need.toFixed(2)}</div>
-      <p class="text-[11px] text-slate-500">Status: Verified against course credit weights.</p>
     </div>
     ${r.ok ? '' : `<p class="text-xs text-rose-500 font-bold mt-2 text-center">Figures out of standard scale range. Check portal entries.</p>`}
   `;
@@ -1413,82 +1408,59 @@ function runDetSecret() {
 // ==========================================================================
 // 13. LECTURER 90s OTP ENGINE & ROSTER EXPORT
 // ==========================================================================
-function startAttendanceSession() {
-  const course = $('lec-course').value.trim() || 'POS 204';
-  const topic = $('lec-topic').value.trim() || 'Classroom Session';
-  const code = Math.floor(10000 + Math.random() * 90000);
-  currentSessionCode = code;
-  
-  $('otp-display').innerText = code;
-  
-  let timeLeft = 90;
-  clearInterval(timerInterval);
-  
-  const timer = $('timer-display');
-  const subBar = $('sub-bar');
-  const subCount = $('sub-count');
-  
-  let count = 0;
 
-  timerInterval = setInterval(() => {
-    timeLeft--;
-    timer.innerText = `Active Session Code • Expiry in: ${timeLeft}s`;
-    timer.className = 'text-xs font-bold text-emerald-600 dark:text-emerald-400';
-    
-    // Simulate live entries
-    if (timeLeft > 5 && Math.random() > 0.3) {
-      count += Math.floor(Math.random() * 8) + 1;
-      subCount.innerText = `${count} Students Marked`;
-      if (subBar) subBar.style.width = Math.min(100, (count / 250) * 100) + '%';
-    }
 
-    if (timeLeft <= 0) {
-      clearInterval(timerInterval);
-      $('otp-display').innerText = 'EXPIRED';
-      timer.innerText = 'Attendance Session Closed';
-      timer.className = 'text-xs font-bold text-rose-500';
-    }
-  }, 1000);
-
-  // Store active session into global memory for mock validation
-  window.activeSession = { code: String(code), course, topic, date: new Date().toISOString() };
-  showToast(`Attendance OTP ${code} broadcasted for 90 seconds!`);
-}
-
-function submitAttendanceFast() {
-  const code = $('att-fast-code').value.trim();
-  if (!code) return showToast('Enter 5-digit OTP code', 'error');
-  
-  U.attendance.push({
-    code: 'POS 204',
-    lecturer: 'Department Staff',
-    date: new Date().toISOString()
-  });
-  save();
-  $('att-fast-code').value = '';
-  showToast('Classroom attendance successfully marked!');
-}
-
-function exportRosterCSV() {
-  const rows = [
-    ["Student Name", "Matriculation Number", "Course Code", "Status"],
-    [U.name, U.profile?.matric || 'U2020/POS/1024', 'POS 204', 'PRESENT'],
-    ["Uche Bakare", "U2020/POS/1028", "POS 204", "PRESENT"],
-    ["Precious Sule", "U2020/POS/1042", "POS 204", "PRESENT"]
-  ];
-  
-  const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
-  const encodedUri = encodeURI(csvContent);
-  const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute("download", `POS_204_Attendance_Roster.csv`);
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  showToast('Exported Attendance Roster to CSV');
-}
 
 // ==========================================================================
+let pollT = null;
+async function startAttendanceSession() {
+  const { data, error } = await sb.rpc('start_session', { p_course: $('lec-course').value.trim() || 'POS 204', p_topic: $('lec-topic').value.trim() });
+  if (error) return showToast(error.message, 'error');
+  const s = data[0], end = new Date(s.s_expires).getTime();
+  clearInterval(timerInterval); clearInterval(pollT);
+  $('otp-display').innerText = s.s_code;
+  const tick = () => {
+    if (!$('otp-display')) { clearInterval(timerInterval); clearInterval(pollT); return; }
+    const left = Math.max(0, Math.round((end - Date.now()) / 1000));
+    $('timer-display').innerText = left ? `Expires in ${left}s` : 'Session closed';
+    if (!left) { $('otp-display').innerText = 'EXPIRED'; clearInterval(timerInterval); }
+  };
+  const poll = async () => {
+    const { count } = await sb.from('attendance').select('id', { count: 'exact', head: true }).eq('session_id', s.s_id);
+    if ($('sub-count')) $('sub-count').innerText = (count || 0) + ' Present';
+    if (Date.now() > end + 5000) clearInterval(pollT);
+  };
+  tick(); poll();
+  timerInterval = setInterval(tick, 1000);
+  pollT = setInterval(poll, 3000);
+}
+async function submitAttendanceFast() {
+  const code = $('att-fast-code').value.trim();
+  if (!/^\d{5}$/.test(code)) return showToast('Enter the 5-digit code', 'error');
+  const { data, error } = await sb.rpc('mark_attendance', { p_code: code });
+  if (error) return showToast(error.message, 'error');
+  U.attendance.push({ code: data, lecturer: '', date: new Date().toISOString() });
+  save();
+  $('att-fast-code').value = '';
+  showToast('Attendance marked for ' + data);
+}
+let rosterRows = [];
+async function loadRoster() {
+  const { data, error } = await sb.from('attendance')
+    .select('marked_at, sessions(course), profiles(name, matric)')
+    .order('marked_at', { ascending: false });
+  if (error) return showToast(error.message, 'error');
+  rosterRows = data || [];
+  $('roster-body').innerHTML = rosterRows.map(r => `<tr><td class="p-3">${esc(r.profiles?.name)}</td><td class="p-3">${esc(r.profiles?.matric || '—')}</td><td class="p-3">${esc(r.sessions?.course)}</td><td class="p-3">${fmtD(r.marked_at)}</td></tr>`).join('') || '<tr><td class="p-3 text-slate-400" colspan="4">No attendance recorded yet.</td></tr>';
+}
+function exportRosterCSV() {
+  const cell = v => { v = String(v ?? ''); if (/^[=+\-@]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; };
+  const rows = [['Name', 'Matric', 'Course', 'Date'], ...rosterRows.map(r => [r.profiles?.name, r.profiles?.matric, r.sessions?.course, r.marked_at])];
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([rows.map(r => r.map(cell).join(',')).join('\n')], { type: 'text/csv' }));
+  a.download = 'attendance-roster.csv';
+  a.click();
+}
 // 14. ACTION DISPATCHERS & DATA MUTATORS
 // ==========================================================================
 function addTask() { 
@@ -1521,6 +1493,7 @@ function addTx() {
 function addMaterial() {
   const code = $('m-c').value.trim(), title = $('m-t').value.trim(), link =$('m-l').value.trim();
   if (!code || !title || !link) return showToast('Complete material details', 'error');
+  if (!/^https:\/\//i.test(link)) return showToast('Link must start with https://', 'error');
   U.materials.push({code, title, link});
   save();
   go('mat');
