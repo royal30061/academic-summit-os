@@ -1387,6 +1387,30 @@ if (matricMatch && matricMatch[0]) {
       }
     }
   }
+  // Course Parsing (multi-line portal format support)
+  const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+  const out = [];
+  const codeRe = /^((?:[A-Z]{2,4}-)?[A-Z]{2,4}\d{3}[A-Z]?)(?=\s|$)/;
+  const isUnit = v => /^[1-6]$/.test(v);
+  const isGrade = v => /^[A-F]$/.test(v);
+  const isScore = v => /^\d{1,3}$/.test(v) && +v <= 100;
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(codeRe);
+    if (!m) continue;
+    const code = m[1].replace(/^[A-Z]{2,4}-/, '').toUpperCase();
+    let unit = 3, score = '';
+    if (isUnit(lines[i + 1] || '')) {
+      unit = +lines[i + 1];
+      if (isScore(lines[i + 3] || '') && isGrade(lines[i + 4] || '')) score = lines[i + 3];
+    } else {
+      const nums = (lines[i].slice(m[0].length).match(/\b\d{1,3}\b/g) || []).map(Number);
+      const u = nums.find(n => n >= 1 && n <= 6);
+      if (u) unit = u;
+      const s = nums.slice(nums.indexOf(u) + 1).filter(n => n <= 100).pop();
+      if (s !== undefined) score = String(s);
+    }
+    out.push([code, unit, score]);
+  }
   if (!out.length) return showToast('No course patterns found in text', 'error');
   $('rows').innerHTML = ''; 
   rowN = 0; 
@@ -1619,6 +1643,35 @@ function exportData() {
 async function logout() { 
   await sb.auth.signOut(); 
   location.reload(); 
+}
+</script>
+<script>
+function authOnboard() {
+  $('app').classList.add('hidden');
+  $('auth').innerHTML = `
+    <div class="min-h-screen grid place-items-center p-5 bg-[#022c22]">
+      <div class="card p-8 w-full max-w-md space-y-4 dark:bg-slate-900 shadow-2xl">
+        <div class="text-center space-y-1">
+          <h1 class="text-2xl font-extrabold text-slate-900 dark:text-slate-100">Set Up Your Summit ⛰</h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Calibrate your academic profile.</p>
+        </div>
+        <div class="space-y-3">
+          <div><label class="lbl mb-1 block">University / Institution</label><input id="o-uni" class="inp" placeholder="e.g. University of Abuja"></div>
+          <div class="grid grid-cols-2 gap-2">
+            <div><label class="lbl mb-1 block">Level</label><select id="o-level" class="inp">${[100,200,300,400,500,600].map(l => `<option ${l == 100 ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+            <div><label class="lbl mb-1 block">Graduation Units</label><input id="o-units" type="number" class="inp" placeholder="e.g. 120"></div>
+          </div>
+          <div><label class="lbl mb-1 block">Department / Program</label><input id="o-prog" class="inp" placeholder="e.g. Political Science & IR"></div>
+          <button class="btn w-full py-3" onclick="doOnboard()">Initialize My Summit</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+function doOnboard() {
+  U.profile = { uni: $('o-uni').value.trim() || 'My University', level: $('o-level').value, program: $('o-prog').value.trim() || 'Not set', totalUnits: parseFloat($('o-units').value) || 120, matric: '' };
+  save();
+  start();
 }
 </script>
 </body>
