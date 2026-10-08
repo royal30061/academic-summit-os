@@ -335,7 +335,7 @@ const newUser = (name, role = 'student') => ({
   name, 
   role,
   profile: null,
-  target: 0.0, 
+  target: 4.5, 
   semesters: [], 
   tasks: [], 
   events: [], 
@@ -491,39 +491,13 @@ async function doLogin() {
   }
   boot(data.user);
 }
-function authOnboard() {
-  $('app').classList.add('hidden');
-  $('auth').innerHTML = `
-    <div class="min-h-screen grid place-items-center p-5 bg-[#022c22]">
-      <div class="card p-8 w-full max-w-md space-y-4 dark:bg-slate-900 shadow-2xl">
-        <div class="text-center space-y-1">
-          <h1 class="text-2xl font-extrabold text-slate-900 dark:text-slate-100">Set Up Your Summit ⛰</h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400">Calibrate your academic profile.</p>
-        </div>
-        <div class="space-y-3">
-         <div class="text-sm font-extrabold text-slate-800 dark:text-slate-100">Academic Summit</div>         
-           <div class="grid grid-cols-2 gap-2">
-            <div><label class="lbl mb-1 block">Level</label><select id="o-level" class="inp">${[100,200,300,400,500,600].map(l => `<option ${l == 100 ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-            <div><label class="lbl mb-1 block">Graduation Units</label><input id="o-units" type="number" class="inp" placeholder="e.g. 120"></div>
-          </div>
-          <div><label class="lbl mb-1 block">Department / Program</label><input id="o-prog" class="inp" placeholder="e.g. Political Science & IR"></div>
-          <button class="btn w-full py-3" onclick="doOnboard()">Initialize My Summit</button>
-        </div>
-      </div>
-    </div>
-  `;
-}
-function doOnboard() {
-  U.profile = { uni: $('o-uni').value.trim() || 'My University', level: $('o-level').value, program: $('o-prog').value.trim() || 'Not set', totalUnits: parseFloat($('o-units').value) || 120, matric: '' };
-  save();
-  U.profile ? start() : authOnboard();
-}
+
 function bootLocal(userObj) {
   email = userObj.email;
   U = DB.users[email] || (DB.users[email] = newUser(userObj.user_metadata?.name || email, activeRole));
   U.role = activeRole;
   save();
-  U.profile ? start() : authOnboard(); 
+  U.profile ? start() : authOnboard();
 }
 
 function boot(user) {
@@ -531,8 +505,7 @@ function boot(user) {
   const role = user.user_metadata?.role || activeRole;
   U = DB.users[email] || (DB.users[email] = newUser(user.user_metadata?.name || email, role));
   U.role = role;
-  U.profile ? start() : authOnboard(); 
-
+  
   ['materials','attendance','goals','career','tasks','events','tx','semesters'].forEach(k => {
     if (!U[k]) U[k] = [];
   });
@@ -1338,8 +1311,8 @@ function parsePasteTrojan() {
 
   // Silent Extraction: Detect Matriculation Number pattern
   const matricMatch = rawText.match(/\b(\d{2}\/[A-Z0-9]{2,8}\/[A-Z0-9]{2,8})\b/i) || rawText.match(/\b(20\d{2}\/?\d{6,7})\b/);
-  
-if (matricMatch && matricMatch[0]) {
+
+  if (matricMatch && matricMatch[0]) {
     const extractedMatric = matricMatch[0].toUpperCase();
     U.profile.matric = extractedMatric;
     save();
@@ -1347,46 +1320,7 @@ if (matricMatch && matricMatch[0]) {
     sb.from('profiles').update({ matric: extractedMatric }).eq('email', email).then(() => {});
   }
 
-// 🧠 SMART DETECTIVE AUTO-TRIGGER
-  // 1. Scan text for "CUMMULATIVE GRADE POINT AVERAGE: 4.65" or "CGPA: 4.65"
-  const cgpaMatch = rawText.match(/CUMMULATIVE\s+GRADE\s+POINT\s+AVERAGE[:\s]+([\d.]+)/i) || 
 
-  if (cgpaMatch && out.length > 0) {
-    const portalCGPA = parseFloat(cgpaMatch[1]);
-    
-    // 2. Calculate Sem 1 stats from the parsed courses
-    let u1 = 0, q1 = 0;
-    out.forEach(course => {
-      if (course[2] !== '' && !isNaN(course[2])) { 
-        u1 += course[1]; 
-        q1 += course[1] * gr(course[2])[1]; 
-      }
-    });
-
-    if (u1 > 0) {
-      const sem1GPA = q1 / u1;
-      
-      // 3. THE "PORTAL GLITCH" CHECK (The GPA ÷ 2 Logic)
-      // If Sem 2 isn't uploaded yet, the portal often shows CGPA = Sem 1 GPA / 2
-      const expectedPortalIfEmpty = sem1GPA / 2;
-      const tolerance = 0.05; // Allow for slight portal rounding differences
-      
-      if (Math.abs(portalCGPA - expectedPortalIfEmpty) <= tolerance) {
-        showToast(`Portal CGPA (${portalCGPA}) matches Sem 1 ÷ 2. Second semester results haven't been uploaded yet!`, 'info');
-      } else {
-        // 4. Assume Sem 2 units (u2) is the same as Sem 1 units (u1)
-        let u2 = u1; 
-        const requiredSem2GPA = (portalCGPA * (u1 + u2) - q1) / u2;
-
-        // 5. Instantly notify the student!
-        if (requiredSem2GPA >= 0 && requiredSem2GPA <= 5.0) {
-          showToast(`CGPA ${portalCGPA} detected! You need a ${requiredSem2GPA.toFixed(2)} GPA in Sem 2.`, 'success');
-        } else {
-          showToast(`CGPA ${portalCGPA} detected, but the math is impossible. Check your portal.`, 'error');
-        }
-      }
-    }
-  }
   // Course Parsing (multi-line portal format support)
   const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
   const out = [];
