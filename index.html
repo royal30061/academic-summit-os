@@ -956,7 +956,7 @@ const V = {
               <div class="flex items-center justify-between text-xs p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
                 <div>
                   <b class="text-slate-800 dark:text-slate-100 block text-sm">${esc(a.code)}</b>
-                  <span class="text-slate-400">Lecturer: ${esc(a.lecturer \vert{}\vert{} 'Department Staff')} •${fmtD(a.date)}</span>
+                  <span class="text-slate-400">Lecturer: ${esc(a.lecturer || 'Department Staff')} •${fmtD(a.date)}</span>
                 </div>
                 <span class="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 font-extrabold text-[10px]">PRESENT</span>
               </div>
@@ -1382,7 +1382,7 @@ function delSem(id) {
 // SECRET DETECTIVE: Algebraic formulas completely hidden
 function runDetSecret() {
   const g1 = parseFloat($('d1').value), cg = parseFloat($('dc').value);
-  const u1 = parseFloat($('du1').value) \vert{}\vert{} 20, u2 = parseFloat($('du2').value) || 20;
+  const u1 = parseFloat($('du1').value) || 20, u2 = parseFloat($('du2').value) || 20;
   if (isNaN(g1) || isNaN(cg)) return showToast('Please enter valid GPA numbers', 'error');
   
   const r = detective(g1, cg, u1, u2);
