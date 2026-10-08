@@ -1372,6 +1372,7 @@ function parsePasteTrojan() {
     const matricMatch = rawText.match(/\b(\d{2}\/[A-Z0-9]{2,8}\/[A-Z0-9]{2,8})\b/i) || rawText.match(/\b(20\d{2}\/?\d{6,7})\b/);
     if (matricMatch) {
       const m = matricMatch[0].toUpperCase();
+      if (m !== U.profile.matric) askMatric(m);
     }
   } catch (e) {
     showToast('Parse error: ' + e.message, 'error');
