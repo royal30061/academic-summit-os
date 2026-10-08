@@ -1,1613 +1,929 @@
 <!DOCTYPE html>
-<html lang="en" class="light">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Academic Summit - Campus Operating System</title>
-<!-- Tailwind CSS CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
-<script>
-  tailwind.config = {
-    darkMode: 'class',
-    theme: {
-      extend: {
-        colors: {
-          brand: {
-            50: '#ecfdf5',
-            100: '#d1fae5',
-            200: '#a7f3d0',
-            300: '#6ee7b7',
-            400: '#34d399',
-            500: '#10b981',
-            600: '#059669',
-            700: '#047857',
-            800: '#065f46',
-            900: '#064e3b',
-            950: '#022c22',
-          }
-        }
-      }
-    }
-  }
-</script>
-<!-- Supabase Client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- Google Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-
 <style>
-/* ==========================================================================
-   1. DESIGN SYSTEM & DYNAMIC CSS VARIABLES
-   ========================================================================== */
-:root {
-  --bg-app: #f2fdf7;
-  --bg-card: #ffffff;
-  --bg-card-subtle: #f8fafc;
-  --border-card: #e2e8f0;
-  --border-accent: #a7f3d0;
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --shadow-card: 0 10px 30px -12px rgba(16, 185, 129, 0.12);
-  --shadow-hover: 0 15px 35px -10px rgba(16, 185, 129, 0.2);
-}
-
-.dark {
-  --bg-app: #020617;
-  --bg-card: #0f172a;
-  --bg-card-subtle: #1e293b;
-  --border-card: #1e293b;
-  --border-accent: #064e3b;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --shadow-card: 0 10px 30px -12px rgba(0, 0, 0, 0.5);
-  --shadow-hover: 0 15px 35px -10px rgba(0, 0, 0, 0.7);
-}
-
-body {
-  background-color: var(--bg-app);
-  color: var(--text-main);
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  transition: background-color 0.25s ease, color 0.25s ease;
-  min-height: 100vh;
-}
-
-/* Card Surface Styling */
-.card {
-  background: var(--bg-card);
-  border-radius: 1.25rem;
-  box-shadow: var(--shadow-card);
-  border: 1px solid var(--border-card);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-hover);
-}
-
-/* Gradients */
-.grad {
-  background: linear-gradient(135deg, #059669, #10b981);
-  color: #ffffff;
-}
-
-.grad-sidebar {
-  background: #022c22;
-}
-.dark .grad-sidebar {
-  background: #01140e;
-}
-
-/* Input Fields */
-.inp {
-  width: 100%;
-  padding: .75rem 1rem;
-  border-radius: .9rem;
-  border: 1px solid var(--border-card);
-  font-size: .875rem;
-  background: var(--bg-card);
-  color: var(--text-main);
-  transition: all 0.2s ease;
-}
-
-.inp:focus {
-  outline: none;
-  border-color: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
-}
-
-/* Buttons */
-.btn {
-  background: linear-gradient(135deg, #059669, #10b981);
-  color: #ffffff;
-  font-weight: 700;
-  font-size: .85rem;
-  padding: .75rem 1.25rem;
-  border-radius: .9rem;
-  transition: transform 0.15s ease, opacity 0.2s ease, box-shadow 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  cursor: pointer;
-}
-.btn:hover { opacity: 0.95; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25); }
-.btn:active { transform: scale(0.97); }
-
-.btn2 {
-  background: #ecfdf5;
-  color: #047857;
-  font-weight: 700;
-  font-size: .85rem;
-  padding: .65rem 1.1rem;
-  border-radius: .9rem;
-  transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  cursor: pointer;
-}
-.dark .btn2 {
-  background: #064e3b;
-  color: #a7f3d0;
-}
-.btn2:hover { filter: brightness(0.96); }
-.btn2:active { transform: scale(0.97); }
-
-.btn-danger {
-  background: #fef2f2;
-  color: #dc2626;
-  font-weight: 700;
-  font-size: .85rem;
-  padding: .65rem 1.1rem;
-  border-radius: .9rem;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-.dark .btn-danger {
-  background: #450a0a;
-  color: #fca5a5;
-}
-
-.lbl {
-  font-size: .65rem;
-  font-weight: 800;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.nav-on {
-  background: linear-gradient(135deg, #059669, #10b981) !important;
-  color: #ffffff !important;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-/* Scrollbar Styling */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-.dark ::-webkit-scrollbar-thumb { background: #334155; }
-
-/* Donut Visuals */
-.donut { border-radius: 50%; display: grid; place-items: center; transition: background 0.3s ease; }
-.donut > div { background: var(--bg-card); border-radius: 50%; display: grid; place-items: center; transition: background 0.3s ease; }
-
-/* Toasts */
-#toast-container {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  pointer-events: none;
-}
-.toast {
-  pointer-events: auto;
-  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-@keyframes slideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-
-@media print {
-  aside, nav, .np, header, #bnav, #toast-container { display: none !important; }
-  body { background: white !important; color: black !important; }
-  .card { box-shadow: none !important; border: 1px solid #ccc !important; }
-}
+:root{--bg:#f4f4fb;--card:#fff;--sub:#f8fafc;--bd:#e5e7f0;--tx:#0f172a;--mut:#64748b;--sh:0 10px 30px -12px rgba(109,40,217,.15)}
+.dark{--bg:#070b1f;--card:#0f172a;--sub:#1e293b;--bd:#1e293b;--tx:#f8fafc;--mut:#94a3b8;--sh:0 10px 30px -12px rgba(0,0,0,.5)}
+body{background:var(--bg);color:var(--tx);font-family:'Plus Jakarta Sans',system-ui,sans-serif;min-height:100vh}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:1.25rem;box-shadow:var(--sh)}
+.grad{background:linear-gradient(135deg,#059669,#6366f1);color:#fff}
+.inp{width:100%;padding:.7rem .9rem;border-radius:.9rem;border:1px solid var(--bd);font-size:.85rem;background:var(--card);color:var(--tx)}
+.inp:focus{outline:none;border-color:#059669;box-shadow:0 0 0 3px rgba(124,58,237,.15)}
+.btn{background:linear-gradient(135deg,#059669,#6366f1);color:#fff;font-weight:700;font-size:.82rem;padding:.7rem 1.1rem;border-radius:.9rem;display:inline-flex;align-items:center;justify-content:center;gap:.45rem;cursor:pointer}
+.btn2{background:rgba(124,58,237,.1);color:#059669;font-weight:700;font-size:.82rem;padding:.6rem 1rem;border-radius:.9rem;display:inline-flex;align-items:center;justify-content:center;gap:.45rem;cursor:pointer}
+.dark .btn2{color:#c4b5fd}
+.lbl{font-size:.65rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.nav-on{background:linear-gradient(135deg,#059669,#6366f1)!important;color:#fff!important}
+.donut{border-radius:50%;display:grid;place-items:center}
+.donut>div{background:var(--card);border-radius:50%;display:grid;place-items:center}
+#toast-container{position:fixed;top:1rem;right:1rem;z-index:9999;display:flex;flex-direction:column;gap:.5rem;pointer-events:none}
+.toast{pointer-events:auto;animation:slideIn .3s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:#8b8bb0;border-radius:3px}
+@media print{aside,nav,header,.np,#toast-container{display:none!important}body{background:#fff!important;color:#000!important}.card{box-shadow:none!important;border:1px solid #ccc!important}}
 </style>
 </head>
 <body class="antialiased">
-
-<!-- Toast Notification Container -->
 <div id="toast-container"></div>
-
-<!-- Authentication & Role Switcher Layer -->
 <div id="auth"></div>
-
-<!-- Main Application Shell -->
 <div id="app" class="hidden">
-  <div class="lg:flex">
-    <!-- Desktop Sidebar -->
-    <aside id="side" class="hidden lg:flex flex-col w-64 shrink-0 min-h-screen sticky top-0 p-5 text-white grad-sidebar border-r border-emerald-900/40 z-30">
-      <!-- Rendered dynamically -->
-    </aside>
-    
-    <!-- Viewport Container -->
-    <div class="flex-1 min-w-0 flex flex-col min-h-screen">
-      <header id="top" class="flex items-center justify-between px-4 md:px-6 py-4 border-b border-slate-200/60 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md sticky top-0 z-20" style="padding-top:max(1rem,env(safe-area-inset-top))">
-        <!-- Rendered dynamically -->
-      </header>
-      <main id="main" class="flex-1 p-4 md:p-6 pb-28 lg:pb-8 max-w-6xl mx-auto w-full">
-        <!-- Active View Screen -->
-      </main>
-    </div>
-  </div>
-
-  <!-- Mobile Bottom Navigation Bar -->
-  <nav id="bnav" class="lg:hidden fixed bottom-0 inset-x-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 flex items-end justify-around px-1 z-40 shadow-lg" style="padding-bottom:env(safe-area-inset-bottom,6px)">
-    <!-- Rendered dynamically -->
-  </nav>
+<div class="lg:flex">
+<aside id="side" class="hidden lg:flex flex-col w-64 shrink-0 min-h-screen sticky top-0 p-5 text-white z-30" style="background:#0b1030"></aside>
+<div class="flex-1 min-w-0 flex flex-col min-h-screen">
+<header id="top" class="flex items-center justify-between px-4 md:px-6 py-4 border-b border-slate-200/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-900/50 backdrop-blur-md sticky top-0 z-20"></header>
+<main id="main" class="flex-1 p-4 md:p-6 pb-28 lg:pb-8 max-w-6xl mx-auto w-full"></main>
 </div>
-
-<!-- Modal & Sheet Container -->
+</div>
+<nav id="bnav" class="lg:hidden fixed bottom-0 inset-x-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 flex items-end justify-around px-1 z-40" style="padding-bottom:env(safe-area-inset-bottom,6px)"></nav>
+</div>
 <div id="sheet"></div>
-
 <script>
-// ==========================================================================
-// 2. CONFIGURATION & SUPABASE SETUP
-// ==========================================================================
-// Note: Replace with your live Supabase project credentials in production
-const SB_URL = 'https://okajzlkeaydskdvogdaw.supabase.co';
-const SB_KEY = 'sb_publishable_xqUBfEtWElgUkKAz65bueg_66AkIHtr';
-const sb = supabase.createClient(SB_URL, SB_KEY);
-
-// ==========================================================================
-// 3. CORE UTILITY HELPERS
-// ==========================================================================
-const $ = id => document.getElementById(id);
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const naira = n => '₦' + Math.round(n || 0).toLocaleString();
-const days = d => Math.ceil((new Date(d) - new Date().setHours(0,0,0,0)) / 864e5);
-const fmtD = d => new Date(d).toLocaleDateString('en-GB', {day:'numeric', month:'short'});
-
-function showToast(msg, type = 'success') {
-  const container = $('toast-container');
-  const toast = document.createElement('div');
-  const bg = type === 'success' ? 'bg-emerald-600 text-white' : type === 'error' ? 'bg-rose-600 text-white' : 'bg-slate-800 text-white';
-  toast.className = `toast px-4 py-3 rounded-xl shadow-lg font-semibold text-xs flex items-center gap-2 ${bg}`;
-  toast.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${esc(msg)}</span>`;
-  container.appendChild(toast);
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateY(-10px)';
-    toast.style.transition = 'all 0.2s ease';
-    setTimeout(() => toast.remove(), 200);
-  }, 3000);
+// CONFIG — put your real keys here
+const SB_URL='https://okajzlkeaydskdvogdaw.supabase.co';
+const SB_KEY='sb_publishable_xqUBfEtWElgUkKAz65bueg_66AkIHtr';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+const LEC_LINK=location.hash==='#lecturer';
+// helpers
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const naira=n=>'₦'+Math.round(n||0).toLocaleString();
+const days=d=>Math.ceil((new Date(d)-new Date().setHours(0,0,0,0))/864e5);
+const fmtD=d=>new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+const iso=d=>d.toISOString().slice(0,10);
+const leftTxt=dt=>{if(!dt)return'';const ms=new Date(dt)-Date.now();if(ms<0)return'overdue';const m=Math.floor(ms/60000),h=Math.floor(m/60),d=Math.floor(h/24);return d?d+'d '+(h%24)+'h':h?h+'h '+(m%60)+'m':m+'m';};
+function showToast(msg,type='success'){
+  const t=document.createElement('div');
+  const bg=type==='success'?'bg-violet-600 text-white':type==='error'?'bg-rose-600 text-white':'bg-slate-800 text-white';
+  t.className='toast px-4 py-3 rounded-xl shadow-lg font-semibold text-xs '+bg;
+  t.innerHTML=(type==='error'?'⚠️ ':'✅ ')+esc(msg);
+  $('toast-container').appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),200);},3000);
 }
-
-// ==========================================================================
-// 4. THEME CONTROLLER
-// ==========================================================================
-let isDark = localStorage.getItem('as_theme') === 'dark';
-
-function applyTheme() {
-  if (isDark) {
-    document.documentElement.classList.add('dark');
-    document.documentElement.classList.remove('light');
-  } else {
-    document.documentElement.classList.remove('dark');
-    document.documentElement.classList.add('light');
-  }
-}
-
-function toggleTheme() {
-  isDark = !isDark;
-  localStorage.setItem('as_theme', isDark ? 'dark' : 'light');
-  applyTheme();
-  if (U) start(); 
-}
+// SVG ICONS (no emojis)
+const IC={
+home:'<path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-7h-6v7H4a1 1 0 01-1-1z"/>',
+acad:'<path d="M12 3l10 5-10 5L2 8z"/><path d="M6 10v5c0 2 3 3 6 3s6-1 6-3v-5"/>',
+plan:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/>',
+fin:'<rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
+mat:'<path d="M4 19V5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/><path d="M8 7h7"/>',
+att:'<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2h11"/>',
+goal:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>',
+car:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/>',
+prof:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
+sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4 4l2 2m12 12l2 2M20 4l-2 2M6 18l-2 2"/>',
+moon:'<path d="M21 13A9 9 0 1111 3a7 7 0 0010 10"/>',
+l:'<path d="M15 6l-6 6 6 6"/>',r:'<path d="M9 6l6 6-6 6"/>',
+up:'<path d="M12 16V4m0 0l-4 4m4-4l4 4"/><path d="M4 20h16"/>',
+x:'<path d="M6 6l12 12M18 6L6 18"/>',
+calc:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6M9 12h.01M12 12h.01M15 12h.01M9 16h.01M12 16h.01M15 16h.01"/>',
+search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/>',
+clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
+print:'<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/>'
+};
+const ic=(n,c='w-4 h-4')=>'<svg class="'+c+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">'+IC[n]+'</svg>';
+// theme
+let isDark=localStorage.getItem('as_theme')==='dark';
+function applyTheme(){document.documentElement.classList.toggle('dark',isDark);}
+function toggleTheme(){isDark=!isDark;localStorage.setItem('as_theme',isDark?'dark':'light');applyTheme();if(U)start();}
 applyTheme();
-
-// ==========================================================================
-// 5. DATA ENGINE & LOCAL BACKING STORE
-// ==========================================================================
-let DB = { users: {} };
-try { 
-  DB = JSON.parse(localStorage.getItem('as_v8')) || DB; 
-} catch (e) { 
-  DB = { users: {} }; 
-}
-
-const save = () => { 
-  try { 
-    localStorage.setItem('as_v8', JSON.stringify(DB)); 
-  } catch (e) {
-    showToast('Failed to save state to local storage', 'error');
-  } 
-};
-
-const newUser = (name, role = 'student') => ({
-  name, 
-  role,
-  profile: null,
-  target: 4.5, 
-  semesters: [], 
-  tasks: [], 
-  events: [], 
-  tx: [], 
-  fees: { total: 0, paid: 0, due: '' },
-  materials: [],
-  attendance: [],
-  goals: [],
-  career: []
-});
-
-const LEC_LINK = location.hash === '#lecturer';
-let U = null, email = '', view = 'home', aTab = 'calc', editing = null, activeRole = 'student';
-let timerInterval = null, currentSessionCode = null;
-
-// ==========================================================================
-// 6. ACADEMIC ENGINE (5.0 SCALE)
-// ==========================================================================
-const gr = s => { 
-  s = parseFloat(s); 
-  if (isNaN(s)) return ['-', 0]; 
-  return s>=70?['A',5]:s>=60?['B',4]:s>=50?['C',3]:s>=45?['D',2]:s>=40?['E',1]:['F',0]; 
-};
-
-const semS = s => { 
-  let u = 0, q = 0; 
-  if (!s || !s.courses) return { u: 0, q: 0, g: 0 };
-  s.courses.forEach(c => { 
-    u += +c.unit; 
-    q += c.unit * gr(c.score)[1]; 
-  }); 
-  return { u, q, g: u ? q/u : 0 }; 
-};
-
-const cum = () => { 
-  let u = 0, q = 0; 
-  if (!U || !U.semesters) return { u: 0, q: 0, g: 0 };
-  U.semesters.forEach(s => { 
-    const x = semS(s); 
-    u += x.u; 
-    q += x.q; 
-  }); 
-  return { u, q, g: u ? q/u : 0 }; 
-};
-
-// OBFUSCATED DETECTIVE LOGIC (Secret Engine)
-const detective = (g1, cg, u1, u2) => { 
-  const need = (cg * (u1 + u2) - g1 * u1) / u2; 
-  return { need, ok: need >= 0 && need <= 5 }; 
-};
-
-const requiredAvg = () => { 
-  const c = cum(), tot = U?.profile?.totalUnits || 120, R = tot - c.u; 
-  return R > 0 ? (U.target * tot - c.q) / R : null; 
-};
-
-// ==========================================================================
-// 7. AUTHENTICATION & ROLE SWITCHER
-// ==========================================================================
-function authUI(mode, msg = '') {
-  const f = {
-    login: `
-      <div class="space-y-3">
-        <div>
-          <label class="lbl mb-1 block">Account Name / Email</label>
-          <input id="a-email" type="email" class="inp" placeholder="user@uni.edu.ng">
-        </div>
-        <div>
-          <label class="lbl mb-1 block">Password</label>
-          <input id="a-pass" type="password" class="inp" placeholder="••••••••">
-        </div>
-        <button class="btn w-full py-3 mt-2" onclick="doLogin()">Enter Campus Portal</button>
-        <button class="text-xs text-slate-500 dark:text-slate-400 w-full hover:underline pt-2" onclick="authUI('signup')">New here? Create account</button>
-      </div>
-    `,
-    signup: `
-      <div class="space-y-3">
-        <div>
-          <label class="lbl mb-1 block">Full Name</label>
-          <input id="a-name" class="inp" placeholder="e.g. Miracle Moses">
-        </div>
-        <div>
-          <label class="lbl mb-1 block">Email Address</label>
-          <input id="a-email" type="email" class="inp" placeholder="user@uni.edu.ng">
-        </div>
-        <div>
-          <label class="lbl mb-1 block">Password</label>
-          <input id="a-pass" type="password" class="inp" placeholder="At least 6 characters">
-        </div>
-        <button class="btn w-full py-3 mt-2" onclick="doSignup()">Create Account</button>
-        <button class="text-xs text-slate-500 dark:text-slate-400 w-full hover:underline pt-2" onclick="authUI('login')">Have an account? Log in</button>
-      </div>
-    `
+// state
+let DB={users:{}};
+try{DB=JSON.parse(localStorage.getItem('as_v8'))||DB;}catch(e){}
+const save=()=>{try{localStorage.setItem('as_v8',JSON.stringify(DB));}catch(e){showToast('Failed to save','error');}};
+const newUser=(name,role='student')=>({name,role,profile:null,target:4.5,semesters:[],tasks:[],events:[],tx:[],fees:{total:0,paid:0,due:''},materials:[],attendance:[],goals:[],career:[]});
+let U=null,email='',uid='',view='home',aTab='calc',editing=null;
+let timerInterval=null,pollT=null,rosterRows=[];
+let calY=new Date().getFullYear(),calM=new Date().getMonth(),selDay=iso(new Date());
+// academic engine
+const gr=s=>{s=parseFloat(s);if(isNaN(s))return['-',0];return s>=70?['A',5]:s>=60?['B',4]:s>=50?['C',3]:s>=45?['D',2]:s>=40?['E',1]:['F',0];};
+const semS=s=>{let u=0,q=0;if(!s||!s.courses)return{u:0,q:0,g:0};s.courses.forEach(c=>{u+=+c.unit;q+=c.unit*gr(c.score)[1];});return{u,q,g:u?q/u:0};};
+const cum=()=>{let u=0,q=0;if(!U||!U.semesters)return{u:0,q:0,g:0};U.semesters.forEach(s=>{const x=semS(s);u+=x.u;q+=x.q;});return{u,q,g:u?q/u:0};};
+const detective=(g1,cg,u1,u2)=>{const need=(cg*(u1+u2)-g1*u1)/u2;return{need,ok:need>=0&&need<=5};};
+const requiredAvg=()=>{const c=cum(),tot=U?.profile?.totalUnits||120,R=tot-c.u;return R>0?(U.target*tot-c.q)/R:null;};
+// auth
+function authUI(mode,msg=''){
+  const f={
+    login:'<div class="space-y-3"><div><label class="lbl mb-1 block">Email</label><input id="a-email" type="email" class="inp" placeholder="user@uni.edu.ng"></div><div><label class="lbl mb-1 block">Password</label><input id="a-pass" type="password" class="inp" placeholder="••••••••"></div><button class="btn w-full py-3 mt-2" onclick="doLogin()">Enter Campus Portal</button><button id="to-signup" class="text-xs text-slate-500 w-full hover:underline pt-2" onclick="authUI(\'signup\')">New here? Create account</button></div>',
+    signup:'<div class="space-y-3"><div><label class="lbl mb-1 block">Full Name</label><input id="a-name" class="inp" placeholder="e.g. Miracle Moses"></div><div><label class="lbl mb-1 block">Email</label><input id="a-email" type="email" class="inp"></div><div><label class="lbl mb-1 block">Password</label><input id="a-pass" type="password" class="inp" placeholder="6+ characters"></div><button class="btn w-full py-3 mt-2" onclick="doSignup()">Create Account</button><button class="text-xs text-slate-500 w-full hover:underline pt-2" onclick="authUI(\'login\')">Have an account? Log in</button></div>',
   }[mode];
-
-  $('auth').innerHTML = `
-    <div class="min-h-screen grid place-items-center p-5 bg-[#022c22] dark:bg-[#01140e]">
-      <div class="card p-8 w-full max-w-md space-y-6 border-emerald-800/40 dark:bg-slate-900 shadow-2xl">
-        <div class="text-center space-y-2">
-          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold uppercase tracking-wider">
-            ⛰ Academic Summit
-          </div>
-          <h1 class="text-2xl font-extrabold text-slate-900 dark:text-slate-100">
-            ${activeRole === 'student' ? 'Student Operating System' : 'Lecturer Control Console'}
-          </h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400">
-            Unified campus platform for attendance, grading, and course management.
-          </p>
-        </div>
-        ${f}
-        ${msg ? `<p class="text-xs text-rose-500 text-center font-semibold bg-rose-500/10 py-2 rounded-lg">${esc(msg)}</p>` : ''}
-      </div>
-    </div>
-  `;
+  $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-5" style="background:#0b1030"><div class="card p-8 w-full max-w-md space-y-5 dark:bg-slate-900 shadow-2xl"><div class="text-center space-y-2"><div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-violet-500/10 text-violet-400 text-xs font-bold uppercase tracking-wider">⛰ Academic Summit</div><h1 class="text-2xl font-extrabold">'+(LEC_LINK?'Lecturer Console':'Student Operating System')+'</h1></div>'+f+(msg?'<p class="text-xs text-rose-500 text-center font-semibold bg-rose-500/10 py-2 rounded-lg">'+esc(msg)+'</p>':'')+'</div></div>';
   $('app').classList.add('hidden');
-  if (LEC_LINK) {
-    document.querySelectorAll('#auth button[onclick="authUI(\'signup\')"]').forEach(b => b.style.display = 'none');
-  }
+  if(LEC_LINK){document.querySelectorAll('#auth button[onclick="authUI(\'signup\')"]').forEach(b=>b.style.display='none');}
 }
-
-function setAuthRole(r) {
-  activeRole = r;
-  $('btn-role-student').className = r === 'student' ? 'flex-1 py-2 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow' : 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-500';
-  $('btn-role-lecturer').className = r === 'lecturer' ? 'flex-1 py-2 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow' : 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-500';
-}
-
-async function doSignup() {
-  const name = $('a-name').value.trim(), em = $('a-email').value.trim().toLowerCase(), pw = $('a-pass').value;
-  if (!name || !em || pw.length < 6) return authUI('signup', 'Complete all fields (password 6+ characters).');
-  const {data, error} = await sb.auth.signUp({email: em, password: pw, options: {data: {name}}});
-  if (error) {
-    // Local fallback if Supabase URL is default configuration
-    bootLocal({email: em, user_metadata: {name, role: activeRole}});
-    return;
-  }
-  if (!data.session) return authUI('login', 'Check your email to confirm your account, then log in.');
+async function doSignup(){
+  const name=$('a-name').value.trim(),em=$('a-email').value.trim().toLowerCase(),pw=$('a-pass').value;
+  if(!name||!em||pw.length<6)return authUI('signup','Complete all fields (password 6+ characters).');
+  const{data,error}=await sb.auth.signUp({email:em,password:pw,options:{data:{name}}});
+  if(error)return authUI('signup',error.message);
+  if(!data.session)return authUI('login','Check your email to confirm, then log in.');
   boot(data.user);
 }
-
-async function doLogin() {
-  const em = $('a-email').value.trim().toLowerCase(), pw = $('a-pass').value;
-  if (!em || !pw) return authUI('login', 'Please enter your email and password.');
-  const {data, error} = await sb.auth.signInWithPassword({email: em, password: pw});
-  if (error) {
-    // Local fallback for quick offline execution
-    bootLocal({email: em, user_metadata: {name: em.split('@')[0], role: activeRole}});
-    return;
-  }
+async function doLogin(){
+  const em=$('a-email').value.trim().toLowerCase(),pw=$('a-pass').value;
+  if(!em||!pw)return authUI('login','Enter email and password.');
+  const{data,error}=await sb.auth.signInWithPassword({email:em,password:pw});
+  if(error)return authUI('login',error.message);
+  sb.from('profiles').update({last_seen:new Date().toISOString()}).eq('id',data.user.id).then(()=>{});
   boot(data.user);
 }
-
-function bootLocal(userObj) {
-  email = userObj.email;
-  U = DB.users[email] || (DB.users[email] = newUser(userObj.user_metadata?.name || email, activeRole));
-  U.role = activeRole;
-  save();
-  U.profile ? start() : authOnboard();
+async function boot(user){
+  uid=user.id;email=user.email;
+  const{data:p}=await sb.from('profiles').select('role').eq('id',uid).maybeSingle();
+  const role=p?.role||'student';
+  if(LEC_LINK&&role!=='lecturer'){await sb.auth.signOut();return authUI('login','This link is reserved for lecturers. Use the main link for student login.');}
+  U=DB.users[email]||(DB.users[email]=newUser(user.user_metadata?.name||email,role));
+  U.role=role;
+  ['materials','attendance','goals','career','tasks','events','tx','semesters'].forEach(k=>{if(!U[k])U[k]=[];});
+  if(!U.fees)U.fees={total:0,paid:0,due:''};
+  save();start();
 }
-
-
-let uid = '';
-async function boot(user) {
-  uid = user.id;
-  email = user.email;
-  const { data: p } = await sb.from('profiles').select('role').eq('id', uid).maybeSingle();
-  const role = p?.role || 'student';
-  if (LEC_LINK && role !== 'lecturer') {
-    await sb.auth.signOut();
-    return authUI('login', 'This link is reserved for lecturers. Use the main link for student login.');
-  }
-  U = DB.users[email] || (DB.users[email] = newUser(user.user_metadata?.name || email, role));
-  U.role = role;
-  ['materials','attendance','goals','career','tasks','events','tx','semesters'].forEach(k => { if (!U[k]) U[k] = []; });
-  if (!U.fees) U.fees = { total: 0, paid: 0, due: '' };
-  save();
-  start();
+function authOnboard(){
+  $('app').classList.add('hidden');
+  $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-5" style="background:#0b1030"><div class="card p-8 w-full max-w-md space-y-4 dark:bg-slate-900"><div class="text-center"><h1 class="text-2xl font-extrabold">Set Up Your Summit ⛰</h1></div><div class="space-y-3"><div><label class="lbl mb-1 block">University</label><input id="o-uni" class="inp" placeholder="e.g. University of Abuja"></div><div class="grid grid-cols-2 gap-2"><div><label class="lbl mb-1 block">Level</label><select id="o-level" class="inp">'+[100,200,300,400,500,600].map(l=>'<option '+((l==100)?'selected':'')+'>'+l+'</option>').join('')+'</select></div><div><label class="lbl mb-1 block">Grad Units</label><input id="o-units" type="number" class="inp" placeholder="120"></div></div><div><label class="lbl mb-1 block">Department</label><input id="o-prog" class="inp" placeholder="e.g. Political Science & IR"></div><button class="btn w-full py-3" onclick="doOnboard()">Initialize My Summit</button></div></div></div>';
 }
-sb.auth.getSession().then(({data}) => data.session ? boot(data.session.user) : authUI('login'));
-
-// ==========================================================================
-// 8. NAVIGATION STRUCTURE & ROUTING ENGINE
-// ==========================================================================
-const STUDENT_NAV = [
-  ['home', 'Dashboard', '🏠'],
-  ['acad', 'Academics', '🎓'],
-  ['plan', 'Planner', '🗓'],
-  ['fin', 'Finance', '💳'],
-  ['mat', 'Materials', '📚'],
-  ['att', 'Attendance', '☑️'],
-  ['goal', 'Goals', '🎯'],
-  ['car', 'Career & Portfolio', '💼'],
-  ['prof', 'Profile & Settings', '👤']
-];
-
-const LECTURER_NAV = [
-  ['home', 'Attendance Hub', '⚡'],
-  ['roster', 'Student Rosters', '📋'],
-  ['prof', 'Account Settings', '👤']
-];
-
-function start() {
-  $('auth').innerHTML = ''; 
-  $('app').classList.remove('hidden');
-
-  const navItems = U.role === 'lecturer' ? LECTURER_NAV : STUDENT_NAV;
-
-  // Render Sidebar
-  $('side').innerHTML = `
-    <div class="flex items-center gap-3 mb-8 px-2">
-      <div class="w-10 h-10 rounded-2xl grad grid place-items-center font-extrabold text-xl shadow-lg">⛰</div>
-      <div>
-        <div class="font-extrabold text-lg leading-tight">Academic</div>
-        <div class="text-xs text-emerald-400 font-bold uppercase tracking-wider">${U.role === 'lecturer' ? 'Lecturer Console' : 'Summit v8.0'}</div>
-      </div>
-    </div>
-
-    <div class="space-y-1 flex-1 overflow-y-auto pr-1">
-      ${navItems.map(n => `
-        <button data-n="${n[0]}" onclick="go('${n[0]}')" class="nv w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-100/70 hover:bg-emerald-900/40 hover:text-white transition-all flex items-center gap-3">
-          <span class="text-base">${n[2]}</span>
-          <span>${n[1]}</span>
-        </button>
-      `).join('')}
-    </div>
-
-    <div class="mt-auto pt-4 border-t border-emerald-900/60">
-      <div class="rounded-2xl p-4 text-xs text-emerald-200/80 bg-emerald-900/40 border border-emerald-800/40 space-y-1">
-        <b class="text-white block text-sm">${U.role === 'lecturer' ? 'Active Classroom Session' : 'Target CGPA: ' + U.target.toFixed(2)}</b>
-        <p class="text-[11px] text-emerald-300/80">${U.role === 'lecturer' ? 'Generate 90-second OTPs to capture attendance.' : 'Stay consistent. Every class builds your degree.'}</p>
-      </div>
-    </div>
-  `;
-
-  // Render Mobile Bottom Bar
-  const sh = {home:'Home', acad:'Academics', plan:'Planner', fin:'Finance', roster:'Roster', prof:'Profile'};
-  $('bnav').innerHTML = navItems.slice(0, 2).concat([['+']]).concat(navItems.slice(2, 4)).map(n => 
-    n[0] === '+' 
-      ? `<button onclick="openSheet()" class="grad w-12 h-12 -mt-5 rounded-full text-xl shadow-lg shrink-0 flex items-center justify-center font-bold text-white transition-transform active:scale-95">+</button>` 
-      : `<button data-n="${n[0]}" onclick="go('${n[0]}')" class="bn flex-1 py-2 text-[10px] font-semibold text-slate-400"><div class="text-base">${n[2]}</div>${sh[n[0]] || n[1]}</button>`
-  ).join('');
-
-  // Top Header User Card
-  const ini = U.name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
-  $('top').innerHTML = `
-    <div>
-      <div class="text-xs text-slate-500 dark:text-slate-400 font-semibold">${new Date().toDateString()}</div>
-      <div class="text-sm font-extrabold text-slate-800 dark:text-slate-100">Academic Summit</div>
-    </div>
-
-    <div class="flex items-center gap-3">
-      <button onclick="toggleTheme()" class="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 shadow-sm flex items-center gap-1.5 transition-all hover:border-emerald-500">
-        ${isDark ? '☀️ Light' : '🌙 Dark'}
-      </button>
-
-      <button onclick="go('prof')" class="flex items-center gap-2.5 pl-2 border-l border-slate-200 dark:border-slate-800">
-        <span class="text-right text-xs hidden sm:block">
-          <b class="block text-slate-800 dark:text-slate-100">${esc(U.name)}</b>
-          <span class="text-slate-400">${U.profile?.matric ? esc(U.profile.matric) : esc(U.profile?.program || 'Student')}</span>
-        </span>
-        <span class="grad w-9 h-9 rounded-full grid place-items-center text-xs font-bold text-white shadow-sm ring-2 ring-emerald-500/20">${esc(ini)}</span>
-      </button>
-    </div>
-  `;
-
+function doOnboard(){
+  U.profile={uni:$('o-uni').value.trim()||'My University',level:$('o-level').value,program:$('o-prog').value.trim()||'Not set',totalUnits:parseFloat($('o-units').value)||120,matric:''};
+  save();start();
+}
+sb.auth.getSession().then(({data})=>data.session?boot(data.session.user):authUI('login'));
+// shell
+const STUDENT_NAV=[['home','Dashboard','home'],['acad','Academics','acad'],['plan','Planner','plan'],['fin','Finance','fin'],['mat','Materials','mat'],['att','Attendance','att'],['goal','Goals','goal'],['car','Career & Portfolio','car'],['prof','Profile & Settings','prof']];
+const LECTURER_NAV=[['home','Attendance Hub','att'],['roster','Student Rosters','prof'],['prof','Account Settings','prof']];
+function start(){
+  $('auth').innerHTML='';$('app').classList.remove('hidden');
+  const nav=U.role==='lecturer'?LECTURER_NAV:STUDENT_NAV;
+  $('side').innerHTML='<div class="flex items-center gap-3 mb-8 px-2"><div class="w-10 h-10 rounded-2xl grad grid place-items-center font-extrabold text-xl">⛰</div><div><div class="font-extrabold text-lg leading-tight">Academic</div><div class="text-xs text-violet-400 font-bold uppercase tracking-wider">'+(U.role==='lecturer'?'Lecturer Console':'Summit v13')+'</div></div></div><div class="space-y-1 flex-1 overflow-y-auto pr-1">'+nav.map(n=>'<button data-n="'+n[0]+'" onclick="go(\''+n[0]+'\')" class="nv w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:bg-violet-900/40 flex items-center gap-3">'+ic(n[2])+'<span>'+n[1]+'</span></button>').join('')+'</div><div class="mt-auto pt-4"><div class="rounded-2xl p-4 text-xs bg-violet-900/40 border border-violet-800/40 space-y-1"><b class="text-white block text-sm">'+(U.role==='lecturer'?'Active Session':'Target CGPA: '+U.target.toFixed(2))+'</b><p class="text-violet-300/80">Higher Goals, Bigger Future.</p></div></div>';
+  const sh={home:'Home',acad:'Academics',plan:'Planner',fin:'Finance',roster:'Roster',prof:'Profile'};
+  $('bnav').innerHTML=nav.slice(0,2).concat([['+']]).concat(nav.slice(2,4)).map(n=>n[0]==='+'?'<button onclick="openSheet()" class="grad w-12 h-12 -mt-5 rounded-full shadow-lg flex items-center justify-center text-white text-xl font-bold">+</button>':'<button data-n="'+n[0]+'" onclick="go(\''+n[0]+'\')" class="bn flex-1 py-2 text-[10px] font-semibold text-slate-400 flex flex-col items-center gap-1">'+ic(n[2],'w-5 h-5')+ (sh[n[0]]||n[1])+'</button>').join('');
+  const ini=U.name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+  $('top').innerHTML='<div><div class="text-xs text-slate-500 font-semibold">'+new Date().toDateString()+'</div><div class="text-sm font-extrabold">Academic Summit</div></div><div class="flex items-center gap-3"><button onclick="toggleTheme()" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">'+ic(isDark?'sun':'moon')+'</button><button onclick="go(\'prof\')" class="flex items-center gap-2.5 pl-2 border-l border-slate-200 dark:border-slate-800"><span class="text-right text-xs hidden sm:block"><b class="block">'+esc(U.name)+'</b><span class="text-slate-400">'+(U.profile?.matric?esc(U.profile.matric):esc(U.profile?.program||'Student'))+'</span></span><span class="grad w-9 h-9 rounded-full grid place-items-center text-xs font-bold">'+esc(ini)+'</span></button></div>';
   go(view);
+  if(!localStorage.getItem('as_tour')&&!toured){toured=true;setTimeout(startTour,400);}
 }
-
-function go(v) {
-  view = v;
-  document.querySelectorAll('.nv').forEach(b => b.className = 'nv w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-3 transition-all ' + (b.dataset.n === v ? 'nav-on' : 'text-emerald-100/70 hover:bg-emerald-900/40 hover:text-white'));
-  document.querySelectorAll('.bn').forEach(b => b.className = 'bn flex-1 py-2 text-[10px] font-semibold ' + (b.dataset.n === v ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'));
-  
-  if (U.role === 'lecturer') {
-    $('main').innerHTML = LECTURER_VIEWS[v] ? LECTURER_VIEWS[v]() : LECTURER_VIEWS.home();
-  } else {
-    $('main').innerHTML = V[v] ? V[v]() : V.home();
-    if (v === 'acad') ACAD[aTab]();
-    if (U.role === 'lecturer' && v === 'roster') loadRoster();
+function go(v){
+  view=v;
+  document.querySelectorAll('.nv').forEach(b=>b.className='nv w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-3 '+(b.dataset.n===v?'nav-on':'text-slate-300 hover:bg-violet-900/40'));
+  document.querySelectorAll('.bn').forEach(b=>b.className='bn flex-1 py-2 text-[10px] font-semibold flex flex-col items-center gap-1 '+(b.dataset.n===v?'text-violet-600 dark:text-violet-400':'text-slate-400'));
+  $('main').innerHTML=U.role==='lecturer'?(LECTURER_VIEWS[v]||LECTURER_VIEWS.home)():(V[v]||V.home)();
+  if(U.role==='student'&&v==='acad')ACAD[aTab]();
+  if(U.role==='lecturer'&&v==='roster')loadRoster();
+  window.scrollTo(0,0);
+}
+function openSheet(){
+  const b=(t,f)=>'<button class="btn2 w-full text-left justify-start py-3" onclick="closeSheet();'+f+'">'+t+'</button>';
+  $('sheet').innerHTML='<div class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end" onclick="closeSheet()"><div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 space-y-3" onclick="event.stopPropagation()" style="padding-bottom:max(1.5rem,env(safe-area-inset-bottom))"><div class="lbl text-violet-600 dark:text-violet-400">Quick Actions</div>'+(U.role==='lecturer'?b('⚡ Generate Attendance OTP',"go('home')")+b('📋 Export Roster',"go('roster')"):b(ic('calc')+' Calculate GPA',"aTab='calc';editing=null;go('acad')")+b(ic('up')+' Import Portal Results',"aTab='calc';editing=null;go('acad');setTimeout(()=>$('paste').classList.remove('hidden'),30)")+b(ic('plan')+' Add Task / Event',"go('plan')")+b(ic('fin')+' Log Expense',"go('fin')")+b(ic('mat')+' Materials',"go('mat')")+b(ic('goal')+' Goals',"go('goal')")+b(ic('car')+' Career',"go('car')")+b(ic('prof')+' Profile',"go('prof')"))+'</div></div>';
+}
+const closeSheet=()=>$('sheet').innerHTML='';
+let pendingMatric='';
+function askMatric(m){
+  pendingMatric=m;
+  var h='<div class="fixed inset-0 z-50 bg-black/50 flex items-end" onclick="closeSheet()">';
+  h+='<div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 space-y-3" onclick="event.stopPropagation()">';
+  h+='<div class="lbl text-violet-600 dark:text-violet-400">Matric number found</div>';
+  h+='<div class="text-sm font-extrabold font-mono">'+esc(m)+'</div>';
+  h+='<p class="text-xs text-slate-500">Link it to your account so lecturers can record your attendance?</p>';
+  h+='<button class="btn w-full" onclick="linkMatric()">Yes, link it</button>';
+  h+='<button class="btn2 w-full" onclick="closeSheet()">Not now</button>';
+  h+='</div></div>';
+  $('sheet').innerHTML=h;
+}
+function linkMatric(){
+  const m=pendingMatric;
+  U.profile.matric=m;save();
+  sb.from('profiles').update({matric:m}).eq('id',uid).then(function(){});
+  closeSheet();showToast('Matric number linked: '+m);
+}
+// graphics
+const donut=(p,c,size=76,inner=58,label='')=>'<div class="donut shrink-0" style="width:'+size+'px;height:'+size+'px;background:conic-gradient('+c+' '+p+'%,'+(isDark?'#334155':'#e2e8f0')+' 0)"><div style="width:'+inner+'px;height:'+inner+'px" class="text-xs font-extrabold">'+label+'</div></div>';
+function chart(){
+  const g=U.semesters.map(s=>semS(s).g),W=400,Hh=170,y=v=>Hh-20-(v/5)*(Hh-40),x=i=>g.length<2?W/2:30+i*(W-60)/(g.length-1);
+  const req=requiredAvg();
+  if(!g.length)return'<div class="h-36 flex items-center justify-center text-xs text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">Save a semester to visualize trajectory</div>';
+  return '<svg viewBox="0 0 '+W+' '+Hh+'" class="w-full"><line x1="0" x2="'+W+'" y1="'+y(U.target)+'" y2="'+y(U.target)+'" stroke="#059669" stroke-dasharray="5 4"/><polyline fill="none" stroke="#10b981" stroke-width="3" points="'+g.map((v,i)=>x(i)+','+y(v)).join(' ')+'"/>'+g.map((v,i)=>'<circle cx="'+x(i)+'" cy="'+y(v)+'" r="5" fill="#059669" stroke="#fff" stroke-width="2"/><text x="'+x(i)+'" y="'+(Hh-4)+'" font-size="9" font-weight="700" text-anchor="middle" fill="'+(isDark?'#94a3b8':'#64748b')+'">'+esc(U.semesters[i].name.slice(0,9))+'</text>').join('')+'</svg>';
+}
+// smart goals
+function goalStatus(g){
+  const m=g.title.match(/(\d\.\d{1,2})/);
+  if(!m)return g.done?['Done','emerald']:['Active','slate'];
+  const t=+m[1],c=cum().g;
+  if(c>=t){if(!g.done){g.done=true;save();}return['Achieved','emerald'];}
+  return[c>=t-0.5?'On track':'Behind','violet'];
+}
+const chip=(txt,col)=>'<span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-'+col+'-100 dark:bg-'+col+'-950 text-'+col+'-600 dark:text-'+col+'-300">'+txt+'</span>';
+// views
+const V={
+home(){
+  const c=cum(),tot=U.profile?.totalUnits||120,pct=Math.min(100,Math.round(c.u/tot*100));
+  const S=U.semesters,last=S.length?semS(S[S.length-1]):null,prev=S.length>1?semS(S[S.length-2]):null,req=requiredAvg();
+  const delta=last&&prev?last.g-prev.g:null;
+  const up=[...U.events.filter(e=>days(e.date)>=0).map(e=>({t:e.title,s:e.type+' • '+fmtD(e.date),d:days(e.date)})),...U.tasks.filter(t=>!t.done).map(t=>({t:t.t,s:'Task'+(t.end?' • '+leftTxt(t.end):''),d:t.end?days(t.end):null}))].sort((a,b)=>(a.d??999)-(b.d??999)).slice(0,4);
+  const notes=[];
+  U.events.filter(e=>days(e.date)>=0&&days(e.date)<=14).forEach(e=>notes.push(['📅','Exam reminder',e.title+' in '+days(e.date)+' day(s).']));
+  U.tasks.filter(t=>!t.done&&t.end&&(new Date(t.end)-Date.now())<864e5).forEach(t=>notes.push(['⏰','Task due soon',t.t+' — '+leftTxt(t.end)+'.']));
+  if(U.fees.total-U.fees.paid>0&&U.fees.due)notes.push(['💳','Fee alert',naira(U.fees.total-U.fees.paid)+' due '+fmtD(U.fees.due)+'.']);
+  U.goals.forEach(g=>{const st=goalStatus(g);if(st[0]==='Achieved')notes.push(['🎯','Milestone achieved',g.title]);});
+  if(last){const low=[...S[S.length-1].courses].sort((a,b)=>a.score-b.score)[0];if(low)notes.push(['💡','Academic insight','Lowest score last semester: '+esc(low.code)+' ('+low.score+').']);}
+  return '<div class="space-y-5"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"><div><h1 class="text-2xl font-extrabold">Good day, '+esc(U.name.split(' ')[0])+' 👋</h1><p class="text-xs text-slate-500">'+esc(U.profile?.program)+' • '+esc(U.profile?.level)+' Level'+(U.profile?.matric?' • '+esc(U.profile.matric):'')+'</p></div><button onclick="aTab=\'calc\';editing=null;go(\'acad\')" class="btn">'+ic('up')+' Import Portal Results</button></div>'+
+  '<div class="grid md:grid-cols-3 gap-4"><div class="grad rounded-3xl p-6 space-y-3 shadow-lg"><div class="text-xs font-bold uppercase tracking-wider opacity-80">Cumulative GPA</div><div class="flex items-end justify-between"><div class="text-4xl font-extrabold">'+c.g.toFixed(2)+'<span class="text-base opacity-75"> / 5.00</span></div><span class="text-[11px] bg-white/20 rounded-full px-3 py-1 font-bold">Target '+U.target.toFixed(2)+'</span></div><div class="h-2 rounded-full bg-white/30"><div class="h-2 rounded-full bg-white" style="width:'+(c.g/5*100)+'%"></div></div>'+(delta!==null?'<div class="text-xs font-semibold">'+(delta>=0?'↑ +':'↓ ')+delta.toFixed(2)+' from previous term</div>':'')+'</div>'+
+  '<div class="card p-6 space-y-2"><div class="lbl">Last Semester GPA</div><div class="text-4xl font-extrabold">'+(last?last.g.toFixed(2):'—')+'<span class="text-base text-slate-400"> / 5.00</span></div><div class="text-xs text-slate-400">'+(last?S[S.length-1].courses.length+' courses • '+last.u+' units':'No semester recorded yet')+'</div></div>'+
+  '<div class="card p-6 flex items-center justify-between gap-4"><div class="space-y-1"><div class="lbl">Degree Progress</div><div class="text-3xl font-extrabold">'+c.u+'<span class="text-sm text-slate-400"> / '+tot+'</span></div><div class="text-xs text-slate-400">'+Math.max(0,tot-c.u)+' units remaining</div></div>'+donut(pct,'#10b981',76,58,pct+'%')+'</div></div>'+
+  '<div class="grid lg:grid-cols-3 gap-5"><div class="lg:col-span-2 space-y-5"><div class="card p-6 space-y-4"><div class="font-extrabold">GPA Trajectory</div><div class="grid sm:grid-cols-3 gap-4 items-center"><div class="sm:col-span-2">'+chart()+'</div><div class="text-xs space-y-3 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl"><div><div class="lbl">Current CGPA</div><b class="text-base">'+c.g.toFixed(2)+'</b></div><div><div class="lbl">Target</div><b class="text-base">'+U.target.toFixed(2)+'</b></div><div><div class="lbl">Required Avg</div><b class="text-base">'+(req===null?'—':req.toFixed(2))+'</b></div>'+(req>5?'<p class="text-[11px] text-rose-500 font-bold">Target unachievable in remaining units.</p>':'')+'</div></div></div>'+
+  '<div class="card p-6 space-y-3"><div class="font-extrabold">Quick Actions</div><div class="grid grid-cols-3 sm:grid-cols-6 gap-3 text-[11px] font-semibold text-center">'+[[ic('calc'),'GPA Calc',"aTab='calc';editing=null;go('acad')"],[ic('up'),'Import',"aTab='calc';go('acad')"],[ic('plan'),'Planner',"go('plan')"],[ic('fin'),'Finance',"go('fin')"],[ic('mat'),'Materials',"go('mat')"],[ic('goal'),'Goals',"go('goal')"]].map(q=>'<button onclick="'+q[2]+'" class="space-y-1.5"><div class="mx-auto w-12 h-12 rounded-2xl bg-violet-50 dark:bg-violet-950 text-violet-600 dark:text-violet-300 grid place-items-center">'+q[0]+'</div>'+q[1]+'</button>').join('')+'</div></div></div>'+
+  '<div class="space-y-5"><div class="card p-6 space-y-2"><div class="flex justify-between items-center"><div class="font-extrabold">Next Up</div><button onclick="go(\'plan\')" class="text-xs font-bold text-violet-600 dark:text-violet-400">View Planner</button></div>'+up.map(u=>'<div class="flex justify-between items-center text-xs p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40"><div><b class="block">'+esc(u.t)+'</b><span class="text-slate-400 text-[11px]">'+esc(u.s)+'</span></div>'+(u.d!==null?'<span class="bg-violet-100 dark:bg-violet-950 text-violet-600 dark:text-violet-300 font-extrabold px-2.5 py-1 rounded-full text-[10px]">'+(u.d===0?'Today':u.d+' d')+'</span>':'')+'</div>').join('')||'<p class="text-xs text-slate-400">Nothing scheduled.</p>'+'</div>'+
+  '<div class="card p-6 space-y-3"><div class="font-extrabold">Milestones</div>'+U.goals.slice(0,3).map(g=>{const st=goalStatus(g);return '<div class="flex justify-between items-center text-xs p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40"><span class="font-semibold">'+esc(g.title)+'</span>'+chip(st[0],st[1])+'</div>';}).join('')||'<p class="text-xs text-slate-400">Set goals to see them here.</p>'+'<button onclick="go(\'goal\')" class="btn2 w-full">Manage Goals</button></div>'+
+  '<div class="card p-6 space-y-2"><div class="font-extrabold">Notifications</div>'+notes.map(n=>'<div class="flex gap-3 text-xs"><span class="text-lg">'+n[0]+'</span><div><b>'+n[1]+'</b><div class="text-slate-500">'+esc(n[2])+'</div></div></div>').join('')||'<p class="text-xs text-slate-400">All clear.</p>'+'</div></div></div></div>';
+},
+acad(){
+  const t=[['calc','GPA Calculator'],['det','Result Detective'],['dec','Menu of Decimals'],['rec','My Record']];
+  return '<div class="space-y-5"><div class="flex gap-2 overflow-x-auto pb-1">'+t.map(x=>'<button onclick="aTab=\''+x[0]+'\';editing=null;go(\'acad\')" class="'+(aTab===x[0]?'btn':'btn2')+' whitespace-nowrap">'+x[1]+'</button>').join('')+'</div><div id="sub"></div></div>';
+},
+plan(){
+  const first=new Date(calY,calM,1);
+  const startDow=(first.getDay()+6)%7;
+  const dim=new Date(calY,calM+1,0).getDate();
+  const mName=first.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  const dayHas=ds=>U.events.some(e=>e.date===ds)||U.tasks.some(t=>(t.end||t.start||'').slice(0,10)===ds);
+  let cells='';
+  for(let i=0;i<startDow;i++)cells+='<div></div>';
+  for(let d=1;d<=dim;d++){
+    const ds=calY+'-'+String(calM+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    cells+='<button onclick="selDay=\''+ds+'\';go(\'plan\')" class="aspect-square rounded-xl flex flex-col items-center justify-center gap-1 text-xs font-semibold '+(ds===selDay?'grad text-white':'bg-slate-50 dark:bg-slate-800/40')+' '+(ds===iso(new Date())?'ring-2 ring-violet-400':'')+'">'+d+(dayHas(ds)?'<span class="w-1 h-1 rounded-full '+(ds===selDay?'bg-white':'bg-violet-500')+'"></span>':'')+'</button>';
   }
-  window.scrollTo(0, 0);
+  const dEv=U.events.filter(e=>e.date===selDay);
+  const dTk=U.tasks.filter(t=>(t.end||t.start||'').slice(0,10)===selDay);
+  return '<div class="space-y-5"><div class="card p-5 space-y-3"><div class="flex justify-between items-center"><button class="btn2 px-2" onclick="calM--;if(calM<0){calM=11;calM=11;calY--;}go(\'plan\')">'+ic('l')+'</button><div class="font-extrabold">'+mName+'</div><button class="btn2 px-2" onclick="calM++;if(calM>11){calM=0;calY++;}go(\'plan\')">'+ic('r')+'</button></div><div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400">'+['M','T','W','T','F','S','S'].map(d=>'<div>'+d+'</div>').join('')+'</div><div class="grid grid-cols-7 gap-1">'+cells+'</div></div>'+
+  '<div class="grid md:grid-cols-2 gap-5"><div class="card p-5 space-y-3"><div class="font-extrabold">'+fmtD(selDay)+' — Schedule</div>'+dEv.map(e=>'<div class="text-xs p-3 rounded-xl bg-violet-50 dark:bg-violet-950/40"><b>'+esc(e.title)+'</b><div class="text-slate-500">'+esc(e.type)+'</div></div>').join('')+dTk.map(t=>'<div class="text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40"><b>'+esc(t.t)+'</b><div class="text-slate-500">'+(t.start?fmtD(t.start)+' '+(new Date(t.start).toTimeString().slice(0,5)):'')+(t.end?' → '+(new Date(t.end).toTimeString().slice(0,5)):'')+'</div></div>').join('')||'<p class="text-xs text-slate-400">Nothing this day.</p>'+
+  '<div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800"><div class="lbl">Add event on this day</div><div class="flex gap-2"><input id="e-t" class="inp" placeholder="Title"><select id="e-k" class="inp"><option>Exam</option><option>Test</option><option>Assignment</option><option>Lecture</option></select></div><button class="btn w-full" onclick="addEvent()">Schedule Event</button></div></div>'+
+  '<div class="card p-5 space-y-3"><div class="font-extrabold">Smart Tasks</div><div class="space-y-2"><input id="t-in" class="inp" placeholder="Task (e.g. Read CSC 200)"><div class="grid grid-cols-2 gap-2"><div><label class="lbl block mb-1">Start</label><input id="t-s" type="datetime-local" class="inp"></div><div><label class="lbl block mb-1">End</label><input id="t-e" type="datetime-local" class="inp"></div></div><button class="btn w-full" onclick="addTask()">Add Task</button></div><div class="space-y-2 pt-2">'+U.tasks.map((t,i)=>'<div class="flex items-center justify-between text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40"><label class="flex items-center gap-3"><input type="checkbox" '+(t.done?'checked':'')+' onchange="U.tasks['+i+'].done=!U.tasks['+i+'].done;save();go(\'plan\')" class="accent-violet-600"><span class="'+(t.done?'line-through text-slate-400':'font-semibold')+'">'+esc(t.t)+'</span></label><span class="flex items-center gap-2">'+(t.end?chip(leftTxt(t.end),(new Date(t.end)-Date.now())<0?'rose':'violet'):'')+'<button class="text-rose-500 font-bold" onclick="U.tasks.splice('+i+',1);save();go(\'plan\')">'+ic('x','w-3 h-3')+'</button></span></div>').join('')||'<p class="text-xs text-slate-400">No tasks yet.</p>'+'</div></div></div></div>';
+},
+fin(){
+  const inc=U.tx.filter(t=>t.type==='income').reduce((a,b)=>a+b.amt,0);
+  const exp=U.tx.filter(t=>t.type==='expense').reduce((a,b)=>a+b.amt,0);
+  const cats=['Food','Transport','Data & Internet','Books','Other'];
+  const cols=['#10b981','#6366f1','#3b82f6','#f59e0b','#ef4444'];
+  const by=cats.map(c=>U.tx.filter(t=>t.type==='expense'&&t.cat===c).reduce((a,b)=>a+b.amt,0));
+  let acc=0;const stops=exp?by.map((v,i)=>{const s=acc;acc+=v/exp*100;return cols[i]+' '+s+'% '+acc+'%';}).join(','):'#e5e7eb 0 100%';
+  const f=U.fees,fp=f.total?Math.min(100,f.paid/f.total*100):0;
+  return '<div class="space-y-5"><div class="grid md:grid-cols-3 gap-4"><div class="card p-6"><div class="lbl">Net Balance</div><div class="text-3xl font-extrabold mt-1">'+naira(inc-exp)+'</div></div><div class="card p-6"><div class="lbl text-emerald-600">Income</div><div class="text-3xl font-extrabold text-emerald-600 mt-1">'+naira(inc)+'</div></div><div class="card p-6"><div class="lbl text-rose-500">Expenses</div><div class="text-3xl font-extrabold text-rose-500 mt-1">'+naira(exp)+'</div></div></div>'+
+  '<div class="grid md:grid-cols-2 gap-5"><div class="card p-6 space-y-3"><div class="font-extrabold">Log Transaction</div><div class="grid grid-cols-2 gap-2"><select id="f-k" class="inp"><option value="expense">Expense (-)</option><option value="income">Income (+)</option></select><input id="f-a" type="number" class="inp" placeholder="Amount (₦)"></div><input id="f-d" class="inp" placeholder="Description"><select id="f-c" class="inp">'+cats.map(c=>'<option>'+c+'</option>').join('')+'</select><button class="btn w-full" onclick="addTx()">Record</button></div>'+
+  '<div class="card p-6 flex items-center gap-5"><div class="donut" style="width:110px;height:110px;background:conic-gradient('+stops+')"><div style="width:76px;height:76px"></div></div><div class="text-xs space-y-1">'+cats.map((c,i)=>'<div><span style="color:'+cols[i]+'">●</span> '+c+' '+(exp?Math.round(by[i]/exp*100):0)+'%</div>').join('')+'</div></div></div>'+
+  '<div class="card p-6 space-y-3"><div class="font-extrabold">School Fees</div><div class="grid grid-cols-3 gap-2"><input type="number" class="inp" placeholder="Total" value="'+(f.total||'')+'" onchange="U.fees.total=+this.value;save();go(\'fin\')"><input type="number" class="inp" placeholder="Paid" value="'+(f.paid||'')+'" onchange="U.fees.paid=+this.value;save();go(\'fin\')"><input type="date" class="inp" value="'+esc(f.due)+'" onchange="U.fees.due=this.value;save();go(\'fin\')"></div><div class="text-xs text-slate-500">'+naira(Math.max(0,f.total-f.paid))+' remaining'+(f.due?' • due '+fmtD(f.due):'')+'</div><div class="h-3 rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full bg-violet-600 rounded-full" style="width:'+fp+'%"></div></div></div>'+
+  '<div class="card p-6 space-y-2"><div class="font-extrabold">History</div>'+[...U.tx].reverse().map(t=>{const i=U.tx.indexOf(t);return '<div class="flex justify-between text-sm p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40"><span>'+esc(t.desc)+' <span class="text-xs text-slate-400">'+esc(t.cat||'')+' • '+fmtD(t.date)+'</span></span><span class="'+(t.type==='income'?'text-emerald-600':'text-rose-500')+' font-bold">'+(t.type==='income'?'+':'-')+naira(t.amt)+' <button class="text-slate-400 ml-2" onclick="U.tx.splice('+i+',1);save();go(\'fin\')">'+ic('x','w-3 h-3')+'</button></span></div>';}).join('')||'<p class="text-xs text-slate-400">No transactions yet.</p>'+'</div></div>';
+},
+mat(){
+  return '<div class="space-y-5"><div class="card p-6 space-y-3"><div class="font-extrabold">Course Materials & Past Questions</div><div class="grid sm:grid-cols-3 gap-3"><input id="m-c" class="inp" placeholder="Course Code (e.g. POS 108)"><input id="m-t" class="inp" placeholder="Title"><select id="m-k" class="inp"><option>Material</option><option>Past Question</option></select></div><div class="grid sm:grid-cols-2 gap-3"><div><label class="lbl block mb-1">Upload PDF / file</label><input id="m-f" type="file" accept=".pdf,.doc,.docx,.png,.jpg" class="inp"></div><div><label class="lbl block mb-1">…or paste a link</label><input id="m-l" class="inp" placeholder="https://..."></div></div><button class="btn" onclick="addMaterial()">'+ic('up')+' Save to Library</button></div>'+
+  '<div class="card p-6 space-y-4"><div class="font-extrabold">Library Storage</div><div class="grid sm:grid-cols-2 gap-4">'+U.materials.map((m,i)=>'<div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 space-y-2"><div class="flex justify-between items-start"><span class="px-2.5 py-1 rounded-lg bg-violet-100 dark:bg-violet-950 text-violet-600 dark:text-violet-300 text-[10px] font-extrabold uppercase">'+esc(m.code)+' • '+esc(m.kind||'Material')+'</span><button class="text-slate-400 text-xs font-bold" onclick="U.materials.splice('+i+',1);save();go(\'mat\')">Delete</button></div><h4 class="font-extrabold text-sm">'+esc(m.title)+'</h4><a href="'+esc(m.link)+'" target="_blank" class="inline-flex items-center gap-1.5 text-xs font-bold text-violet-600 dark:text-violet-400 hover:underline">Open Document</a></div>').join('')||'<p class="text-xs text-slate-400 col-span-2 py-6 text-center">No materials in library yet.</p>'+'</div></div></div>';
+},
+att(){
+  return '<div class="space-y-5"><div class="card p-6 space-y-3"><div class="font-extrabold">Classroom Attendance Log</div><p class="text-xs text-slate-500">Records from live OTP entries in class.</p><div class="space-y-2">'+U.attendance.map(a=>'<div class="flex items-center justify-between text-xs p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40"><div><b class="block text-sm">'+esc(a.code)+'</b><span class="text-slate-400">'+fmtD(a.date)+'</span></div><span class="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-300 font-extrabold text-[10px]">PRESENT</span></div>').join('')||'<p class="text-xs text-slate-400 py-6 text-center">No attendance recorded yet.</p>'+'</div></div>'+
+  '<div class="p-6 rounded-3xl bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800 space-y-3"><div class="font-extrabold text-sm text-violet-900 dark:text-violet-200">Fast Mark Attendance</div><div class="flex gap-2"><input id="att-fast-code" class="inp uppercase tracking-widest text-center font-bold text-lg" placeholder="ENTER 5-DIGIT CODE" maxlength="5"><button class="btn shrink-0" onclick="submitAttendanceFast()">Submit</button></div></div></div>';
+},
+goal(){
+  return '<div class="space-y-5"><div class="card p-6 space-y-3"><div class="font-extrabold">Academic Milestones</div><p class="text-xs text-slate-500">Tip: include a CGPA number (e.g. "Finish with 4.50") and the app will track it against your real results automatically.</p><div class="flex gap-2"><input id="g-t" class="inp" placeholder="e.g. 200 session, perform above 4.5 CGPA"><button class="btn shrink-0" onclick="addGoal()">Set Goal</button></div></div><div class="card p-6 space-y-2"><div class="font-extrabold">Active Milestones</div>'+U.goals.map((g,i)=>{const st=goalStatus(g);return '<div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40"><span class="text-xs font-bold">'+esc(g.title)+'</span><span class="flex items-center gap-2">'+chip(st[0],st[1])+'<button class="text-slate-400 font-bold text-xs" onclick="U.goals.splice('+i+',1);save();go(\'goal\')">'+ic('x','w-3 h-3')+'</button></span></div>';}).join('')||'<p class="text-xs text-slate-400 py-4 text-center">No milestones set.</p>'+'</div></div>';
+},
+car(){
+  return '<div class="space-y-5"><div class="card p-6 space-y-3"><div class="font-extrabold">Career Portfolio</div><input id="c-t" class="inp" placeholder="Achievement / Essay Title"><textarea id="c-d" class="inp text-xs" rows="3" placeholder="Brief summary of skills or publication..."></textarea><button class="btn w-full" onclick="addCareer()">Save to Portfolio</button></div><div class="card p-6 space-y-3"><div class="font-extrabold">Portfolio Records</div>'+U.career.map((c,i)=>'<div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 space-y-2"><div class="flex justify-between"><b class="text-sm">'+esc(c.title)+'</b><button class="text-slate-400 text-xs" onclick="U.career.splice('+i+',1);save();go(\'car\')">'+ic('x','w-3 h-3')+'</button></div><p class="text-xs text-slate-500">'+esc(c.desc)+'</p></div>').join('')||'<p class="text-xs text-slate-400 py-4 text-center">No portfolio items yet.</p>'+'</div></div>';
+},
+prof(){
+  const p=U.profile||{};
+  return '<div class="space-y-5"><div class="card p-6 space-y-4"><div class="font-extrabold">Profile & Settings</div><div class="grid sm:grid-cols-2 gap-3"><div><label class="lbl block mb-1">Full Name</label><input id="p-n" class="inp" value="'+esc(U.name)+'"></div><div><label class="lbl block mb-1">University</label><input id="p-u" class="inp" value="'+esc(p.uni)+'"></div><div><label class="lbl block mb-1">Program</label><input id="p-p" class="inp" value="'+esc(p.program)+'"></div><div><label class="lbl block mb-1">Level</label><select id="p-l" class="inp">'+[100,200,300,400,500,600].map(l=>'<option '+(l==p.level?'selected':'')+'>'+l+'</option>').join('')+'</select></div><div><label class="lbl block mb-1">Grad Units</label><input id="p-t" type="number" class="inp" value="'+(p.totalUnits||120)+'"></div><div><label class="lbl block mb-1">Target CGPA</label><input id="p-g" type="number" step="0.01" min="0" max="5" class="inp" value="'+U.target+'"></div><div class="sm:col-span-2"><label class="lbl block mb-1">Matric number</label><input id="p-m" class="inp font-mono uppercase font-bold" value="'+esc(p.matric||'')+'" placeholder="Paste portal results — we ask before saving"></div></div><button class="btn" onclick="saveProfile()">Save Changes</button><p class="text-xs text-slate-400 pt-2">'+esc(email)+'</p></div>'+
+  '<div class="card p-6 space-y-3"><div class="font-extrabold">Data Management</div><p class="text-xs text-slate-500">Export a JSON backup anytime.</p><button class="btn2" onclick="exportData()">Download Backup</button></div><button class="btn2 w-full !text-rose-500" onclick="logout()">Log Out</button></div>';
 }
-
-function openSheet() {
-  const b = (t, f) => `<button class="btn2 w-full text-left justify-start py-3" onclick="closeSheet();${f}">${t}</button>`;
-  $('sheet').innerHTML = `
-    <div class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end" onclick="closeSheet()">
-      <div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 space-y-3 border-t border-slate-200 dark:border-slate-800 shadow-2xl" onclick="event.stopPropagation()" style="padding-bottom:max(1.5rem,env(safe-area-inset-bottom))">
-        <div class="flex justify-between items-center mb-1">
-          <div class="lbl text-emerald-600 dark:text-emerald-400">Quick Actions</div>
-          <button onclick="closeSheet()" class="text-xs text-slate-400 font-bold">✕ Close</button>
-        </div>
-        ${U.role === 'lecturer' ? `
-          ${b('⚡ Generate 90s Attendance OTP',"go('home')")}
-          ${b('📋 Export Class Attendance Roster',"go('roster')")}
-        ` : `
-          ${b('📋 Paste Portal Results (Auto-Matric Extract)',"aTab='calc';editing=null;go('acad');setTimeout(()=>$('paste').classList.remove('hidden'),30)")}
-          ${b('☑️ Fast Mark Class Attendance',"go('att')")}
-          ${b('🧮 Calculate Semester GPA',"aTab='calc';editing=null;go('acad')")}
-          ${b('💸 Log Financial Expense',"go('fin')")}
-          ${b('📚 Materials',"go('mat')")}
-          ${b('🎯 Goals',"go('goal')")}
-          ${b('💼 Career & Portfolio',"go('car')")}
-          ${b('👤 Profile & Settings',"go('prof')")}
-        `}
-      </div>
-    </div>
-  `;
-}
-let pendingMatric = '';
-function askMatric(m) {
-  pendingMatric = m;
-  $('sheet').innerHTML = `
-    <div class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end" onclick="closeSheet()">
-      <div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 space-y-3 border-t border-slate-200 dark:border-slate-800 shadow-2xl" onclick="event.stopPropagation()" style="padding-bottom:max(1.5rem,env(safe-area-inset-bottom))">
-        <div class="lbl text-emerald-600 dark:text-emerald-400">Matric number found</div>
-        <div class="text-sm font-extrabold font-mono text-slate-800 dark:text-slate-100">${esc(m)}</div>
-        <p class="text-xs text-slate-500 dark:text-slate-400">Link it to your account so lecturers can record your attendance? You can change it anytime in Profile.</p>
-        <button class="btn w-full" onclick="linkMatric()">Yes, link it</button>
-        <button class="btn2 w-full" onclick="closeSheet()">Not now</button>
-      </div>
-    </div>
-  `;
-}
-function linkMatric() {
-  const m = pendingMatric;
-  U.profile.matric = m;
-  save();
-  sb.from('profiles').update({ matric: m }).eq('id', uid).then(() => {});
-  closeSheet();
-  showToast('Matric number linked: ' + m);
-}
-const closeSheet = () => $('sheet').innerHTML = '';
-
-// ==========================================================================
-// 9. GRAPHICS & DONUT GENERATOR
-// ==========================================================================
-const donut = (p, c, size = 76, inner = 58, label = '') => `
-  <div class="donut shrink-0" style="width:${size}px;height:${size}px;background:conic-gradient(${c} ${p}%, ${isDark ? '#334155' : '#e2e8f0'} 0)">
-    <div style="width:${inner}px;height:${inner}px" class="text-xs font-extrabold text-slate-800 dark:text-slate-100">${label}</div>
-  </div>
-`;
-
-function chart() {
-  const g = U.semesters.map(s => semS(s).g), W = 400, Hh = 170, y = v => Hh - 20 - (v/5) * (Hh - 40), x = i => g.length < 2 ? W/2 : 30 + i * (W-60) / (g.length-1);
-  const req = requiredAvg();
-  if (!g.length) return `<div class="h-36 flex items-center justify-center text-xs text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">Save a semester to visualize trajectory</div>`;
-  return `
-    <svg viewBox="0 0 ${W} ${Hh}" class="w-full">
-      <line x1="0" x2="${W}" y1="${y(U.target)}" y2="${y(U.target)}" stroke="#059669" stroke-dasharray="5 4" stroke-width="1.5"/>
-      ${req ? `<line x1="0" x2="${W}" y1="${y(req)}" y2="${y(req)}" stroke="#34d399" stroke-dasharray="2 4" stroke-width="1"/>` : ''}
-      <polyline fill="none" stroke="#10b981" stroke-width="3" points="${g.map((v,i) => x(i)+','+y(v)).join(' ')}"/>
-      ${g.map((v,i) => `
-        <circle cx="${x(i)}" cy="${y(v)}" r="5" fill="#059669" stroke="#ffffff" stroke-width="2"/>
-        <text x="${x(i)}" y="${Hh-4}" font-size="9" font-weight="700" text-anchor="middle" fill="${isDark?'#94a3b8':'#64748b'}">${esc(U.semesters[i].name.slice(0,9))}</text>
-      `).join('')}
-    </svg>
-  `;
-}
-
-// ==========================================================================
-// 10. STUDENT VIEWS (Trojan Horse + Hidden Magic Engine)
-// ==========================================================================
-const V = {
-  home() {
-    const c = cum(), tot = U.profile?.totalUnits || 120, pct = Math.min(100, Math.round(c.u / tot * 100));
-    const S = U.semesters, last = S.length ? semS(S[S.length-1]) : null, prev = S.length > 1 ? semS(S[S.length-2]) : null, req = requiredAvg();
-    const delta = last && prev ? last.g - prev.g : null;
-    
-    const up = [...U.events.filter(e => days(e.date) >= 0).map(e => ({t: e.title, s: e.type + ' • ' + fmtD(e.date), d: days(e.date)})), ...U.tasks.filter(t => !t.done).map(t => ({t: t.t, s: 'Task', d: null}))].sort((a,b) => (a.d ?? 999) - (b.d ?? 999)).slice(0,4);
-    
-    return `
-      <div class="space-y-6">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-          <div>
-            <h1 class="text-2xl font-extrabold text-slate-800 dark:text-slate-100">Welcome back, ${esc(U.name.split(' ')[0])} 👋</h1>
-            <p class="text-xs text-slate-500 dark:text-slate-400">${esc(U.profile?.program)} • ${esc(U.profile?.level)} Level ${U.profile?.matric ? '• ' + esc(U.profile.matric) : ''}</p>
-          </div>
-          <button onclick="aTab='calc';editing=null;go('acad')" class="btn">
-            <span>📋</span> Import Portal Results
-          </button>
-        </div>
-
-        <div class="grid md:grid-cols-3 gap-4">
-          <div class="grad rounded-3xl p-6 space-y-3 shadow-lg">
-            <div class="text-xs font-bold uppercase tracking-wider opacity-80">Cumulative GPA</div>
-            <div class="flex items-end justify-between">
-              <div class="text-4xl font-extrabold">${c.g.toFixed(2)}<span class="text-base opacity-75 font-normal"> / 5.00</span></div>
-              <span class="text-[11px] bg-white/20 backdrop-blur-md rounded-full px-3 py-1 font-bold">Target ${U.target.toFixed(2)}</span>
-            </div>
-            <div class="h-2 rounded-full bg-white/30 overflow-hidden"><div class="h-2 rounded-full bg-white" style="width:${c.g/5*100}%"></div></div>
-            ${delta !== null ? `<div class="text-xs font-semibold">${delta>=0?'↑ +':'↓ '}${delta.toFixed(2)} from previous term</div>` : '<div class="text-xs text-white/70">Keep tracking semesters to view change</div>'}
-          </div>
-
-          <div class="card p-6 space-y-2 card-hover">
-            <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Last Semester GPA</div>
-            <div class="text-4xl font-extrabold text-slate-800 dark:text-slate-100">${last ? last.g.toFixed(2) : '—'}<span class="text-base text-slate-400 font-normal"> / 5.00</span></div>
-            <div class="text-xs text-slate-400">${last ? `${S[S.length-1].courses.length} courses completed • ${last.u} units` : 'No semester recorded yet'}</div>
-          </div>
-
-          <div class="card p-6 flex items-center justify-between gap-4 card-hover">
-            <div class="space-y-1">
-              <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Degree Progress</div>
-              <div class="text-3xl font-extrabold text-slate-800 dark:text-slate-100">${c.u}<span class="text-sm text-slate-400 font-normal"> / ${tot} units</span></div>
-              <div class="text-xs text-slate-400">${Math.max(0, tot - c.u)} credit units remaining</div>
-            </div>
-            ${donut(pct, '#10b981', 76, 58, pct + '%')}
-          </div>
-        </div>
-
-        <!-- Fast Attendance Submit Module -->
-        <div class="p-6 rounded-3xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 space-y-3">
-          <div class="flex justify-between items-center">
-            <h3 class="font-extrabold text-sm text-emerald-900 dark:text-emerald-200">☑️ Fast Mark Class Attendance</h3>
-            <span class="text-[10px] bg-emerald-600 text-white px-2.5 py-0.5 rounded-full font-extrabold">90s Live Engine</span>
-          </div>
-          <p class="text-xs text-slate-600 dark:text-slate-400">Enter the temporary code generated by your lecturer in class before expiry.</p>
-          <div class="flex gap-2">
-            <input id="att-fast-code" class="inp uppercase tracking-widest text-center font-bold text-lg bg-white dark:bg-slate-900" placeholder="ENTER CODE" maxlength="5">
-            <button class="btn shrink-0" onclick="submitAttendanceFast()">Submit Attendance</button>
-          </div>
-        </div>
-
-        <div class="grid lg:grid-cols-3 gap-6">
-          <div class="lg:col-span-2 space-y-6">
-            <div class="card p-6 space-y-4">
-              <div class="flex justify-between items-center">
-                <div class="font-extrabold text-slate-800 dark:text-slate-100">GPA Trajectory & Goals</div>
-                <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">5.0 Scale System</span>
-              </div>
-              <div class="grid sm:grid-cols-3 gap-4 items-center">
-                <div class="sm:col-span-2">${chart()}</div>
-                <div class="text-xs space-y-3 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
-                  <div><div class="lbl">Current CGPA</div><b class="text-base text-slate-800 dark:text-slate-100">${c.g.toFixed(2)}</b></div>
-                  <div><div class="lbl">Target Goal</div><b class="text-base text-slate-800 dark:text-slate-100">${U.target.toFixed(2)}</b></div>
-                  <div><div class="lbl">Required Future Avg</div><b class="text-base text-slate-800 dark:text-slate-100">${req === null ? '—' : req.toFixed(2)}</b></div>
-                  ${req > 5 ? '<p class="text-[11px] text-rose-500 font-bold">Target mathematically unachievable in remaining units.</p>' : ''}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="space-y-6">
-            <div class="card p-6 space-y-3">
-              <div class="flex justify-between items-center">
-                <div class="font-extrabold text-slate-800 dark:text-slate-100">Next Up</div>
-                <button onclick="go('plan')" class="text-xs font-bold text-emerald-600 dark:text-emerald-400">View Planner</button>
-              </div>
-              ${up.map(u => `
-                <div class="flex justify-between items-center text-xs p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
-                  <div>
-                    <b class="text-slate-900 dark:text-slate-100 block">${esc(u.t)}</b>
-                    <span class="text-slate-400 text-[11px]">${esc(u.s)}</span>
-                  </div>
-                  ${u.d !== null ? `<span class="bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 font-extrabold px-2.5 py-1 rounded-full text-[10px]">${u.d === 0 ? 'Today' : u.d + ' d'}</span>` : ''}
-                </div>
-              `).join('') || '<p class="text-xs text-slate-400 py-2">No upcoming exams or pending tasks.</p>'}
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  },
-
-  acad() {
-    const t = [['calc','GPA Calculator'],['det','Result Detective'],['dec','Menu of Decimals'],['rec','My Academic Record']];
-    return `
-      <div class="space-y-6">
-        <div class="flex gap-2 overflow-x-auto pb-1">
-          ${t.map(x => `<button onclick="aTab='${x[0]}';editing=null;go('acad')" class="${aTab===x[0]?'btn':'btn2'} whitespace-nowrap">${x[1]}</button>`).join('')}
-        </div>
-        <div id="sub"></div>
-      </div>
-    `;
-  },
-
-  plan() {
-    return `
-      <div class="space-y-6">
-        <div class="grid md:grid-cols-2 gap-6">
-          <div class="card p-6 space-y-4">
-            <div class="font-extrabold text-slate-800 dark:text-slate-100">Task Manager</div>
-            <div class="flex gap-2">
-              <input id="t-in" class="inp" placeholder="e.g. Complete POS 204 Assignment">
-              <button class="btn shrink-0" onclick="addTask()">Add Task</button>
-            </div>
-            <div class="space-y-2 pt-2">
-              ${U.tasks.map((t,i) => `
-                <div class="flex items-center justify-between text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" ${t.done?'checked':''} onchange="U.tasks[${i}].done=!U.tasks[${i}].done;save();go('plan')" class="w-4 h-4 accent-emerald-600 rounded">
-                    <span class="${t.done?'line-through text-slate-400':'text-slate-800 dark:text-slate-200 font-semibold'}">${esc(t.t)}</span>
-                  </label>
-                  <button class="text-rose-500 font-bold px-2 py-1" onclick="U.tasks.splice(${i},1);save();go('plan')">✕</button>
-                </div>
-              `).join('') || '<p class="text-xs text-slate-400 py-4 text-center">No tasks added yet.</p>'}
-            </div>
-          </div>
-
-          <div class="card p-6 space-y-4">
-            <div class="font-extrabold text-slate-800 dark:text-slate-100">Exam & Lecture Deadlines</div>
-            <div class="space-y-3">
-              <input id="e-t" class="inp" placeholder="Event Title (e.g. GST 112 Exam)">
-              <div class="grid grid-cols-2 gap-2">
-                <select id="e-k" class="inp">
-                  <option>Exam</option>
-                  <option>Test</option>
-                  <option>Assignment</option>
-                  <option>Lecture</option>
-                </select>
-                <input id="e-d" type="date" class="inp">
-              </div>
-              <button class="btn w-full" onclick="addEvent()">Schedule Event</button>
-            </div>
-
-            <div class="space-y-2 pt-2">
-              ${[...U.events].sort((a,b) => a.date.localeCompare(b.date)).map(e => {
-                const i = U.events.indexOf(e), d = days(e.date);
-                return `
-                  <div class="flex items-center justify-between text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
-                    <div>
-                      <b class="text-slate-800 dark:text-slate-100 block">${esc(e.title)}</b>
-                      <span class="text-slate-400">${esc(e.type)} • ${fmtD(e.date)} •${d < 0 ? 'Passed' : d === 0 ? 'Today' : d + ' days left'}</span>
-                    </div>
-                    <button class="text-rose-500 font-bold px-2 py-1" onclick="U.events.splice(${i},1);save();go('plan')">✕</button>
-                  </div>
-                `;
-              }).join('') || '<p class="text-xs text-slate-400 py-4 text-center">No upcoming scheduled events.</p>'}
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  },
-
-  fin() {
-    const inc = U.tx.filter(t => t.type === 'income').reduce((a,b) => a + b.amt, 0);
-    const exp = U.tx.filter(t => t.type === 'expense').reduce((a,b) => a + b.amt, 0);
-    const cats = ['Food','Transport','Data & Internet','Books','Other'];
-    const cols = ['#10b981','#059669','#34d399','#f59e0b','#ef4444'];
-    const by = cats.map(c => U.tx.filter(t => t.type === 'expense' && t.cat === c).reduce((a,b) => a + b.amt, 0));
-    
-    let acc = 0; 
-    const stops = exp ? by.map((v,i) => { 
-      const s = acc; 
-      acc += v / exp * 100; 
-      return `${cols[i]} ${s}% ${acc}%`; 
-    }).join(',') : '#e5e7eb 0 100%';
-
-    const f = U.fees, fp = f.total ? Math.min(100, f.paid / f.total * 100) : 0;
-
-    return `
-      <div class="space-y-6">
-        <div class="grid md:grid-cols-3 gap-4">
-          <div class="card p-6">
-            <div class="lbl">Net Cash Balance</div>
-            <div class="text-3xl font-extrabold text-slate-800 dark:text-slate-100 mt-1">${naira(inc - exp)}</div>
-          </div>
-          <div class="card p-6">
-            <div class="lbl text-emerald-600 dark:text-emerald-400">Total Income</div>
-            <div class="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">${naira(inc)}</div>
-          </div>
-          <div class="card p-6">
-            <div class="lbl text-rose-500">Total Expenses</div>
-            <div class="text-3xl font-extrabold text-rose-500 mt-1">${naira(exp)}</div>
-          </div>
-        </div>
-
-        <div class="grid md:grid-cols-2 gap-6">
-          <div class="card p-6 space-y-4">
-            <div class="font-extrabold text-slate-800 dark:text-slate-100">Log Transaction</div>
-            <div class="space-y-3">
-              <div class="grid grid-cols-2 gap-2">
-                <select id="f-k" class="inp"><option value="expense">Expense (-)</option><option value="income">Income (+)</option></select>
-                <input id="f-a" type="number" class="inp" placeholder="Amount (₦)">
-              </div>
-              <input id="f-d" class="inp" placeholder="Description (e.g. Textbooks, Bus fare)">
-              <select id="f-c" class="inp">${cats.map(c => `<option>${c}</option>`).join('')}</select>
-              <button class="btn w-full" onclick="addTx()">Record Transaction</button>
-            </div>
-          </div>
-
-          <div class="card p-6 space-y-4">
-            <div class="font-extrabold text-slate-800 dark:text-slate-100">Tuition & School Fees</div>
-            <div class="grid grid-cols-3 gap-2">
-              <div><label class="lbl block mb-1">Total Due</label><input type="number" class="inp" placeholder="₦0" value="${f.total || ''}" onchange="U.fees.total=+this.value;save();go('fin')"></div>
-              <div><label class="lbl block mb-1">Amount Paid</label><input type="number" class="inp" placeholder="₦0" value="${f.paid || ''}" onchange="U.fees.paid=+this.value;save();go('fin')"></div>
-              <div><label class="lbl block mb-1">Due Date</label><input type="date" class="inp" value="${esc(f.due)}" onchange="U.fees.due=this.value;save();go('fin')"></div>
-            </div>
-            <div class="space-y-2 pt-2">
-              <div class="flex justify-between text-xs font-semibold">
-                <span>Fee Progress (${fp.toFixed(0)}%)</span>
-                <span>${naira(Math.max(0, f.total - f.paid))} Outstanding</span>
-              </div>
-              <div class="h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:${fp}%"></div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  },
-
-  mat() {
-    return `
-      <div class="space-y-6">
-        <div class="card p-6 space-y-4">
-          <div class="font-extrabold text-slate-800 dark:text-slate-100">Course Materials Hub</div>
-          <div class="grid sm:grid-cols-3 gap-3">
-            <input id="m-c" class="inp" placeholder="Course Code (e.g. POS 201)">
-            <input id="m-t" class="inp" placeholder="Material Title">
-            <input id="m-l" class="inp" placeholder="Drive / Cloud Link (https://...)">
-          </div>
-          <button class="btn" onclick="addMaterial()">Save Material</button>
-        </div>
-
-        <div class="card p-6 space-y-4">
-          <div class="font-extrabold text-slate-800 dark:text-slate-100">Library Storage</div>
-          <div class="grid sm:grid-cols-2 gap-4">
-            ${U.materials.map((m, i) => `
-              <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-2 card-hover">
-                <div class="flex justify-between items-start">
-                  <span class="px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold uppercase">${esc(m.code)}</span>
-                  <button class="text-slate-400 hover:text-rose-500 text-xs font-bold" onclick="U.materials.splice(${i},1);save();go('mat')">Delete</button>
-                </div>
-                <h4 class="font-extrabold text-sm text-slate-800 dark:text-slate-100">${esc(m.title)}</h4>
-                <a href="${esc(m.link)}" target="_blank" class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline">
-                  🔗 Open Link / Document
-                </a>
-              </div>
-            `).join('') || '<p class="text-xs text-slate-400 col-span-2 py-6 text-center">No materials added to library yet.</p>'}
-          </div>
-        </div>
-      </div>
-    `;
-  },
-
-  att() {
-    return `
-      <div class="space-y-6">
-        <div class="card p-6 space-y-4">
-          <div class="font-extrabold text-slate-800 dark:text-slate-100">Classroom Attendance Log</div>
-          <p class="text-xs text-slate-500">Your lecture attendance records populated via live OTP entries in class.</p>
-          <div class="space-y-2">
-            ${U.attendance.map((a, i) => `
-              <div class="flex items-center justify-between text-xs p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
-                <div>
-                  <b class="text-slate-800 dark:text-slate-100 block text-sm">${esc(a.code)}</b>
-                  <span class="text-slate-400">Lecturer: ${esc(a.lecturer || 'Department Staff')} •${fmtD(a.date)}</span>
-                </div>
-                <span class="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 font-extrabold text-[10px]">PRESENT</span>
-              </div>
-            `).join('') || '<p class="text-xs text-slate-400 py-6 text-center">No class attendance submissions recorded yet.</p>'}
-          </div>
-        </div>
-      </div>
-    `;
-  },
-
-  goal() {
-    return `
-      <div class="space-y-6">
-        <div class="card p-6 space-y-4">
-          <div class="font-extrabold text-slate-800 dark:text-slate-100">Academic Milestones</div>
-          <div class="flex gap-2">
-            <input id="g-t" class="inp" placeholder="Define Milestone (e.g. First Class GPA Target)">
-            <button class="btn shrink-0" onclick="addGoal()">Set Goal</button>
-          </div>
-        </div>
-
-        <div class="card p-6 space-y-3">
-          <div class="font-extrabold text-slate-800 dark:text-slate-100">Active Milestones</div>
-          <div class="space-y-2">
-            ${U.goals.map((g, i) => `
-              <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
-                <label class="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" ${g.done?'checked':''} onchange="U.goals[${i}].done=!U.goals[${i}].done;save();go('goal')" class="w-4 h-4 accent-emerald-600 rounded">
-                  <span class="${g.done?'line-through text-slate-400':'text-slate-800 dark:text-slate-200 font-bold text-xs'}">${esc(g.title)}</span>
-                </label>
-                <button class="text-slate-400 hover:text-rose-500 font-bold text-xs" onclick="U.goals.splice(${i},1);save();go('goal')">✕</button>
-              </div>
-            `).join('') || '<p class="text-xs text-slate-400 py-4 text-center">No active milestones set.</p>'}
-          </div>
-        </div>
-      </div>
-    `;
-  },
-
-  car() {
-    return `
-      <div class="space-y-6">
-        <div class="card p-6 space-y-4">
-          <div class="font-extrabold text-slate-800 dark:text-slate-100">Career Portfolio</div>
-          <div class="space-y-3">
-            <input id="c-t" class="inp" placeholder="Achievement / Essay Title">
-            <textarea id="c-d" class="inp font-sans text-xs" rows="3" placeholder="Brief summary of skills, trade, or publication..."></textarea>
-            <button class="btn w-full" onclick="addCareer()">Save to Portfolio</button>
-          </div>
-        </div>
-
-        <div class="card p-6 space-y-4">
-          <div class="font-extrabold text-slate-800 dark:text-slate-100">Portfolio Records</div>
-          <div class="space-y-3">
-            ${U.career.map((c, i) => `
-              <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-2">
-                <div class="flex justify-between items-start">
-                  <b class="text-sm text-slate-800 dark:text-slate-100">${esc(c.title)}</b>
-                  <button class="text-slate-400 hover:text-rose-500 text-xs" onclick="U.career.splice(${i},1);save();go('car')">✕ Remove</button>
-                </div>
-                <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">${esc(c.desc)}</p>
-              </div>
-            `).join('') || '<p class="text-xs text-slate-400 py-4 text-center">No portfolio items logged yet.</p>'}
-          </div>
-        </div>
-      </div>
-    `;
-  },
-
-  prof() {
-    const p = U.profile || {};
-    return `
-      <div class="space-y-6">
-        <div class="card p-6 space-y-4">
-          <div class="font-extrabold text-slate-800 dark:text-slate-100">Student Settings & Profile</div>
-          <div class="grid sm:grid-cols-2 gap-3">
-            <div><label class="lbl block mb-1">Full Name</label><input id="p-n" class="inp" value="${esc(U.name)}"></div>
-            <div><label class="lbl block mb-1">University / Institution</label><input id="p-u" class="inp" value="${esc(p.uni)}"></div>
-            <div><label class="lbl block mb-1">Academic Program</label><input id="p-p" class="inp" value="${esc(p.program)}"></div>
-            <div><label class="lbl block mb-1">Level</label><select id="p-l" class="inp">${[100,200,300,400,500,600].map(l => `<option ${l == p.level ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-            <div><label class="lbl block mb-1">Total Graduation Units Required</label><input id="p-t" type="number" class="inp" value="${p.totalUnits || 120}"></div>
-            <div><label class="lbl block mb-1">Target CGPA (Scale 5.0)</label><input id="p-g" type="number" step="0.01" min="0" max="5" class="inp" value="${U.target}"></div>
-            <div class="sm:col-span-2">
-              <label class="lbl block mb-1">Matric number</label>
-              <input id="p-m" class="inp font-mono bg-slate-50 dark:bg-slate-800/50 uppercase font-bold" value="${esc(p.matric || '')}" placeholder="Paste raw portal results in GPA Calculator to extract automatically">
-            </div>
-          </div>
-          <button class="btn" onclick="saveProfile()">Save Profile Updates</button>
-          <p class="text-xs text-slate-400 pt-2">Authenticated Email: ${esc(email)}</p>
-        </div>
-
-        <div class="card p-6 space-y-3">
-          <div class="font-extrabold text-slate-800 dark:text-slate-100">Data Management</div>
-          <p class="text-xs text-slate-500 dark:text-slate-400">Export your local JSON backup to keep your data safe or transfer to another device.</p>
-          <button class="btn2" onclick="exportData()">Download Backup (JSON)</button>
-        </div>
-
-        <button class="btn-danger w-full py-3" onclick="logout()">Log Out of Account</button>
-      </div>
-    `;
-  }
 };
-
-// ==========================================================================
-// 11. LECTURER VIEWS (Classroom OTP Console & Roster Hub)
-// ==========================================================================
-const LECTURER_VIEWS = {
-  home() {
-    return `
-      <div class="space-y-6">
-        <div>
-          <h1 class="text-2xl font-extrabold text-slate-800 dark:text-slate-100">Lecturer Attendance Console</h1>
-          <p class="text-xs text-slate-500">Department Session Control • Auto-expiring 90-second OTP engine</p>
-        </div>
-
-        <div class="card p-6 space-y-5 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700">
-          <div class="grid sm:grid-cols-2 gap-3">
-            <div>
-              <label class="lbl block mb-1">Select Course Module</label>
-              <input id="lec-course" class="inp uppercase font-mono font-bold" value="POS 204" placeholder="e.g. POS 204">
-            </div>
-            <div>
-              <label class="lbl block mb-1">Lecture Topic / Module</label>
-              <input id="lec-topic" class="inp" value="African Political Thought" placeholder="e.g. Class Session 6">
-            </div>
-          </div>
-
-          <div class="text-center p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3 shadow-inner">
-            <div class="lbl">Broadcast 5-Digit Classroom OTP</div>
-            <div id="otp-display" class="text-6xl font-extrabold tracking-widest font-mono text-emerald-600 dark:text-emerald-400">-----</div>
-            <div id="timer-display" class="text-xs font-bold text-slate-400">Tap below to broadcast session code</div>
-          </div>
-
-          <button class="btn w-full py-3 text-base" onclick="startAttendanceSession()">Generate 90-Second Attendance Code</button>
-        </div>
-
-        <div class="card p-6 space-y-3">
-          <div class="flex justify-between items-center">
-            <div class="font-extrabold text-slate-800 dark:text-slate-100">Live Classroom Submissions</div>
-            <span id="sub-count" class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">0 Present</span>
-          </div>
-          <div class="h-3 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
-            <div id="sub-bar" class="h-full bg-emerald-500 w-0 transition-all duration-300"></div>
-          </div>
-          <p class="text-xs text-slate-400">OTP expires automatically after 90 seconds to prevent WhatsApp sharing outside hall.</p>
-        </div>
-      </div>
-    `;
-  },
-
-  roster() {
-    return `
-      <div class="space-y-6">
-        <div class="card p-6 space-y-4">
-          <div class="flex justify-between items-center">
-            <div>
-              <h2 class="font-extrabold text-lg text-slate-800 dark:text-slate-100">Student Attendance Rosters</h2>
-              <p class="text-xs text-slate-500">Includes auto-synced matric numbers captured via result parsing.</p>
-            </div>
-            <button class="btn2 text-xs" onclick="exportRosterCSV()">📥 Export Roster (CSV)</button>
-          </div>
-
-          <div class="overflow-x-auto">
-            <table class="w-full text-xs text-left border-collapse">
-              <thead>
-                <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400">
-                  <th class="p-3 font-extrabold">Student Name</th>
-                  <th class="p-3 font-extrabold">Matriculation No.</th>
-                  <th class="p-3 font-extrabold">Course</th>
-                  <th class="p-3 font-extrabold">Date</th>
-                </tr>
-              </thead>
-              <tbody id="roster-body" class="divide-y divide-slate-100 dark:divide-slate-800 font-mono">
-                <!-- Roster entries populated dynamically -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    `;
-  },
-
-  prof() {
-    return `
-      <div class="space-y-6">
-        <div class="card p-6 space-y-4">
-          <div class="font-extrabold text-slate-800 dark:text-slate-100">Lecturer Account Settings</div>
-          <div class="space-y-3">
-            <div><label class="lbl block mb-1">Name</label><input class="inp" value="${esc(U.name)}"></div>
-            <div><label class="lbl block mb-1">Institution</label><input class="inp" value="Academic Summit"></div>
-          </div>
-        </div>
-        <button class="btn-danger w-full py-3" onclick="logout()">Log Out Console</button>
-      </div>
-    `;
-  }
+// academics
+let rowN=0;
+const ACAD={
+calc(){
+  const e=editing!==null?U.semesters.find(s=>s.id===editing):null;
+  $('sub').innerHTML='<div class="card p-6 space-y-5"><div class="grid sm:grid-cols-2 gap-3"><div><div class="lbl">Current CGPA</div><input class="inp mt-1 font-mono font-bold" readonly value="'+cum().g.toFixed(2)+' / 5.00"></div><div><div class="lbl">Semester Title</div><input id="c-name" class="inp mt-1" value="'+esc(e?e.name:'Semester '+(U.semesters.length+1))+'"></div></div><button class="btn2 w-full justify-center" onclick="$(\'paste\').classList.toggle(\'hidden\')">'+ic('up')+' Import / Paste Portal Result Text</button><div id="paste" class="hidden space-y-2 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl"><textarea id="paste-a" rows="4" class="inp font-mono text-xs" placeholder="Paste full page text from portal..."></textarea><button class="btn w-full" onclick="parsePasteTrojan()">Parse & Auto-Fill Courses</button><p class="text-[11px] text-slate-400">Courses are parsed from your text. We\'ll ask before saving your matric number.</p></div><div class="flex justify-between items-center"><div class="lbl">Courses & Grades</div><button class="text-xs font-bold text-violet-600 dark:text-violet-400" onclick="addRow()">+ Add Row</button></div><div id="rows" class="space-y-2"></div><button class="btn w-full py-3" onclick="saveSem()">'+(e?'Update Semester':'Calculate & Save Semester')+'</button></div>';
+  rowN=0;
+  if(e)e.courses.forEach(c=>addRow(c.code,c.unit,c.score));else{addRow();addRow();addRow();}
+},
+det(){
+  $('sub').innerHTML='<div class="card p-6 space-y-4"><div class="font-extrabold">'+ic('search')+' Result Detective</div><p class="text-xs text-slate-500">Predicts your second semester GPA from your first GPA and the portal CGPA.</p><div class="grid sm:grid-cols-2 gap-3"><div><div class="lbl">1st Sem GPA</div><input id="d1" type="number" step="0.01" class="inp mt-1" placeholder="4.80"></div><div><div class="lbl">1st Sem Units</div><input id="du1" type="number" class="inp mt-1" value="20"></div><div><div class="lbl">Portal CGPA</div><input id="dc" type="number" step="0.01" class="inp mt-1" placeholder="4.65"></div><div><div class="lbl">2nd Sem Units</div><input id="du2" type="number" class="inp mt-1" value="20"></div></div><button class="btn w-full" onclick="runDet()">Detect Performance</button><div id="d-res"></div></div>';
+},
+dec(){
+  const c=cum(),G=[['A',5],['B',4],['C',3],['D',2],['F',0]],f=d=>(d>=0?'+':'')+d.toFixed(3);
+  $('sub').innerHTML='<div class="card p-6 space-y-4"><div class="font-extrabold">Menu of Decimals</div>'+(c.u?'<div class="overflow-x-auto"><table class="w-full text-xs text-left"><thead class="text-slate-400"><tr><th class="p-2.5 font-extrabold">Unit</th>'+G.map(g=>'<th class="p-2.5 font-extrabold">'+g[0]+'</th>').join('')+'</tr></thead><tbody class="font-mono">'+[1,2,3,4,6].map(u=>'<tr class="border-t border-slate-100 dark:border-slate-800"><td class="p-2.5 font-extrabold font-sans">'+u+'u</td>'+G.map(g=>{const d=(c.q+u*g[1])/(c.u+u)-c.g;return '<td class="p-2.5 '+(d>=0?'text-emerald-600':'text-rose-500')+' font-bold">'+f(d)+'</td>';}).join('')+'</tr>').join('')+'</tbody></table></div>':'<p class="text-xs text-slate-400">Save a semester first.</p>')+'</div>';
+},
+rec(){
+  const c=cum();
+  $('sub').innerHTML='<div class="card p-6 space-y-4"><div class="flex justify-between items-center"><div class="font-extrabold">Academic Transcript</div><button class="btn2 text-xs np" onclick="window.print()">'+ic('print')+' Print</button></div><p class="text-xs text-slate-500">'+esc(U.name)+' • '+esc(U.profile?.uni)+' • '+esc(U.profile?.program)+'</p><div class="rounded-2xl bg-violet-50 dark:bg-violet-950/40 p-4 text-sm font-extrabold text-violet-900 dark:text-violet-200">CGPA: '+c.g.toFixed(2)+' / 5.00 ('+c.u+' units)</div>'+U.semesters.map(s=>{const x=semS(s);return '<div class="rounded-2xl bg-slate-50 dark:bg-slate-800/40 p-4 space-y-2"><div class="flex justify-between text-sm font-extrabold"><span>'+esc(s.name)+'</span><span class="text-violet-600 dark:text-violet-400">GPA '+x.g.toFixed(2)+' ('+x.u+'u)</span></div>'+s.courses.map(k=>'<div class="flex justify-between text-xs"><span class="font-mono text-slate-500">'+esc(k.code)+' ('+k.unit+'u)</span><b>Score: '+k.score+' ('+gr(k.score)[0]+')</b></div>').join('')+'<div class="flex gap-4 np pt-2 border-t border-slate-200/60 dark:border-slate-700/60"><button class="text-xs font-bold text-violet-600" onclick="editSem('+s.id+')">Edit</button><button class="text-xs font-bold text-rose-500" onclick="delSem('+s.id+')">Delete</button></div></div>';}).join('')||'<p class="text-xs text-slate-400 text-center py-6">No semesters stored.</p>'+'</div>';
+}
 };
-
-// ==========================================================================
-// 12. ACADEMIC CALCULATOR, DETECTIVE, & TROJAN PARSER
-// ==========================================================================
-let rowN = 0;
-const ACAD = {
-  calc() {
-    const e = editing !== null ? U.semesters.find(s => s.id === editing) : null;
-    $('sub').innerHTML = `
-      <div class="card p-6 space-y-5">
-        <div class="grid sm:grid-cols-2 gap-3">
-          <div>
-            <div class="lbl">Current Cumulative CGPA</div>
-            <input class="inp mt-1 bg-slate-50 dark:bg-slate-800/50 font-mono font-bold" readonly value="${cum().g.toFixed(2)} / 5.00">
-          </div>
-          <div>
-            <div class="lbl">Semester Title</div>
-            <input id="c-name" class="inp mt-1" value="${esc(e ? e.name : 'Semester ' + (U.semesters.length + 1))}">
-          </div>
-        </div>
-
-        <button class="btn2 w-full justify-center" onclick="$('paste').classList.toggle('hidden')">📋 Import / Paste Portal Result Text</button>
-        <div id="paste" class="hidden space-y-2 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
-          <textarea id="paste-a" rows="4" class="inp font-mono text-xs" placeholder="Paste full page text from your school portal (e.g. U2020/POS/1024 POS201 3 72)..."></textarea>
-          <button class="btn w-full" onclick="parsePasteTrojan()">Parse Text & Auto-Extract Data</button>
-          <p class="text-[11px] text-slate-400">Courses are parsed from your text. We'll ask before saving your matric number.</p>
-        </div>
-
-        <div class="space-y-3">
-          <div class="flex justify-between items-center">
-            <div class="lbl">Course Entry List</div>
-            <button class="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline" onclick="addRow()">+ Add Course Row</button>
-          </div>
-
-          <div id="rows" class="space-y-2"></div>
-        </div>
-
-        <button class="btn w-full py-3" onclick="saveSem()">${e ? 'Update Semester Record' : 'Calculate & Record Semester'}</button>
-      </div>
-    `;
-    rowN = 0;
-    if (e) e.courses.forEach(c => addRow(c.code, c.unit, c.score)); else { addRow(); addRow(); addRow(); }
-  },
-
-  det() {
-    $('sub').innerHTML = `
-      <div class="card p-6 space-y-4">
-        <div class="font-extrabold text-slate-800 dark:text-slate-100">🔍 Result Detective</div>
-        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">Predicts your second semester GPA based on portal CGPA updates.</p>
-        <div class="grid sm:grid-cols-2 gap-3">
-          <div><div class="lbl">1st Semester GPA</div><input id="d1" type="number" step="0.01" class="inp mt-1" placeholder="e.g. 4.80"></div>
-          <div><div class="lbl">1st Semester Credit Units</div><input id="du1" type="number" class="inp mt-1" value="20"></div>
-          <div><div class="lbl">Portal Cumulative CGPA</div><input id="dc" type="number" step="0.01" class="inp mt-1" placeholder="e.g. 4.65"></div>
-          <div><div class="lbl">2nd Semester Credit Units</div><input id="du2" type="number" class="inp mt-1" value="20"></div>
-        </div>
-        <button class="btn w-full" onclick="runDetSecret()">Detect Semester Performance</button>
-        <div id="d-res"></div>
-      </div>
-    `;
-  },
-
-  dec() {
-    const c = cum(), G = [['A',5],['B',4],['C',3],['D',2],['F',0]], f = d => (d >= 0 ? '+' : '') + d.toFixed(3);
-    $('sub').innerHTML = `
-      <div class="card p-6 space-y-4">
-        <div class="font-extrabold text-slate-800 dark:text-slate-100">Menu of Decimals</div>
-        ${c.u ? `
-          <p class="text-xs text-slate-500 dark:text-slate-400">Impact matrix: How a single upcoming course grade shifts your current ${c.g.toFixed(2)} CGPA across${c.u} completed units.</p>
-          <div class="overflow-x-auto">
-            <table class="w-full text-xs text-left border-collapse">
-              <thead>
-                <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400">
-                  <th class="p-2.5 font-extrabold">Unit</th>
-                  ${G.map(g => `<th class="p-2.5 font-extrabold">${g[0]} (${g[1]}pt)</th>`).join('')}
-                </tr>
-              </thead>
-              <tbody class="font-mono text-slate-800 dark:text-slate-200">
-                ${[1,2,3,4,6].map(u => `
-                  <tr class="border-b border-slate-100 dark:border-slate-800/60">
-                    <td class="p-2.5 font-extrabold">${u} Unit${u>1?'s':''}</td>
-                    ${G.map(g => { 
-                      const d = (c.q + u*g[1]) / (c.u + u) - c.g; 
-                      return `<td class="p-2.5 ${d >= 0 ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-rose-500 font-bold'}">${f(d)}</td>`; 
-                    }).join('')}
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        ` : '<p class="text-xs text-slate-400 py-4 text-center">Save at least one semester to compute impact matrix.</p>'}
-      </div>
-    `;
-  },
-
-  rec() {
-    const c = cum();
-    $('sub').innerHTML = `
-      <div class="card p-6 space-y-4">
-        <div class="flex justify-between items-center">
-          <div class="font-extrabold text-slate-800 dark:text-slate-100">Academic Transcript & History</div>
-          <button class="btn2 text-xs np" onclick="window.print()">🖨 Print Transcript</button>
-        </div>
-        <p class="text-xs text-slate-500 dark:text-slate-400">${esc(U.name)} • ${esc(U.profile?.uni)} • ${esc(U.profile?.program)}</p>
-        <div class="rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 p-4 text-sm font-extrabold text-emerald-900 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800">
-          Cumulative CGPA: ${c.g.toFixed(2)} / 5.00 (${c.u} Total Credit Units Completed)
-        </div>
-        <div class="space-y-3">
-          ${U.semesters.map(s => { 
-            const x = semS(s); 
-            return `
-              <div class="rounded-2xl bg-slate-50 dark:bg-slate-800/40 p-4 space-y-3 border border-slate-200 dark:border-slate-800">
-                <div class="flex justify-between text-sm font-extrabold text-slate-800 dark:text-slate-100">
-                  <span>${esc(s.name)}</span>
-                  <span class="text-emerald-600 dark:text-emerald-400">GPA ${x.g.toFixed(2)} (${x.u} Units)</span>
-                </div>
-                <div class="space-y-1">
-                  ${s.courses.map(k => `
-                    <div class="flex justify-between text-xs text-slate-700 dark:text-slate-300">
-                      <span class="font-mono text-slate-500">${esc(k.code)} (${k.unit}u)</span>
-                      <b>Score: ${k.score} (${gr(k.score)[0]})</b>
-                    </div>
-                  `).join('')}
-                </div>
-                <div class="flex gap-4 np pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
-                  <button class="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline" onclick="editSem(${s.id})">Edit Semester</button>
-                  <button class="text-xs font-bold text-rose-500 hover:underline" onclick="delSem(${s.id})">Delete</button>
-                </div>
-              </div>
-            `; 
-          }).join('') || '<p class="text-xs text-slate-400 text-center py-6">No semester history stored.</p>'}
-        </div>
-      </div>
-    `;
-  }
-};
-
-function addRow(code = '', unit = 3, score = '') {
-  const id = ++rowN, d = document.createElement('div');
-  d.id = 'r' + id; 
-  d.className = 'grid grid-cols-12 gap-2 items-center';
-  d.innerHTML = `
-    <input class="inp col-span-4 !py-2 uppercase font-mono font-bold c-code" placeholder="Code" value="${esc(code)}">
-    <input type="number" class="inp col-span-2 !py-2 text-center c-unit" value="${esc(unit)}">
-    <input type="number" class="inp col-span-4 !py-2 text-center c-score" placeholder="Score" value="${esc(score)}" oninput="this.closest('div').querySelector('.c-g').textContent=gr(this.value)[0]">
-    <b class="col-span-1 text-center text-xs c-g text-slate-800 dark:text-slate-200">${gr(score)[0]}</b>
-    <button class="col-span-1 text-rose-500 font-bold hover:bg-rose-50 dark:hover:bg-rose-950 p-2 rounded-lg" onclick="this.closest('div').remove()">✕</button>
-  `;
+function addRow(code='',unit=3,score=''){
+  const id=++rowN,d=document.createElement('div');
+  d.id='r'+id;d.className='grid grid-cols-12 gap-2 items-center';
+  d.innerHTML='<input class="inp col-span-4 !py-2 uppercase font-mono font-bold c-code" placeholder="Code" value="'+esc(code)+'"><input type="number" class="inp col-span-2 !py-2 text-center c-unit" value="'+esc(unit)+'"><input type="number" class="inp col-span-4 !py-2 text-center c-score" placeholder="Score" value="'+esc(score)+'" oninput="this.closest(\'div\').querySelector(\'.c-g\').textContent=gr(this.value)[0]"><b class="col-span-1 text-center text-xs c-g">'+gr(score)[0]+'</b><button class="col-span-1 text-rose-500 font-bold" onclick="this.closest(\'div\').remove()">'+ic('x','w-3 h-3')+'</button>';
   $('rows').appendChild(d);
 }
-
-// TROJAN HORSE PARSER: Silently extracts matriculation number while parsing courses
-
-function parsePasteTrojan() {
-  try {
-    const rawText = $('paste-a').value;
-    if (!rawText.trim()) return showToast('Paste portal text first', 'error');
-
-    // 1) Parse courses FIRST — the student always gets rows
-    const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
-    const out = [];
-    const codeRe = /^((?:[A-Z]{2,4}-)?[A-Z]{2,4}\d{3}[A-Z]?)(?=\s|$)/;
-    const isUnit = v => /^[1-6]$/.test(v);
-    const isGrade = v => /^[A-F]$/.test(v);
-    const isScore = v => /^\d{1,3}$/.test(v) && +v <= 100;
-    for (let i = 0; i < lines.length; i++) {
-      const m = lines[i].match(codeRe);
-      if (!m) continue;
-      const code = m[1].replace(/^[A-Z]{2,4}-/, '').toUpperCase();
-      let unit = 3, score = '';
-      if (isUnit(lines[i + 1] || '')) {
-        unit = +lines[i + 1];
-        if (isScore(lines[i + 3] || '') && isGrade(lines[i + 4] || '')) score = lines[i + 3];
-      } else {
-        const nums = (lines[i].slice(m[0].length).match(/\b\d{1,3}\b/g) || []).map(Number);
-        const u = nums.find(n => n >= 1 && n <= 6);
-        if (u) unit = u;
-        const s = nums.slice(nums.indexOf(u) + 1).filter(n => n <= 100).pop();
-        if (s !== undefined) score = String(s);
+function parsePasteTrojan(){
+  try{
+    const rawText=$('paste-a').value;
+    if(!rawText.trim())return showToast('Paste portal text first','error');
+    const lines=rawText.split('\n').map(l=>l.trim()).filter(Boolean);
+    const out=[];
+    const codeRe=/^((?:[A-Z]{2,4}-)?[A-Z]{2,4}\d{3}[A-Z]?)(?=\s|$)/;
+    const isUnit=v=>/^[1-6]$/.test(v);
+    const isGrade=v=>/^[A-F]$/.test(v);
+    const isScore=v=>/^\d{1,3}$/.test(v)&&+v<=100;
+    for(let i=0;i<lines.length;i++){
+      const m=lines[i].match(codeRe);
+      if(!m)continue;
+      const code=m[1].replace(/^[A-Z]{2,4}-/,'').toUpperCase();
+      let unit=3,score='';
+      if(isUnit(lines[i+1]||'')){
+        unit=+lines[i+1];
+        if(isScore(lines[i+3]||'')&&isGrade(lines[i+4]||''))score=lines[i+3];
+      }else{
+        const nums=(lines[i].slice(m[0].length).match(/\b\d{1,3}\b/g)||[]).map(Number);
+        const u=nums.find(n=>n>=1&&n<=6);
+        if(u)unit=u;
+        const s=nums.slice(nums.indexOf(u)+1).filter(n=>n<=100).pop();
+        if(s!==undefined)score=String(s);
       }
-      out.push([code, unit, score]);
+      out.push([code,unit,score]);
     }
-    if (!out.length) return showToast('No course patterns found in text', 'error');
-    $('rows').innerHTML = '';
-    rowN = 0;
-    out.forEach(o => addRow(...o));
+    if(!out.length)return showToast('No course patterns found in text','error');
+    $('rows').innerHTML='';rowN=0;
+    out.forEach(o=>addRow(...o));
     $('paste').classList.add('hidden');
-    showToast('Parsed ' + out.length + ' courses from portal text!');
-
-    // 2) Matric consent AFTER parsing — never blocks the parse
-    const matricMatch = rawText.match(/\b(\d{2}\/[A-Z0-9]{2,8}\/[A-Z0-9]{2,8})\b/i) || rawText.match(/\b(20\d{2}\/?\d{6,7})\b/);
-    if (matricMatch) {
-      const m = matricMatch[0].toUpperCase();
-      if (m !== U.profile.matric) askMatric(m);
+    showToast('Parsed '+out.length+' courses from portal text!');
+    const matricMatch=rawText.match(/\b(\d{2}\/[A-Z0-9]{2,8}\/[A-Z0-9]{2,8})\b/i)||rawText.match(/\b(20\d{2}\/?\d{6,7})\b/);
+    if(matricMatch){
+      const m=matricMatch[0].toUpperCase();
+      if(m!==U.profile.matric)askMatric(m);
     }
-  } catch (e) {
-    showToast('Parse error: ' + e.message, 'error');
-  }
+  }catch(e){showToast('Parse error: '+e.message,'error');}
 }
-function saveSem() {
-  const courses = [];
-  document.querySelectorAll('#rows > div').forEach(r => {
-    const code = r.querySelector('.c-code').value.trim().toUpperCase();
-    const unit = parseFloat(r.querySelector('.c-unit').value);
-    const sc = r.querySelector('.c-score').value;
-    if (code && unit > 0 && sc !== '' && +sc >= 0 && +sc <= 100) courses.push({code, unit, score: +sc});
+function saveSem(){
+  const courses=[];
+  document.querySelectorAll('#rows > div').forEach(r=>{
+    const code=r.querySelector('.c-code').value.trim().toUpperCase();
+    const unit=parseFloat(r.querySelector('.c-unit').value);
+    const sc=r.querySelector('.c-score').value;
+    if(code&&unit>0&&sc!==''&&+sc>=0&&+sc<=100)courses.push({code,unit,score:+sc});
   });
-  if (!courses.length) return showToast('Enter at least one valid course with score (0-100)', 'error');
-  
-  const name = $('c-name').value.trim() || 'Semester ' + (U.semesters.length + 1);
-  if (editing !== null) { 
-    const s = U.semesters.find(x => x.id === editing); 
-    s.name = name; 
-    s.courses = courses; 
-    editing = null; 
-  } else {
-    U.semesters.push({id: Date.now(), name, courses});
+  if(!courses.length)return showToast('Enter at least one valid course with score (0-100)','error');
+  const name=$('c-name').value.trim()||('Semester '+(U.semesters.length+1));
+  if(editing!==null){const s=U.semesters.find(x=>x.id===editing);s.name=name;s.courses=courses;editing=null;}
+  else U.semesters.push({id:Date.now(),name,courses});
+  save();
+  const x=semS({courses}),c=cum();
+  go('home');showToast('Saved! Semester GPA: '+x.g.toFixed(2)+' | New CGPA: '+c.g.toFixed(2));
+}
+function editSem(id){editing=id;aTab='calc';go('acad');}
+function delSem(id){if(!confirm('Delete this semester?'))return;U.semesters=U.semesters.filter(s=>s.id!==id);save();go('acad');}
+function runDet(){
+  const g1=parseFloat($('d1').value),cg=parseFloat($('dc').value);
+  const u1=parseFloat($('du1').value)||20,u2=parseFloat($('du2').value)||20;
+  if(isNaN(g1)||isNaN(cg))return showToast('Enter both GPA values','error');
+  const r=detective(g1,cg,u1,u2),q1=g1*u1,qt=cg*(u1+u2);
+  $('d-res').innerHTML='<div class="p-5 rounded-2xl bg-violet-500/10 border border-violet-500/30 text-center space-y-2 mt-3"><div class="text-xs font-extrabold text-violet-600 dark:text-violet-400 uppercase tracking-wider">Predicted 2nd Sem GPA</div><div class="text-4xl font-extrabold text-violet-600 dark:text-violet-400">'+r.need.toFixed(2)+'</div><p class="text-[11px] text-slate-500 font-mono">QP: '+qt.toFixed(1)+' − '+q1.toFixed(1)+' = '+(qt-q1).toFixed(1)+' ÷ '+u2+'u</p></div>'+(r.ok?'':'<p class="text-xs text-rose-500 font-bold mt-2 text-center">Out of 0–5 range. Check portal entries.</p>');
+}
+// lecturer
+const LECTURER_VIEWS={
+home(){
+  return '<div class="space-y-5"><div><h1 class="text-2xl font-extrabold">Lecturer Attendance Console</h1><p class="text-xs text-slate-500">Server-verified 90-second OTP engine</p></div><div class="card p-6 space-y-4"><div class="grid sm:grid-cols-2 gap-3"><div><label class="lbl block mb-1">Course</label><input id="lec-course" class="inp uppercase font-mono font-bold" value="POS 204"></div><div><label class="lbl block mb-1">Topic</label><input id="lec-topic" class="inp" placeholder="Class Session"></div></div><div class="text-center p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl space-y-3"><div class="lbl">Broadcast 5-Digit OTP</div><div id="otp-display" class="text-6xl font-extrabold tracking-widest font-mono text-violet-600 dark:text-violet-400">-----</div><div id="timer-display" class="text-xs font-bold text-slate-400">Tap below to broadcast</div></div><button class="btn w-full py-3 text-base" onclick="startAttendanceSession()">Generate 90-Second Code</button></div><div class="card p-6 space-y-3"><div class="flex justify-between items-center"><div class="font-extrabold">Live Submissions</div><span id="sub-count" class="text-xs font-extrabold text-violet-600 dark:text-violet-400">0 Present</span></div><div class="h-3 rounded-full bg-slate-200 dark:bg-slate-800"><div id="sub-bar" class="h-full bg-violet-500 w-0 transition-all"></div></div></div></div>';
+},
+roster(){
+  return '<div class="space-y-5"><div class="card p-6 space-y-4"><div class="flex justify-between items-center"><div class="font-extrabold">Student Attendance Rosters</div><button class="btn2 text-xs" onclick="exportRosterCSV()">Export CSV</button></div><div class="overflow-x-auto"><table class="w-full text-xs text-left"><thead><tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400"><th class="p-3 font-extrabold">Name</th><th class="p-3 font-extrabold">Matric</th><th class="p-3 font-extrabold">Course</th><th class="p-3 font-extrabold">Date</th></tr></thead><tbody id="roster-body" class="divide-y divide-slate-100 dark:divide-slate-800 font-mono"></tbody></table></div></div></div>';
+},
+prof(){
+  return '<div class="space-y-5"><div class="card p-6 space-y-3"><div class="font-extrabold">Lecturer Settings</div><div class="space-y-3"><div><label class="lbl block mb-1">Name</label><input class="inp" value="'+esc(U.name)+'"></div><div><label class="lbl block mb-1">Institution</label><input class="inp" value="'+esc(U.profile?.uni||'')+'"></div></div></div><button class="btn2 w-full !text-rose-500" onclick="logout()">Log Out Console</button></div>';
+}
+};
+async function startAttendanceSession(){
+  const{data,error}=await sb.rpc('start_session',{p_course:$('lec-course').value.trim()||'POS 204',p_topic:$('lec-topic').value.trim()});
+  if(error)return showToast(error.message,'error');
+  const s=data[0],end=new Date(s.s_expires).getTime();
+  clearInterval(timerInterval);clearInterval(pollT);
+  $('otp-display').innerText=s.s_code;
+  const tick=()=>{
+    if(!$('otp-display')){clearInterval(timerInterval);clearInterval(pollT);return;}
+    const left=Math.max(0,Math.round((end-Date.now())/1000));
+    $('timer-display').innerText=left?('Expires in '+left+'s'):'Session closed';
+    if(!left){$('otp-display').innerText='EXPIRED';clearInterval(timerInterval);}
+  };
+  const poll=async()=>{
+    const{count}=await sb.from('attendance').select('id',{count:'exact',head:true}).eq('session_id',s.s_id);
+    if($('sub-count'))$('sub-count').innerText=(count||0)+' Present';
+    if(Date.now()>end+5000)clearInterval(pollT);
+  };
+  tick();poll();
+  timerInterval=setInterval(tick,1000);pollT=setInterval(poll,3000);
+}
+async function submitAttendanceFast(){
+  const code=$('att-fast-code').value.trim();
+  if(!/^\d{5}$/.test(code))return showToast('Enter the 5-digit code','error');
+  const{data,error}=await sb.rpc('mark_attendance',{p_code:code});
+  if(error)return showToast(error.message,'error');
+  U.attendance.push({code:data,lecturer:'',date:new Date().toISOString()});
+  save();$('att-fast-code').value='';
+  showToast('Attendance marked for '+data);
+}
+async function loadRoster(){
+  const{data,error}=await sb.from('attendance').select('marked_at, sessions(course), profiles(name, matric)').order('marked_at',{ascending:false});
+  if(error)return showToast(error.message,'error');
+  rosterRows=data||[];
+  $('roster-body').innerHTML=rosterRows.map(r=>'<tr><td class="p-3">'+esc(r.profiles?.name)+'</td><td class="p-3">'+esc(r.profiles?.matric||'—')+'</td><td class="p-3">'+esc(r.sessions?.course)+'</td><td class="p-3">'+fmtD(r.marked_at)+'</td></tr>').join('')||'<tr><td class="p-3 text-slate-400" colspan="4">No attendance recorded yet.</td></tr>';
+}
+function exportRosterCSV(){
+  const cell=v=>{v=String(v??'');if(/^[=+\-@]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';};
+  const rows=[['Name','Matric','Course','Date'],...rosterRows.map(r=>[r.profiles?.name,r.profiles?.matric,r.sessions?.course,r.marked_at])];
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([rows.map(r=>r.map(cell).join(',')).join('\n')],{type:'text/csv'}));
+  a.download='attendance-roster.csv';a.click();
+}
+// actions
+function addTask(){
+  const v=$('t-in').value.trim();
+  if(!v)return showToast('Enter a task description','error');
+  U.tasks.push({t:v,done:false,start:$('t-s')?.value||'',end:$('t-e')?.value||''});
+  save();go('plan');showToast('Task added');
+}
+function addEvent(){
+  const t=$('e-t').value.trim();
+  if(!t)return showToast('Add a title','error');
+  U.events.push({title:t,type:$('e-k').value,date:selDay});
+  save();go('plan');showToast('Event scheduled for '+fmtD(selDay));
+}
+function addTx(){
+  const a=parseFloat($('f-a').value),d=$('f-d').value.trim();
+  if(!(a>0)||!d)return showToast('Enter amount and description','error');
+  U.tx.push({type:$('f-k').value,amt:a,desc:d,cat:$('f-c').value,date:Date.now()});
+  save();go('fin');showToast('Transaction logged');
+}
+async function addMaterial(){
+  const code=$('m-c').value.trim(),title=$('m-t').value.trim(),kind=$('m-k').value;
+  const file=$('m-f').files[0];
+  let link=$('m-l').value.trim();
+  if(!code||!title)return showToast('Add course code and title','error');
+  if(file){
+    showToast('Uploading '+file.name+'...');
+    const path=(uid||'web')+'/'+Date.now()+'_'+file.name.replace(/[^A-Za-z0-9._-]/g,'');
+    const{error}=await sb.storage.from('materials').upload(path,file);
+    if(error)return showToast(error.message,'error');
+    link=sb.storage.from('materials').getPublicUrl(path).data.publicUrl;
   }
-  
-  save();
-  const x = semS({courses}), c = cum();
-  go('home'); 
-  showToast(`Saved! Semester GPA: ${x.g.toFixed(2)} | New CGPA: ${c.g.toFixed(2)}`);
+  if(!link)return showToast('Choose a file or paste a link','error');
+  if(!/^https:\/\//i.test(link))return showToast('Link must start with https://','error');
+  U.materials.push({code,title,link,kind});
+  save();go('mat');showToast(kind+' saved to library');
 }
-
-function editSem(id) { editing = id; aTab = 'calc'; go('acad'); }
-function delSem(id) { 
-  if (!confirm('Are you sure you want to delete this semester record?')) return; 
-  U.semesters = U.semesters.filter(s => s.id !== id); 
-  save(); 
-  go('acad'); 
-  showToast('Semester record deleted.');
+function addGoal(){
+  const t=$('g-t').value.trim();
+  if(!t)return showToast('Enter milestone description','error');
+  U.goals.push({title:t,done:false});
+  save();go('goal');showToast('Goal created');
 }
-
-// SECRET DETECTIVE: Algebraic formulas completely hidden
-function runDetSecret() {
-  const g1 = parseFloat($('d1').value), cg = parseFloat($('dc').value);
-  const u1 = parseFloat($('du1').value) || 20, u2 = parseFloat($('du2').value) || 20;
-  if (isNaN(g1) || isNaN(cg)) return showToast('Please enter valid GPA numbers', 'error');
-  
-  const r = detective(g1, cg, u1, u2);
-  $('d-res').innerHTML = `
-    <div class="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center space-y-2 mt-3">
-      <div class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Predicted 2nd Semester GPA</div>
-      <div class="text-4xl font-extrabold text-emerald-600 dark:text-emerald-400">${r.need.toFixed(2)}</div>
-    </div>
-    ${r.ok ? '' : `<p class="text-xs text-rose-500 font-bold mt-2 text-center">Figures out of standard scale range. Check portal entries.</p>`}
-  `;
+function addCareer(){
+  const title=$('c-t').value.trim(),desc=$('c-d').value.trim();
+  if(!title||!desc)return showToast('Enter title and description','error');
+  U.career.push({title,desc});
+  save();go('car');showToast('Portfolio item saved');
 }
-
-// ==========================================================================
-// 13. LECTURER 90s OTP ENGINE & ROSTER EXPORT
-// ==========================================================================
-
-
-
-// ==========================================================================
-let pollT = null;
-async function startAttendanceSession() {
-  const { data, error } = await sb.rpc('start_session', { p_course: $('lec-course').value.trim() || 'POS 204', p_topic: $('lec-topic').value.trim() });
-  if (error) return showToast(error.message, 'error');
-  const s = data[0], end = new Date(s.s_expires).getTime();
-  clearInterval(timerInterval); clearInterval(pollT);
-  $('otp-display').innerText = s.s_code;
-  const tick = () => {
-    if (!$('otp-display')) { clearInterval(timerInterval); clearInterval(pollT); return; }
-    const left = Math.max(0, Math.round((end - Date.now()) / 1000));
-    $('timer-display').innerText = left ? `Expires in ${left}s` : 'Session closed';
-    if (!left) { $('otp-display').innerText = 'EXPIRED'; clearInterval(timerInterval); }
-  };
-  const poll = async () => {
-    const { count } = await sb.from('attendance').select('id', { count: 'exact', head: true }).eq('session_id', s.s_id);
-    if ($('sub-count')) $('sub-count').innerText = (count || 0) + ' Present';
-    if (Date.now() > end + 5000) clearInterval(pollT);
-  };
-  tick(); poll();
-  timerInterval = setInterval(tick, 1000);
-  pollT = setInterval(poll, 3000);
+function saveProfile(){
+  const t=parseFloat($('p-g').value);
+  if(isNaN(t)||t<0||t>5)return showToast('Target CGPA must be 0–5','error');
+  U.name=$('p-n').value.trim()||U.name;U.target=t;
+  Object.assign(U.profile,{uni:$('p-u').value.trim(),program:$('p-p').value.trim(),level:$('p-l').value,totalUnits:parseFloat($('p-t').value)||120,matric:$('p-m').value.trim()});
+  save();start();go('prof');showToast('Profile updated');
 }
-async function submitAttendanceFast() {
-  const code = $('att-fast-code').value.trim();
-  if (!/^\d{5}$/.test(code)) return showToast('Enter the 5-digit code', 'error');
-  const { data, error } = await sb.rpc('mark_attendance', { p_code: code });
-  if (error) return showToast(error.message, 'error');
-  U.attendance.push({ code: data, lecturer: '', date: new Date().toISOString() });
-  save();
-  $('att-fast-code').value = '';
-  showToast('Attendance marked for ' + data);
+function exportData(){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(U,null,2)],{type:'application/json'}));
+  a.download='academic-summit-backup.json';a.click();
+  showToast('Backup downloaded');
 }
-let rosterRows = [];
-async function loadRoster() {
-  const { data, error } = await sb.from('attendance')
-    .select('marked_at, sessions(course), profiles(name, matric)')
-    .order('marked_at', { ascending: false });
-  if (error) return showToast(error.message, 'error');
-  rosterRows = data || [];
-  $('roster-body').innerHTML = rosterRows.map(r => `<tr><td class="p-3">${esc(r.profiles?.name)}</td><td class="p-3">${esc(r.profiles?.matric || '—')}</td><td class="p-3">${esc(r.sessions?.course)}</td><td class="p-3">${fmtD(r.marked_at)}</td></tr>`).join('') || '<tr><td class="p-3 text-slate-400" colspan="4">No attendance recorded yet.</td></tr>';
+async function logout(){await sb.auth.signOut();location.reload();}
+  let toured=false;
+const TOUR=[
+['Dashboard','Your CGPA, degree progress and GPA trajectory live here. Notifications warn you about exams, fees and due tasks.'],
+['Academics','Calculate GPA, import portal results with one paste, and let the Result Detective predict a missing semester.'],
+['Planner','A Google-style calendar. Tasks have start and end times with live countdowns.'],
+['Finance','Track allowance, spending by category, and school-fees progress.'],
+['Materials','Save course materials and past questions — upload a PDF directly or paste a link.'],
+['Attendance','Enter the 5-digit code your lecturer broadcasts in class to mark yourself present.'],
+['Profile','Edit your profile, link your matric number, download a backup anytime.']
+];
+let tourI=0;
+function startTour(){tourI=0;tourStep();}
+function tourStep(){
+  if(tourI>=TOUR.length)return closeTour();
+  const s=TOUR[tourI];
+  var h='<div class="fixed inset-0 z-50 bg-black/60 flex items-end">';
+  h+='<div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 space-y-4">';
+  h+='<div class="lbl text-violet-600 dark:text-violet-400">Quick tour '+(tourI+1)+'/'+TOUR.length+'</div>';
+  h+='<div class="font-extrabold text-lg">'+s[0]+'</div>';
+  h+='<p class="text-sm text-slate-500 dark:text-slate-400">'+s[1]+'</p>';
+  h+='<div class="flex gap-1">'+TOUR.map(function(_,i){
+    return '<span class="h-1.5 flex-1 rounded-full '+(i<=tourI?'bg-violet-600':'bg-slate-200 dark:bg-slate-700')+'"></span>';
+  }).join('')+'</div>';
+  h+='<div class="flex gap-2"><button class="btn2 flex-1" onclick="closeTour()">Skip</button>';
+  h+='<button class="btn flex-1" onclick="tourI++;tourStep()">';
+  h+=(tourI===TOUR.length-1?'Finish':'Next')+'</button></div></div></div>';
+  $('sheet').innerHTML=h;
 }
-function exportRosterCSV() {
-  const cell = v => { v = String(v ?? ''); if (/^[=+\-@]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; };
-  const rows = [['Name', 'Matric', 'Course', 'Date'], ...rosterRows.map(r => [r.profiles?.name, r.profiles?.matric, r.sessions?.course, r.marked_at])];
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([rows.map(r => r.map(cell).join(',')).join('\n')], { type: 'text/csv' }));
-  a.download = 'attendance-roster.csv';
-  a.click();
+function closeTour(){$('sheet').innerHTML='';localStorage.setItem('as_tour','1');}
+setTimeout(function(){
+  var fb=document.createElement('button');
+  fb.className='fixed right-4 z-40 w-10 h-10 rounded-full grad text-white font-extrabold shadow-lg';
+  fb.style.bottom='calc(env(safe-area-inset-bottom,6px) + 76px)';
+  fb.textContent='?';fb.onclick=startTour;
+  document.body.appendChild(fb);
+},800);
+// ===== SETTINGS SCREEN (v13 add-on) =====
+const SI={
+pencil:'<path d="M4 20l4-1L20 7l-3-3L5 16z"/>',
+bell:'<path d="M6 9a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 004 0"/>',
+head:'<path d="M4 13a8 8 0 0116 0"/><rect x="3" y="13" width="4" height="6" rx="2"/><rect x="17" y="13" width="4" height="6" rx="2"/>',
+shield:'<path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z"/>',
+help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 015 0c0 2-2.5 2-2.5 4"/><path d="M12 17h.01"/>',
+moon:'<path d="M21 13A9 9 0 1111 3a7 7 0 0010 10"/>'
+};
+const si=n=>'<svg class="w-4 h-4 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">'+SI[n]+'</svg>';
+// theme with System Preferred
+let themeMode=localStorage.getItem('as_theme_mode')||(isDark?'dark':'light');
+function applyTheme(){
+  let dark;
+  if(themeMode==='system')dark=matchMedia('(prefers-color-scheme: dark)').matches;
+  else dark=themeMode==='dark';
+  isDark=dark;
+  document.documentElement.classList.toggle('dark',dark);
 }
-// 14. ACTION DISPATCHERS & DATA MUTATORS
-// ==========================================================================
-function addTask() { 
-  const v = $('t-in').value.trim(); 
-  if (!v) return showToast('Enter a task description', 'error'); 
-  U.tasks.push({t: v, done: false}); 
-  save(); 
-  go('plan'); 
-  showToast('Task added');
+function toggleTheme(){setThemeMode(isDark?'light':'dark');}
+function setThemeMode(m){
+  themeMode=m;localStorage.setItem('as_theme_mode',m);
+  applyTheme();if(U)start();
 }
-
-function addEvent() { 
-  const t = $('e-t').value.trim(), d =$('e-d').value; 
-  if (!t || !d) return showToast('Title and date required', 'error'); 
-  U.events.push({title: t, type: $('e-k').value, date: d}); 
-  save(); 
-  go('plan'); 
-  showToast('Event scheduled');
-}
-
-function addTx() { 
-  const a = parseFloat($('f-a').value), d =$('f-d').value.trim(); 
-  if (!(a > 0) || !d) return showToast('Enter valid amount and description', 'error'); 
-  U.tx.push({type: $('f-k').value, amt: a, desc: d, cat:$('f-c').value, date: Date.now()}); 
-  save(); 
-  go('fin'); 
-  showToast('Transaction logged');
-}
-
-function addMaterial() {
-  const code = $('m-c').value.trim(), title = $('m-t').value.trim(), link =$('m-l').value.trim();
-  if (!code || !title || !link) return showToast('Complete material details', 'error');
-  if (!/^https:\/\//i.test(link)) return showToast('Link must start with https://', 'error');
-  U.materials.push({code, title, link});
-  save();
-  go('mat');
-  showToast('Material saved');
-}
-
-function addGoal() {
-  const t = $('g-t').value.trim();
-  if (!t) return showToast('Enter milestone description', 'error');
-  U.goals.push({title: t, done: false});
-  save();
-  go('goal');
-  showToast('Goal created');
-}
-
-function addCareer() {
-  const title = $('c-t').value.trim(), desc =$('c-d').value.trim();
-  if (!title || !desc) return showToast('Enter portfolio title and description', 'error');
-  U.career.push({title, desc});
-  save();
-  go('car');
-  showToast('Portfolio item saved');
-}
-
-function saveProfile() {
-  const t = parseFloat($('p-g').value); 
-  if (isNaN(t) || t < 0 || t > 5) return showToast('Target CGPA must be between 0 and 5', 'error');
-  U.name = $('p-n').value.trim() || U.name; 
-  U.target = t;
-  
-  const m = $('p-m').value.trim();
-  Object.assign(U.profile, {
-    uni: $('p-u').value.trim(), 
-    program: $('p-p').value.trim(), 
-    level: $('p-l').value, 
-    totalUnits: parseFloat($('p-t').value) || 120,
-    matric: m
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(){
+  if(themeMode==='system'){applyTheme();if(U)start();}
+});
+applyTheme();
+// notification prefs actually filter dashboard alerts
+const _home0=V.home;
+V.home=function(){
+  const p=U.prefs||{};
+  const map={'📅':'exam','⏰':'tasks','💳':'fees','🎯':'goals'};
+  let html=_home0();
+  Object.keys(map).forEach(function(e){
+    if(p[map[e]]===false){
+      const re=new RegExp('<div class="flex gap-3 text-xs"><span class="text-lg">'+e+'[\\s\\S]*?</div></div>','g');
+      html=html.replace(re,'');
+    }
   });
-  
-  save(); 
-  U.profile ? start() : authOnboard();
-  go('prof');
-  showToast('Profile updated');
+  return html;
+};
+// the new Settings screen
+V.prof=function(){
+  const p=U.profile||{};
+  const ini=U.name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+  const row=(icon,label,fn)=>'<button onclick="'+fn+'" class="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 text-left"><span class="flex items-center gap-3 text-sm font-semibold">'+icon+label+'</span>'+ic('r')+'</button>';
+  return '<div class="space-y-5 max-w-2xl mx-auto">'+
+  '<div class="grad rounded-3xl p-6 text-center space-y-2 shadow-lg"><div class="w-16 h-16 mx-auto rounded-2xl bg-white text-violet-700 grid place-items-center text-xl font-extrabold">'+ini+'</div><div class="font-extrabold text-white text-lg">'+esc(U.name)+'</div><div class="text-xs text-white/80">'+esc(email)+'</div></div>'+
+  '<div class="card p-5 space-y-2"><div class="lbl">Account</div>'+
+  row(ic('prof'),'Personal Information','openInfoSheet()')+
+  row(si('pencil'),'Update Profile','openEditSheet()')+
+  row(si('bell'),'Notifications','openNotifSheet()')+
+  row(ic('up'),'Download Backup','exportData()')+'</div>'+
+  '<div class="card p-5 space-y-2"><div class="lbl">Appearance</div><div class="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40"><span class="flex items-center gap-3 text-sm font-semibold">'+si('moon')+'Theme</span><select onchange="setThemeMode(this.value)" class="inp text-xs" style="width:auto">'+['light','dark','system'].map(m=>'<option value="'+m+'"'+(themeMode===m?' selected':'')+'>'+(m==='system'?'System Preferred':(m==='dark'?'Dark':'Light'))+'</option>').join('')+'</select></div></div>'+
+  '<div class="card p-5 space-y-2"><div class="lbl">Other</div>'+
+  row(si('head'),'Support','openSupport()')+
+  row(si('shield'),'Privacy Policy','openPolicy()')+
+  row(si('help'),'FAQ','openFaq()')+'</div>'+
+  '<button class="w-full py-3.5 rounded-2xl font-bold text-sm bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-300" onclick="logout()">Logout</button></div>';
+};
+const sLine=(k,v)=>'<div class="flex justify-between text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40"><span class="text-slate-400">'+k+'</span><b>'+esc(v||'—')+'</b></div>';
+function sheetWrap(title,body){
+  return '<div class="fixed inset-0 z-50 bg-black/50 flex items-end" onclick="closeSheet()"><div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 space-y-3" onclick="event.stopPropagation()" style="padding-bottom:max(1.5rem,env(safe-area-inset-bottom))"><div class="lbl text-violet-600 dark:text-violet-400">'+title+'</div>'+body+'<button class="btn2 w-full" onclick="closeSheet()">Close</button></div></div>';
 }
-
-function exportData() { 
-  const a = document.createElement('a'); 
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(U, null, 2)], {type: 'application/json'})); 
-  a.download = `academic-summit-backup-${new Date().toISOString().slice(0,10)}.json`; 
-  a.click(); 
-  showToast('Backup JSON downloaded');
+function openInfoSheet(){
+  const p=U.profile||{};
+  $('sheet').innerHTML=sheetWrap('Personal Information',
+  sLine('Name',U.name)+sLine('Email',email)+sLine('University',p.uni)+
+  sLine('Program',p.program)+sLine('Level',p.level+' Level')+
+  sLine('Matric',p.matric||'Not linked')+sLine('Target CGPA',U.target.toFixed(2)));
 }
-
-async function logout() { 
-  await sb.auth.signOut(); 
-  location.reload(); 
+function openEditSheet(){
+  const p=U.profile||{};
+  $('sheet').innerHTML=sheetWrap('Update Profile',
+  '<input id="e-n" class="inp" value="'+esc(U.name)+'" placeholder="Full name">'+
+  '<input id="e-u" class="inp" value="'+esc(p.uni)+'" placeholder="University">'+
+  '<input id="e-p" class="inp" value="'+esc(p.program)+'" placeholder="Program">'+
+  '<div class="grid grid-cols-2 gap-2"><select id="e-l" class="inp">'+[100,200,300,400,500,600].map(l=>'<option '+(l==p.level?'selected':'')+'>'+l+'</option>').join('')+'</select><input id="e-t" type="number" class="inp" value="'+(p.totalUnits||120)+'"></div>'+
+  '<input id="e-m" class="inp font-mono uppercase" value="'+esc(p.matric||'')+'" placeholder="Matric number">'+
+  '<input id="e-g" type="number" step="0.01" min="0" max="5" class="inp" value="'+U.target+'" placeholder="Target CGPA">'+
+  '<button class="btn w-full" onclick="saveEditSheet()">Save Changes</button>');
 }
-</script>
-<script>
-function authOnboard() {
+function saveEditSheet(){
+  const t=parseFloat($('e-g').value);
+  if(isNaN(t)||t<0||t>5)return showToast('Target CGPA must be 0–5','error');
+  U.name=$('e-n').value.trim()||U.name;U.target=t;
+  Object.assign(U.profile,{uni:$('e-u').value.trim(),program:$('e-p').value.trim(),level:$('e-l').value,totalUnits:parseFloat($('e-t').value)||120,matric:$('e-m').value.trim()});
+  save();closeSheet();start();go('prof');showToast('Profile updated');
+}
+function openNotifSheet(){
+  const p=U.prefs=U.prefs||{exam:true,fees:true,tasks:true,goals:true};
+  const tg=(k,label)=>'<div class="flex items-center justify-between text-sm p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40"><span class="font-semibold text-xs">'+label+'</span><input type="checkbox" '+(p[k]?'checked':'')+' onchange="U.prefs[\''+k+'\']=this.checked;save()" class="w-5 h-5 accent-violet-600"></div>';
+  $('sheet').innerHTML=sheetWrap('Notifications',
+  tg('exam','Exam & test reminders')+tg('tasks','Task due alerts')+
+  tg('fees','Fee alerts')+tg('goals','Milestone updates'));
+}
+function openSupport(){
+  $('sheet').innerHTML=sheetWrap('Support',
+  '<p class="text-xs text-slate-500 dark:text-slate-400">Questions or issues? The team replies within 24 hours.</p>'+
+  '<a class="btn w-full" href="mailto:support@academicsummit.app">Email Support</a>'+
+  '<a class="btn2 w-full" target="_blank" href="https://wa.me/2348000000000">WhatsApp Community</a>');
+}
+function openPolicy(){
+  $('sheet').innerHTML=sheetWrap('Privacy Policy',
+  '<p class="text-xs text-slate-500 dark:text-slate-400 space-y-2">'+
+  '• Your results, tasks and finance data live on your device and your private account.<br>• Your matric number is saved only after you approve it.<br>• Uploaded files are stored in your university library storage and visible to signed-in users.<br>• Lecturers only see names and matrics of students who attended their class.<br>• Export or erase your data anytime from Settings.</p>');
+}
+function openFaq(){
+  $('sheet').innerHTML=sheetWrap('FAQ',
+  sLine('How is my GPA calculated?','Score → grade points × units ÷ total units')+
+  sLine('How do I import results?','Academics → Import → paste portal text')+
+  sLine('How does attendance work?','Enter the lecturer\'s 90-second code')+
+  sLine('How do lecturers join?','The admin promotes them securely'));
+  }
+  // ===== CYBER GREEN THEME (v13 add-on) =====
+(function(){
+var s=document.createElement('style');
+s.textContent=[
+':root{--bg:#edfaf3;--card:#ffffff;--sub:#f2fdf9;--bd:#d8efe3;--tx:#052e22;--mut:#5b7068;--sh:0 10px 30px -12px rgba(5,150,105,.18)}',
+'.dark{--bg:#02120c;--card:#07271d;--sub:#0b3527;--bd:#0d3f2e;--tx:#e7fff5;--mut:#8fb8a9;--sh:0 10px 30px -12px rgba(0,0,0,.6)}',
+'.grad,.btn{background:linear-gradient(135deg,#059669,#10b981 55%,#06b6d4)!important}',
+'.btn2{background:rgba(16,185,129,.12)!important;color:#047857!important}',
+'.dark .btn2{color:#6ee7b7!important}',
+'#side{background:#021812!important}',
+'div[style*="0b1030"]{background:#021812!important}',
+'[class*="text-violet"]{color:#047857!important}',
+'.dark [class*="text-violet"]{color:#34d399!important}',
+'#side [class*="text-violet"]{color:#6ee7b7!important}',
+'#auth [class*="text-violet"]{color:#a7f3d0!important}',
+'[class*="bg-violet"]{background-color:rgba(16,185,129,.12)!important}',
+'[class*="bg-violet-6"]{background-color:#059669!important}',
+'[class*="border-violet"]{border-color:rgba(16,185,129,.35)!important}',
+'[class*="ring-violet"]{--tw-ring-color:rgba(52,211,153,.6)!important}',
+'[class*="accent-violet"]{accent-color:#059669!important}'
+].join('');
+document.head.appendChild(s);
+})();
+  // ===== SETTINGS v2 + SILVER/CYBER THEME =====
+SI.back='<path d="M19 12H5m7-7l-7 7 7 7"/>';
+SI.mega='<path d="M3 11l14-5v12L3 13z"/><path d="M7 13v4a2 2 0 002 2h1"/>';
+const PI={
+user:'<path d="M8 8a4 4 0 118 0 4 4 0 01-8 0"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
+id:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10h4M7 14h6"/><circle cx="16" cy="12" r="2"/>',
+dept:'<circle cx="6" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="12" r="2"/><path d="M8 7l8 4M8 17l8-4"/>',
+fac:'<path d="M3 21h18M6 21V8l6-4 6 4v13"/><path d="M10 21v-4h4v4"/>',
+lvl:'<path d="M4 19V5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/>',
+mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+phone:'<path d="M5 4h4l2 5-3 2a12 12 0 005 5l2-3 5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/>'
+};
+const pi=n=>'<svg class="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">'+PI[n]+'</svg>';
+(function(){var s=document.createElement('style');s.textContent=[
+':root{--bg:#eef2f5;--card:#fbfcfd;--sub:#f3f6f8;--bd:#dce4ea;--tx:#0b1520;--mut:#5c6b76;--sh:0 10px 30px -12px rgba(20,50,70,.16)}',
+'.dark{--bg:#02120c;--card:#07271d;--sub:#0b3527;--bd:#0d3f2e;--tx:#e7fff5;--mut:#8fb8a9;--sh:0 10px 30px -12px rgba(0,0,0,.6)}',
+'.dark .grad,.dark .btn{box-shadow:0 0 18px rgba(16,185,129,.35)}',
+'.grad,.btn{background:linear-gradient(135deg,#059669,#10b981 55%,#06b6d4)!important}',
+'.btn2{background:rgba(16,185,129,.12)!important;color:#047857!important}',
+'.dark .btn2{color:#6ee7b7!important}',
+'#side{background:#021812!important}',
+'div[style*="0b1030"]{background:#021812!important}',
+'[class*="text-violet"]{color:#047857!important}',
+'.dark [class*="text-violet"]{color:#34d399!important}',
+'#side [class*="text-violet"]{color:#6ee7b7!important}',
+'#auth [class*="text-violet"]{color:#a7f3d0!important}',
+'[class*="bg-violet"]{background-color:rgba(16,185,129,.12)!important}',
+'[class*="bg-violet-6"]{background-color:#059669!important}',
+'[class*="border-violet"]{border-color:rgba(16,185,129,.35)!important}',
+'[class*="ring-violet"]{--tw-ring-color:rgba(52,211,153,.6)!important}',
+'[class*="accent-violet"]{accent-color:#059669!important}',
+'.sw{width:46px;height:26px;border-radius:999px;background:#94a3b8;position:relative;transition:.2s;flex-shrink:0}',
+'.sw::after{content:"";position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s}',
+'input:checked+.sw{background:#10b981}',
+'input:checked+.sw::after{left:23px;background:#02120c}'
+].join('');document.head.appendChild(s);})();
+function showToast(msg,type){
+  const p=(U&&U.prefs)||{};
+  if(p.inapp===false)return;
+  type=type||'success';
+  const t=document.createElement('div');
+  const bg=type==='success'?'bg-emerald-600 text-white':type==='error'?'bg-rose-600 text-white':'bg-slate-800 text-white';
+  t.className='toast px-4 py-3 rounded-xl shadow-lg font-semibold text-xs '+bg;
+  t.innerHTML=(type==='error'?'⚠️ ':'✅ ')+esc(msg);
+  $('toast-container').appendChild(t);
+  setTimeout(function(){t.style.opacity='0';setTimeout(function(){t.remove();},200);},3000);
+}
+function fullScreen(title,body){
+  $('sheet').innerHTML='<div class="fixed inset-0 z-50 overflow-y-auto" style="background:var(--bg);color:var(--tx)">'+
+  '<div class="sticky top-0 z-10 flex items-center px-3 py-4 backdrop-blur-md" style="background:var(--bg)">'+
+  '<button onclick="closeSheet()" class="p-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">'+SI.back+'</svg></button>'+
+  '<div class="font-extrabold text-base flex-1 text-center pr-9">'+title+'</div></div>'+
+  '<div class="px-4 pb-24 space-y-4 max-w-2xl mx-auto">'+body+'</div></div>';
+}
+function openInfoSheet(){
+  const p=U.profile||{};
+  const row=function(icn,label,val){
+    return '<div class="space-y-1"><div class="lbl px-1">'+label+'</div>'+
+    '<div class="flex items-center gap-3 p-4 rounded-2xl border" style="background:var(--sub);border-color:var(--bd)">'+icn+
+    '<span class="text-sm font-semibold break-all">'+esc(val||'Not set')+'</span></div></div>';
+  };
+  fullScreen('Personal Information',
+  row(pi('user'),'Full Name',U.name)+
+  row(pi('id'),'Registration Number',p.matric)+
+  row(pi('dept'),'Department',p.program)+
+  row(pi('fac'),'Faculty',p.faculty)+
+  row(pi('lvl'),'Level',p.level)+
+  row(pi('mail'),'Email Address',email)+
+  row(pi('mail'),'Student Email Address',p.semail)+
+  '<button class="w-full py-3.5 rounded-2xl font-bold text-sm bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-300" onclick="deactivate()">Deactivate Account</button>');
+}
+function deactivate(){
+  if(!confirm('Deactivate on this device? Cloud data is erased only by support.'))return;
+  delete DB.users[email];save();logout();
+}
+function openEditSheet(){
+  const p=U.profile||{};
+  fullScreen('Update Profile',
+  '<div class="space-y-2"><div class="lbl px-1">Phone Number</div>'+
+  '<div class="flex items-center gap-3 p-4 rounded-2xl border" style="background:var(--sub);border-color:var(--bd)">'+pi('phone')+'<span class="text-sm font-semibold">'+esc(p.phone||'Not set')+'</span></div>'+
+  '<button class="btn w-full" onclick="changePhone()">Change phone number</button></div>'+
+  '<div class="space-y-3 card p-5">'+
+  '<input id="e-n" class="inp" value="'+esc(U.name)+'" placeholder="Full name">'+
+  '<input id="e-u" class="inp" value="'+esc(p.uni)+'" placeholder="University">'+
+  '<input id="e-p" class="inp" value="'+esc(p.program)+'" placeholder="Department">'+
+  '<input id="e-f" class="inp" value="'+esc(p.faculty||'')+'" placeholder="Faculty (e.g. Social Sciences)">'+
+  '<div class="grid grid-cols-2 gap-2"><select id="e-l" class="inp">'+[100,200,300,400,500,600].map(function(l){return '<option '+(l==p.level?'selected':'')+'>'+l+'</option>';}).join('')+'</select><input id="e-t" type="number" class="inp" value="'+(p.totalUnits||120)+'" placeholder="Grad units"></div>'+
+  '<input id="e-m" class="inp font-mono uppercase" value="'+esc(p.matric||'')+'" placeholder="Matric / Reg number">'+
+  '<input id="e-s" type="email" class="inp" value="'+esc(p.semail||'')+'" placeholder="Student email">'+
+  '<input id="e-g" type="number" step="0.01" min="0" max="5" class="inp" value="'+U.target+'" placeholder="Target CGPA">'+
+  '<button class="btn w-full" onclick="saveEditSheet()">Save Changes</button></div>');
+}
+function changePhone(){
+  const v=prompt('New phone number (e.g. +2348012345678):',U.profile.phone||'');
+  if(v){U.profile.phone=v.trim();save();openEditSheet();showToast('Phone updated');}
+}
+function saveEditSheet(){
+  const t=parseFloat($('e-g').value);
+  if(isNaN(t)||t<0||t>5)return showToast('Target CGPA must be 0-5','error');
+  U.name=$('e-n').value.trim()||U.name;U.target=t;
+  Object.assign(U.profile,{uni:$('e-u').value.trim(),program:$('e-p').value.trim(),faculty:$('e-f').value.trim(),level:$('e-l').value,totalUnits:parseFloat($('e-t').value)||120,matric:$('e-m').value.trim(),semail:$('e-s').value.trim()});
+  save();closeSheet();start();showToast('Profile updated');
+}
+function pSet(k,v){U.prefs=U.prefs||{};U.prefs[k]=v;save();}
+function openNotifSheet(){
+  const p=U.prefs=Object.assign({inapp:true,emailch:true,mkt:false,exam:true,tasks:true,fees:true,goals:true},U.prefs);
+  const sw=function(icn,label,k){
+    return '<label class="flex items-center justify-between p-4 rounded-2xl border cursor-pointer" style="background:var(--sub);border-color:var(--bd)">'+
+    '<span class="flex items-center gap-3 text-sm font-semibold">'+icn+label+'</span>'+
+    '<input type="checkbox" class="hidden" '+(p[k]?'checked':'')+' onchange="pSet(\''+k+'\',this.checked)"><span class="sw"></span></label>';
+  };
+  fullScreen('Notifications',
+  '<div class="space-y-3"><div class="lbl px-1">Channels</div>'+
+  sw(si('bell'),'In-app Notifications','inapp')+
+  sw(pi('mail'),'Email Notifications','emailch')+
+  sw(si('mega'),'Marketing Emails','mkt')+
+  '<div class="lbl px-1 pt-2">Smart Alerts</div>'+
+  sw(ic('plan'),'Exam & Test Reminders','exam')+
+  sw(ic('clock'),'Task Due Alerts','tasks')+
+  sw(ic('fin'),'Fee Alerts','fees')+
+  sw(ic('goal'),'Milestone Updates','goals')+'</div>');
+}
+const FAQ=[
+['What is Academic Summit?','Your campus operating system: results, GPA analytics, planner, finance, materials and attendance in one place.'],
+['Who can use it?','Students of any institution, plus lecturers who are securely promoted by the admin for attendance sessions.'],
+['How is my GPA calculated?','Each score becomes a grade point (A=5 to F=0). GPA = total (units × points) ÷ total units. CGPA spans all semesters.'],
+['How do I import my results?','Academics → Import Results, then paste your portal page text. Courses, units and scores are detected automatically.'],
+['How does attendance work?','Your lecturer broadcasts a 5-digit code that expires in 90 seconds. Enter it on your dashboard to mark yourself present.'],
+['Is my data safe?','Yes. Records live in your private account, your matric is saved only after you approve it, and you can export or erase everything anytime.'],
+['How do lecturers get access?','Lecturers sign up normally and are promoted by the administrator. The lecturer link rejects student accounts.'],
+['How do I back up my data?','Profile & Settings → Download Backup gives you a JSON copy of everything.']
+];
+let faqOpen=-1;
+function faqT(i){faqOpen=(faqOpen===i?-1:i);openFaq();}
+function openFaq(){
+  const items=FAQ.map(function(f,i){
+    return '<div class="border-b" style="border-color:var(--bd)">'+
+    '<button class="w-full flex items-center justify-between gap-3 py-5 text-left" onclick="faqT('+i+')">'+
+    '<span class="text-sm font-semibold">'+f[0]+'</span>'+
+    '<span class="w-7 h-7 shrink-0 rounded-full border grid place-items-center text-emerald-600 dark:text-emerald-400" style="border-color:var(--bd)">'+(faqOpen===i?'−':'+')+'</span></button>'+
+    (faqOpen===i?'<p class="text-xs pb-5 -mt-1 leading-relaxed" style="color:var(--mut)">'+f[1]+'</p>':'')+'</div>';
+  }).join('');
+  fullScreen('FAQ',items+
+  '<div class="rounded-3xl p-6 text-center space-y-3 grad shadow-lg mt-6">'+
+  '<div class="flex justify-center -space-x-2">'+['M','T','S'].map(function(x){return '<div class="w-9 h-9 rounded-full bg-white text-emerald-700 grid place-items-center text-xs font-extrabold border-2 border-emerald-500">'+x+'</div>';}).join('')+'</div>'+
+  '<div class="font-extrabold text-white">Still have questions?</div>'+
+  '<p class="text-xs text-white/80">Can\'t find what you need? Chat with our friendly team.</p>'+
+  '<a class="block w-full py-3 rounded-2xl font-bold text-sm bg-white text-emerald-700" href="mailto:support@academicsummit.app">Get in touch</a></div>');
+}
+function openPolicy(){
+  const sec=function(t,b){return '<div class="space-y-1"><div class="font-extrabold text-sm">'+t+'</div><p class="text-xs leading-relaxed" style="color:var(--mut)">'+b+'</p></div>';};
+  fullScreen('Privacy Policy',
+  sec('1. What we store','Account email and name; your academic profile (university, department, faculty, level, and your matric number only after you approve it); semesters, tasks, events, finance logs, goals and files you upload.')+
+  sec('2. Where it lives','On your device for offline use, and in your private cloud account. Uploaded library files are visible to signed-in users so classmates can learn.')+
+  sec('3. Who sees what','Lecturers see only the name and matric of students who attended their own class. Nobody can see your finance data or results.')+
+  sec('4. What we never do','We do not sell data, show ads, or read your records for marketing. Marketing emails only if you opt in.')+
+  sec('5. Your controls','Export a JSON backup anytime, edit or unlink your matric in Settings, and deactivate your account from Personal Information.')+
+  sec('6. Cookies & storage','Local storage is used only to keep you logged in and remember your theme. No tracking cookies.')+
+  sec('7. Contact','Questions? support@academicsummit.app')+
+  '<p class="text-[10px] pt-2" style="color:var(--mut)">Last updated: October 2026</p>');
+  }
+  // ===== GROWTH: WELCOME + WHOLE-SCHOOL ONBOARDING =====
+const SEED={
+'Arts':['English Language','History','Philosophy','Theatre Arts','French','Arabic Studies'],
+'Education':['Adult Education','Educational Management','Human Kinetics','Early Childhood Education'],
+'Engineering':['Civil Engineering','Electrical Engineering','Mechanical Engineering','Chemical Engineering'],
+'Environmental Sciences':['Architecture','Building Technology','Estate Management','Quantity Surveying','Urban & Regional Planning'],
+'Law':['Common Law','Civil Law','Criminal Law'],
+'Management Sciences':['Accounting','Banking & Finance','Business Administration','Marketing','Actuarial Science'],
+'Sciences':['Biochemistry','Biology','Chemistry','Computer Science','Mathematics','Microbiology','Physics','Statistics'],
+'Social Sciences':['Political Science','Economics','Mass Communication','Psychology','Sociology','Geography','International Relations'],
+'Agriculture':['Animal Science','Crop Science','Agricultural Economics','Soil Science'],
+'Health Sciences':['Medicine & Surgery','Nursing Science','Pharmacy','Medical Laboratory Science','Public Health']
+};
+const normDept=s=>String(s||'').trim().replace(/\s+/g,' ').replace(/[.,]$/,'').split(' ').map(w=>w?w[0].toUpperCase()+w.slice(1).toLowerCase():w).join(' ');
+function authUI(mode,msg){
+  msg=msg||'';
+  if(mode==='login'&&!localStorage.getItem('as_welcomed')&&!LEC_LINK)mode='welcome';
+  if(mode==='welcome'){
+    $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-6" style="background:#021812">'+
+    '<div class="max-w-md w-full text-center space-y-6">'+
+    '<div class="w-20 h-20 mx-auto rounded-3xl grad grid place-items-center text-3xl font-extrabold text-white shadow-lg">⛰</div>'+
+    '<h1 class="text-3xl font-extrabold text-white">Welcome to Academic Summit</h1>'+
+    '<p class="text-sm" style="color:#a7f3d0aa">Your one guide for the academic journey — built for every faculty, every department.</p>'+
+    '<div class="space-y-2 text-left">'+[['🎓','Smart GPA Engine','5.0-scale analytics & the Result Detective'],['📅','Planner & Attendance','Calendar, reminders and 90-second class OTP'],['🗂','Library & Past Questions','Department materials, uploads & backups']].map(f=>'<div class="flex gap-3 p-4 rounded-2xl bg-white/5 border border-white/10"><span class="text-xl">'+f[0]+'</span><div><b class="text-sm text-white">'+f[1]+'</b><p class="text-xs" style="color:#a7f3d099">'+f[2]+'</p></div></div>').join('')+'</div>'+
+    '<button class="btn w-full py-3.5" onclick="localStorage.setItem(\'as_welcomed\',\'1\');authUI(\'signup\')">Create my account</button>'+
+    '<button class="btn2 w-full" onclick="localStorage.setItem(\'as_welcomed\',\'1\');authUI(\'login\')">I already have an account</button>'+
+    '</div></div>';
+    $('app').classList.add('hidden');return;
+  }
+  const f={
+    login:'<div class="space-y-3"><div><label class="lbl mb-1 block">Email</label><input id="a-email" type="email" class="inp" placeholder="user@uni.edu.ng"></div><div><label class="lbl mb-1 block">Password</label><input id="a-pass" type="password" class="inp" placeholder="••••••••"></div><button class="btn w-full py-3 mt-2" onclick="doLogin()">Enter Campus Portal</button><button class="text-xs text-slate-500 w-full hover:underline pt-2" onclick="authUI(\'signup\')">New here? Create account</button></div>',
+    signup:'<div class="space-y-3"><div><label class="lbl mb-1 block">Full Name</label><input id="a-name" class="inp" placeholder="e.g. Miracle Moses"></div><div><label class="lbl mb-1 block">Email</label><input id="a-email" type="email" class="inp"></div><div><label class="lbl mb-1 block">Password</label><input id="a-pass" type="password" class="inp" placeholder="6+ characters"></div><button class="btn w-full py-3 mt-2" onclick="doSignup()">Create Account</button><button class="text-xs text-slate-500 w-full hover:underline pt-2" onclick="authUI(\'login\')">Have an account? Log in</button></div>'
+  }[mode];
+  $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-5" style="background:#021812"><div class="card p-8 w-full max-w-md space-y-5 dark:bg-slate-900 shadow-2xl"><div class="text-center space-y-2"><div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold uppercase tracking-wider">⛰ Academic Summit</div><h1 class="text-2xl font-extrabold">'+(LEC_LINK?'Lecturer Console':'Student Operating System')+'</h1></div>'+f+(msg?'<p class="text-xs text-rose-500 text-center font-semibold bg-rose-500/10 py-2 rounded-lg">'+esc(msg)+'</p>':'')+'</div></div>';
   $('app').classList.add('hidden');
-  if (LEC_LINK) {
-    document.querySelectorAll('#auth button[onclick="authUI(\'signup\')"]').forEach(b => b.style.display = 'none');
-  }
-  $('auth').innerHTML = `
-    <div class="min-h-screen grid place-items-center p-5 bg-[#022c22]">
-      <div class="card p-8 w-full max-w-md space-y-4 dark:bg-slate-900 shadow-2xl">
-        <div class="text-center space-y-1">
-          <h1 class="text-2xl font-extrabold text-slate-900 dark:text-slate-100">Set Up Your Summit ⛰</h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400">Calibrate your academic profile.</p>
-        </div>
-        <div class="space-y-3">
-          <div><label class="lbl mb-1 block">University / Institution</label><input id="o-uni" class="inp" placeholder="e.g. University of Abuja"></div>
-          <div class="grid grid-cols-2 gap-2">
-            <div><label class="lbl mb-1 block">Level</label><select id="o-level" class="inp">${[100,200,300,400,500,600].map(l => `<option ${l == 100 ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-            <div><label class="lbl mb-1 block">Graduation Units</label><input id="o-units" type="number" class="inp" placeholder="e.g. 120"></div>
-          </div>
-          <div><label class="lbl mb-1 block">Department / Program</label><input id="o-prog" class="inp" placeholder="e.g. Political Science & IR"></div>
-          <button class="btn w-full py-3" onclick="doOnboard()">Initialize My Summit</button>
-        </div>
-      </div>
-    </div>
-  `;
+  if(LEC_LINK){document.querySelectorAll('#auth button[onclick="authUI(\'signup\')"]').forEach(b=>b.style.display='none');}
 }
-function doOnboard() {
-  U.profile = { uni: $('o-uni').value.trim() || 'My University', level: $('o-level').value, program: $('o-prog').value.trim() || 'Not set', totalUnits: parseFloat($('o-units').value) || 120, matric: '' };
+function authOnboard(){
+  $('app').classList.add('hidden');
+  $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-5" style="background:#021812"><div class="card p-8 w-full max-w-md space-y-4 dark:bg-slate-900"><div class="text-center"><h1 class="text-2xl font-extrabold">Set Up Your Summit ⛰</h1><p class="text-xs text-slate-500">For every faculty, every department.</p></div><div class="space-y-3">'+
+  '<div><label class="lbl mb-1 block">University</label><input id="o-uni" class="inp" value="University of Abuja"></div>'+
+  '<div><label class="lbl mb-1 block">Faculty</label><select id="o-fac" class="inp" onchange="facChanged()">'+Object.keys(SEED).map(k=>'<option>'+k+'</option>').join('')+'</select></div>'+
+  '<div><label class="lbl mb-1 block">Department</label><select id="o-dep" class="inp" onchange="document.getElementById(\'o-dep-wrap\').classList.toggle(\'hidden\',this.value!==\'__other\')"></select></div>'+
+  '<div id="o-dep-wrap" class="hidden"><input id="o-dep-new" class="inp" placeholder="Type your department"></div>'+
+  '<div class="grid grid-cols-2 gap-2"><div><label class="lbl mb-1 block">Level</label><select id="o-level" class="inp">'+[100,200,300,400,500,600].map(l=>'<option '+(l==100?'selected':'')+'>'+l+'</option>').join('')+'</select></div><div><label class="lbl mb-1 block">Grad Units</label><input id="o-units" type="number" class="inp" placeholder="120"></div></div>'+
+  '<button class="btn w-full py-3" onclick="doOnboard()">Initialize My Summit</button></div></div></div>';
+  facChanged();
+}
+async function facChanged(){
+  const f=$('o-fac').value;
+  let extra=[];
+  try{const{data}=await sb.from('departments').select('name').eq('faculty',f).order('uses',{ascending:false});extra=(data||[]).map(d=>d.name);}catch(e){}
+  const all=[...new Set([...(SEED[f]||[]),...extra])];
+  $('o-dep').innerHTML=all.map(d=>'<option>'+esc(d)+'</option>').join('')+'<option value="__other">Other (type your own)</option>';
+  $('o-dep-wrap').classList.add('hidden');
+}
+async function doOnboard(){
+  const fac=$('o-fac').value;
+  let dep=$('o-dep').value;
+  if(dep==='__other')dep=normDept($('o-dep-new').value);
+  if(!dep)return showToast('Choose or type your department','error');
+  dep=normDept(dep);
+  U.profile={uni:$('o-uni').value.trim()||'University of Abuja',level:$('o-level').value,program:dep,faculty:fac,totalUnits:parseFloat($('o-units').value)||120,matric:'',phone:'',semail:''};
   save();
+  bumpDept(fac,dep);
+  sb.from('profiles').update({faculty:fac, program:dep, level:$('o-level').value, uni:U.profile.uni}).eq('id',uid).then(()=>{});
   start();
 }
+async function bumpDept(fac,dep){
+  const{data}=await sb.from('departments').select('id,uses').eq('faculty',fac).ilike('name',dep).maybeSingle();
+  if(data){sb.from('departments').update({uses:(data.uses||1)+1}).eq('id',data.id).then(()=>{});}
+  else{sb.from('departments').insert({faculty:fac,name:dep}).then(()=>{});}
+  }
+  async function boot(user){
+  uid=user.id;email=user.email;
+  const{data:p}=await sb.from('profiles').select('role').eq('id',uid).maybeSingle();
+  const role=p?.role||'student';
+  if(LEC_LINK&&role!=='lecturer'){await sb.auth.signOut();return authUI('login','This link is reserved for lecturers. Use the main link for student login.');}
+  U=DB.users[email]||(DB.users[email]=newUser(user.user_metadata?.name||email,role));
+  U.role=role;
+  ['materials','attendance','goals','career','tasks','events','tx','semesters'].forEach(k=>{if(!U[k])U[k]=[];});
+  if(!U.fees)U.fees={total:0,paid:0,due:''};
+  save();
+  if(!U.profile)return authOnboard();
+  start();
+  }
 </script>
 </body>
-</html>
-
+  </html>
