@@ -49,6 +49,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Plus Jakarta Sans',system
 // CONFIG — put your real keys here
 const SB_URL='https://okajzlkeaydskdvogdaw.supabase.co';
 const SB_KEY='sb_publishable_xqUBfEtWElgUkKAz65bueg_66AkIHtr';
+const RECOVERY=/type=recovery/.test(location.hash);
 const sb=supabase.createClient(SB_URL,SB_KEY);
 const LEC_LINK=location.hash==='#lecturer';
 // helpers
@@ -127,7 +128,7 @@ async function doLogin(){
   sb.from('profiles').update({last_seen:new Date().toISOString()}).eq('id',data.user.id).then(()=>{});
   boot(data.user);
 }
-sb.auth.getSession().then(({data})=>data.session?boot(data.session.user):authUI('login'));
+sb.auth.getSession().then(({data})=>data.session?(RECOVERY?resetUI(data.session.user):boot(data.session.user)):authUI('login'));
 // shell
 const STUDENT_NAV=[['home','Dashboard','home'],['acad','Academics','acad'],['plan','Planner','plan'],['fin','Finance','fin'],['mat','Materials','mat'],['att','Attendance','att'],['goal','Goals','goal'],['car','Career & Portfolio','car'],['prof','Profile & Settings','prof']];
 const LECTURER_NAV=[['home','Attendance Hub','att'],['roster','Student Rosters','prof'],['prof','Account Settings','prof']];
@@ -769,7 +770,7 @@ function authUI(mode,msg){
     $('app').classList.add('hidden');return;
   }
   const f={
-    login:'<div class="space-y-3"><div><label class="lbl mb-1 block">Email</label><input id="a-email" type="email" class="inp" placeholder="user@uni.edu.ng"></div><div><label class="lbl mb-1 block">Password</label><input id="a-pass" type="password" class="inp" placeholder="••••••••"></div><button class="btn w-full py-3 mt-2" onclick="doLogin()">Enter Campus Portal</button><button class="text-xs text-slate-500 w-full hover:underline pt-2" onclick="authUI(\'signup\')">New here? Create account</button></div>',
+    login:'<div class="space-y-3"><div><label class="lbl mb-1 block">Email</label><input id="a-email" type="email" class="inp" placeholder="user@uni.edu.ng"></div><div><label class="lbl mb-1 block">Password</label><input id="a-pass" type="password" class="inp" placeholder="••••••••"></div><button class="btn w-full py-3 mt-2" onclick="doLogin()">Enter Campus Portal</button><button class="text-xs text-slate-500 w-full hover:underline pt-3" onclick="forgotUI()">Forgot password?</button><button class="text-xs text-slate-500 w-full hover:underline pt-2" onclick="authUI(\'signup\')">New here? Create account</button></div>',
     signup:'<div class="space-y-3"><div><label class="lbl mb-1 block">Full Name</label><input id="a-name" class="inp" placeholder="Your full name"></div><div><label class="lbl mb-1 block">Email</label><input id="a-email" type="email" class="inp"></div><div><label class="lbl mb-1 block">Password</label><input id="a-pass" type="password" class="inp" placeholder="6+ characters"></div><button class="btn w-full py-3 mt-2" onclick="doSignup()">Create Account</button><button class="text-xs text-slate-500 w-full hover:underline pt-2" onclick="authUI(\'login\')">Have an account? Log in</button></div>'
   }[mode];
   $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-5" style="background:#021812"><div class="card p-8 w-full max-w-md space-y-5 dark:bg-slate-900 shadow-2xl"><div class="text-center space-y-2"><div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold uppercase tracking-wider">Academic Summit</div><h1 class="text-2xl font-extrabold">'+(LEC_LINK?'Lecturer Console':'Student Operating System')+'</h1></div>'+f+(msg?'<p class="text-xs text-rose-500 text-center font-semibold bg-rose-500/10 py-2 rounded-lg">'+esc(msg)+'</p>':'')+'</div></div>';
@@ -834,6 +835,38 @@ async function boot(user){
   if(!U.profile){$('auth').classList.remove('hidden');$('app').classList.add('hidden');return authOnboard();}
   $('auth').classList.add('hidden');$('app').classList.remove('hidden');
   start();
+}
+</script>
+<script>
+let resetUser=null;
+function authCard(title,sub,body,msg,bad){
+  $('app').classList.add('hidden');
+  $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-5" style="background:#021812"><div class="card p-8 w-full max-w-md space-y-4 dark:bg-slate-900"><div class="text-center space-y-2"><h1 class="text-2xl font-extrabold">'+title+'</h1><p class="text-xs text-slate-500">'+sub+'</p></div>'+body+(msg?'<p class="text-xs text-center font-semibold py-2 px-3 rounded-lg '+(bad?'text-rose-500 bg-rose-500/10':'text-emerald-600 bg-emerald-500/10')+'">'+esc(msg)+'</p>':'')+'</div></div>';
+}
+function forgotUI(msg,bad){
+  authCard('Reset Password','Enter your account email and we will send you a reset link.',
+  '<div class="space-y-3"><input id="f-email" type="email" class="inp" placeholder="Email address"><button class="btn w-full py-3" onclick="doForgot()">Send Reset Link</button><button class="text-xs text-slate-500 w-full hover:underline" onclick="authUI(\'login\')">Back to login</button></div>',msg,bad);
+}
+async function doForgot(){
+  const em=$('f-email').value.trim().toLowerCase();
+  if(!em)return forgotUI('Enter your email.',true);
+  const{error}=await sb.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname});
+  if(error)return forgotUI(error.message,true);
+  forgotUI('If that email has an account, a reset link is on its way. Check your inbox and spam folder.',false);
+}
+function resetUI(user,msg,bad){
+  resetUser=user||resetUser;
+  authCard('Set New Password','Choose a new password for your account.',
+  '<div class="space-y-3"><input id="r-pass" type="password" class="inp" placeholder="New password (6+ characters)"><input id="r-pass2" type="password" class="inp" placeholder="Confirm new password"><button class="btn w-full py-3" onclick="doReset()">Save Password</button></div>',msg,bad);
+}
+async function doReset(){
+  const a=$('r-pass').value,b=$('r-pass2').value;
+  if(a.length<6)return resetUI(null,'Password must be 6+ characters.',true);
+  if(a!==b)return resetUI(null,'Passwords do not match.',true);
+  const{error}=await sb.auth.updateUser({password:a});
+  if(error)return resetUI(null,error.message,true);
+  history.replaceState(null,'',location.pathname);
+  boot(resetUser);
 }
 </script>
 </body>
