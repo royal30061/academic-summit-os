@@ -57,14 +57,6 @@ const days=d=>Math.ceil((new Date(d)-new Date().setHours(0,0,0,0))/864e5);
 const fmtD=d=>new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
 const iso=d=>d.toISOString().slice(0,10);
 const leftTxt=dt=>{if(!dt)return'';const ms=new Date(dt)-Date.now();if(ms<0)return'overdue';const m=Math.floor(ms/60000),h=Math.floor(m/60),d=Math.floor(h/24);return d?d+'d '+(h%24)+'h':h?h+'h '+(m%60)+'m':m+'m';};
-function showToast(msg,type='success'){
-  const t=document.createElement('div');
-  const bg=type==='success'?'bg-violet-600 text-white':type==='error'?'bg-rose-600 text-white':'bg-slate-800 text-white';
-  t.className='toast px-4 py-3 rounded-xl shadow-lg font-semibold text-xs '+bg;
-  t.innerHTML=(type==='error'?'⚠️ ':'✅ ')+esc(msg);
-  $('toast-container').appendChild(t);
-  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),200);},3000);
-}
 // SVG ICONS (no emojis)
 const IC={
 home:'<path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-7h-6v7H4a1 1 0 01-1-1z"/>',
@@ -89,8 +81,6 @@ print:'<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><p
 const ic=(n,c='w-4 h-4')=>'<svg class="'+c+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">'+IC[n]+'</svg>';
 // theme
 let isDark=localStorage.getItem('as_theme')==='dark';
-function applyTheme(){document.documentElement.classList.toggle('dark',isDark);}
-function toggleTheme(){isDark=!isDark;localStorage.setItem('as_theme',isDark?'dark':'light');applyTheme();if(U)start();}
 // state
 let DB={users:{}};
 try{DB=JSON.parse(localStorage.getItem('as_v8'))||DB;}catch(e){}
@@ -106,15 +96,6 @@ const cum=()=>{let u=0,q=0;if(!U||!U.semesters)return{u:0,q:0,g:0};U.semesters.f
 const detective=(g1,cg,u1,u2)=>{const need=(cg*(u1+u2)-g1*u1)/u2;return{need,ok:need>=0&&need<=5};};
 const requiredAvg=()=>{const c=cum(),tot=U?.profile?.totalUnits||120,R=tot-c.u;return R>0?(U.target*tot-c.q)/R:null;};
 // auth
-function authUI(mode,msg=''){
-  const f={
-    login:'<div class="space-y-3"><div><label class="lbl mb-1 block">Email</label><input id="a-email" type="email" class="inp" placeholder="user@uni.edu.ng"></div><div><label class="lbl mb-1 block">Password</label><input id="a-pass" type="password" class="inp" placeholder="••••••••"></div><button class="btn w-full py-3 mt-2" onclick="doLogin()">Enter Campus Portal</button><button id="to-signup" class="text-xs text-slate-500 w-full hover:underline pt-2" onclick="authUI(\'signup\')">New here? Create account</button></div>',
-    signup:'<div class="space-y-3"><div><label class="lbl mb-1 block">Full Name</label><input id="a-name" class="inp" placeholder="e.g. Miracle Moses"></div><div><label class="lbl mb-1 block">Email</label><input id="a-email" type="email" class="inp"></div><div><label class="lbl mb-1 block">Password</label><input id="a-pass" type="password" class="inp" placeholder="6+ characters"></div><button class="btn w-full py-3 mt-2" onclick="doSignup()">Create Account</button><button class="text-xs text-slate-500 w-full hover:underline pt-2" onclick="authUI(\'login\')">Have an account? Log in</button></div>',
-  }[mode];
-  $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-5" style="background:#0b1030"><div class="card p-8 w-full max-w-md space-y-5 dark:bg-slate-900 shadow-2xl"><div class="text-center space-y-2"><div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-violet-500/10 text-violet-400 text-xs font-bold uppercase tracking-wider">⛰ Academic Summit</div><h1 class="text-2xl font-extrabold">'+(LEC_LINK?'Lecturer Console':'Student Operating System')+'</h1></div>'+f+(msg?'<p class="text-xs text-rose-500 text-center font-semibold bg-rose-500/10 py-2 rounded-lg">'+esc(msg)+'</p>':'')+'</div></div>';
-  $('app').classList.add('hidden');
-  if(LEC_LINK){document.querySelectorAll('#auth button[onclick="authUI(\'signup\')"]').forEach(b=>b.style.display='none');}
-}
 async function doSignup(){
   const name=$('a-name').value.trim(),em=$('a-email').value.trim().toLowerCase(),pw=$('a-pass').value;
   if(!name||!em||pw.length<6)return authUI('signup','Complete all fields (password 6+ characters).');
@@ -130,14 +111,6 @@ async function doLogin(){
   if(error)return authUI('login',error.message);
   sb.from('profiles').update({last_seen:new Date().toISOString()}).eq('id',data.user.id).then(()=>{});
   boot(data.user);
-}
-function authOnboard(){
-  $('app').classList.add('hidden');
-  $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-5" style="background:#0b1030"><div class="card p-8 w-full max-w-md space-y-4 dark:bg-slate-900"><div class="text-center"><h1 class="text-2xl font-extrabold">Set Up Your Summit ⛰</h1></div><div class="space-y-3"><div><label class="lbl mb-1 block">University</label><input id="o-uni" class="inp" placeholder="e.g. University of Abuja"></div><div class="grid grid-cols-2 gap-2"><div><label class="lbl mb-1 block">Level</label><select id="o-level" class="inp">'+[100,200,300,400,500,600].map(l=>'<option '+((l==100)?'selected':'')+'>'+l+'</option>').join('')+'</select></div><div><label class="lbl mb-1 block">Grad Units</label><input id="o-units" type="number" class="inp" placeholder="120"></div></div><div><label class="lbl mb-1 block">Department</label><input id="o-prog" class="inp" placeholder="e.g. Political Science & IR"></div><button class="btn w-full py-3" onclick="doOnboard()">Initialize My Summit</button></div></div></div>';
-}
-function doOnboard(){
-  U.profile={uni:$('o-uni').value.trim()||'My University',level:$('o-level').value,program:$('o-prog').value.trim()||'Not set',totalUnits:parseFloat($('o-units').value)||120,matric:''};
-  save();start();
 }
 sb.auth.getSession().then(({data})=>data.session?boot(data.session.user):authUI('login'));
 // shell
@@ -592,80 +565,13 @@ const sLine=(k,v)=>'<div class="flex justify-between text-xs p-3 rounded-xl bg-s
 function sheetWrap(title,body){
   return '<div class="fixed inset-0 z-50 bg-black/50 flex items-end" onclick="closeSheet()"><div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 space-y-3" onclick="event.stopPropagation()" style="padding-bottom:max(1.5rem,env(safe-area-inset-bottom))"><div class="lbl text-violet-600 dark:text-violet-400">'+title+'</div>'+body+'<button class="btn2 w-full" onclick="closeSheet()">Close</button></div></div>';
 }
-function openInfoSheet(){
-  const p=U.profile||{};
-  $('sheet').innerHTML=sheetWrap('Personal Information',
-  sLine('Name',U.name)+sLine('Email',email)+sLine('University',p.uni)+
-  sLine('Program',p.program)+sLine('Level',p.level+' Level')+
-  sLine('Matric',p.matric||'Not linked')+sLine('Target CGPA',U.target.toFixed(2)));
-}
-function openEditSheet(){
-  const p=U.profile||{};
-  $('sheet').innerHTML=sheetWrap('Update Profile',
-  '<input id="e-n" class="inp" value="'+esc(U.name)+'" placeholder="Full name">'+
-  '<input id="e-u" class="inp" value="'+esc(p.uni)+'" placeholder="University">'+
-  '<input id="e-p" class="inp" value="'+esc(p.program)+'" placeholder="Program">'+
-  '<div class="grid grid-cols-2 gap-2"><select id="e-l" class="inp">'+[100,200,300,400,500,600].map(l=>'<option '+(l==p.level?'selected':'')+'>'+l+'</option>').join('')+'</select><input id="e-t" type="number" class="inp" value="'+(p.totalUnits||120)+'"></div>'+
-  '<input id="e-m" class="inp font-mono uppercase" value="'+esc(p.matric||'')+'" placeholder="Matric number">'+
-  '<input id="e-g" type="number" step="0.01" min="0" max="5" class="inp" value="'+U.target+'" placeholder="Target CGPA">'+
-  '<button class="btn w-full" onclick="saveEditSheet()">Save Changes</button>');
-}
-function saveEditSheet(){
-  const t=parseFloat($('e-g').value);
-  if(isNaN(t)||t<0||t>5)return showToast('Target CGPA must be 0–5','error');
-  U.name=$('e-n').value.trim()||U.name;U.target=t;
-  Object.assign(U.profile,{uni:$('e-u').value.trim(),program:$('e-p').value.trim(),level:$('e-l').value,totalUnits:parseFloat($('e-t').value)||120,matric:$('e-m').value.trim()});
-  save();closeSheet();start();go('prof');showToast('Profile updated');
-}
-function openNotifSheet(){
-  const p=U.prefs=U.prefs||{exam:true,fees:true,tasks:true,goals:true};
-  const tg=(k,label)=>'<div class="flex items-center justify-between text-sm p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40"><span class="font-semibold text-xs">'+label+'</span><input type="checkbox" '+(p[k]?'checked':'')+' onchange="U.prefs[\''+k+'\']=this.checked;save()" class="w-5 h-5 accent-violet-600"></div>';
-  $('sheet').innerHTML=sheetWrap('Notifications',
-  tg('exam','Exam & test reminders')+tg('tasks','Task due alerts')+
-  tg('fees','Fee alerts')+tg('goals','Milestone updates'));
-}
 function openSupport(){
   $('sheet').innerHTML=sheetWrap('Support',
   '<p class="text-xs text-slate-500 dark:text-slate-400">Questions or issues? The team replies within 24 hours.</p>'+
   '<a class="btn w-full" href="mailto:support@academicsummit.app">Email Support</a>'+
   '<a class="btn2 w-full" target="_blank" href="https://wa.me/2348000000000">WhatsApp Community</a>');
 }
-function openPolicy(){
-  $('sheet').innerHTML=sheetWrap('Privacy Policy',
-  '<p class="text-xs text-slate-500 dark:text-slate-400 space-y-2">'+
-  '• Your results, tasks and finance data live on your device and your private account.<br>• Your matric number is saved only after you approve it.<br>• Uploaded files are stored in your university library storage and visible to signed-in users.<br>• Lecturers only see names and matrics of students who attended their class.<br>• Export or erase your data anytime from Settings.</p>');
-}
-function openFaq(){
-  $('sheet').innerHTML=sheetWrap('FAQ',
-  sLine('How is my GPA calculated?','Score → grade points × units ÷ total units')+
-  sLine('How do I import results?','Academics → Import → paste portal text')+
-  sLine('How does attendance work?','Enter the lecturer\'s 90-second code')+
-  sLine('How do lecturers join?','The admin promotes them securely'));
-  }
-  // ===== CYBER GREEN THEME (v13 add-on) =====
-(function(){
-var s=document.createElement('style');
-s.textContent=[
-':root{--bg:#edfaf3;--card:#ffffff;--sub:#f2fdf9;--bd:#d8efe3;--tx:#052e22;--mut:#5b7068;--sh:0 10px 30px -12px rgba(5,150,105,.18)}',
-'.dark{--bg:#02120c;--card:#07271d;--sub:#0b3527;--bd:#0d3f2e;--tx:#e7fff5;--mut:#8fb8a9;--sh:0 10px 30px -12px rgba(0,0,0,.6)}',
-'.grad,.btn{background:linear-gradient(135deg,#059669,#10b981 55%,#06b6d4)!important}',
-'.btn2{background:rgba(16,185,129,.12)!important;color:#047857!important}',
-'.dark .btn2{color:#6ee7b7!important}',
-'#side{background:#021812!important}',
-'div[style*="0b1030"]{background:#021812!important}',
-'[class*="text-violet"]{color:#047857!important}',
-'.dark [class*="text-violet"]{color:#34d399!important}',
-'#side [class*="text-violet"]{color:#6ee7b7!important}',
-'#auth [class*="text-violet"]{color:#a7f3d0!important}',
-'[class*="bg-violet"]{background-color:rgba(16,185,129,.12)!important}',
-'[class*="bg-violet-6"]{background-color:#059669!important}',
-'[class*="border-violet"]{border-color:rgba(16,185,129,.35)!important}',
-'[class*="ring-violet"]{--tw-ring-color:rgba(52,211,153,.6)!important}',
-'[class*="accent-violet"]{accent-color:#059669!important}'
-].join('');
-document.head.appendChild(s);
-})();
-  // ===== SETTINGS v2 + SILVER/CYBER THEME =====
+// ===== SETTINGS v2 + SILVER/CYBER THEME =====
 SI.back='<path d="M19 12H5m7-7l-7 7 7 7"/>';
 SI.mega='<path d="M3 11l14-5v12L3 13z"/><path d="M7 13v4a2 2 0 002 2h1"/>';
 const PI={
