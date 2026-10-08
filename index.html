@@ -84,7 +84,19 @@ let isDark=localStorage.getItem('as_theme')==='dark';
 // state
 let DB={users:{}};
 try{DB=JSON.parse(localStorage.getItem('as_v8'))||DB;}catch(e){}
-const save=()=>{try{localStorage.setItem('as_v8',JSON.stringify(DB));}catch(e){showToast('Failed to save','error');}};
+let cloudReady=false,syncT=null;
+async function syncNow(){
+  clearTimeout(syncT);syncT=null;
+  if(!cloudReady||!uid||!U)return;
+  const{error}=await sb.from('user_data').upsert({id:uid,data:U,updated_at:new Date().toISOString()});
+  if(error)console.warn('sync failed',error.message);
+}
+const save=()=>{
+  try{if(U)U.updatedAt=Date.now();localStorage.setItem('as_v8',JSON.stringify(DB));}
+  catch(e){showToast('Failed to save','error');}
+  if(cloudReady){clearTimeout(syncT);syncT=setTimeout(syncNow,1500);}
+};
+if(document.addEventListener)document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')syncNow();});
 const newUser=(name,role='student')=>({name,role,profile:null,target:4.5,semesters:[],tasks:[],events:[],tx:[],fees:{total:0,paid:0,due:''},materials:[],attendance:[],goals:[],career:[]});
 let U=null,email='',uid='',view='home',aTab='calc',editing=null;
 let timerInterval=null,pollT=null,rosterRows=[];
@@ -463,7 +475,7 @@ function exportData(){
   a.download='academic-summit-backup.json';a.click();
   showToast('Backup downloaded');
 }
-async function logout(){await sb.auth.signOut();location.reload();}
+async function logout(){await syncNow();await sb.auth.signOut();location.reload();}
   let toured=false;
 const TOUR=[
 ['Dashboard','Your CGPA, degree progress and GPA trajectory live here. Notifications warn you about exams, fees and due tasks.'],
@@ -813,6 +825,13 @@ async function boot(user){
   const role=p?.role||'student';
   if(LEC_LINK&&role!=='lecturer'){await sb.auth.signOut();return authUI('login','This link is reserved for lecturers.');}
   U=DB.users[email]||(DB.users[email]=newUser(user.user_metadata?.name||email,role));
+  cloudReady=false;
+  try{
+    const{data:row,error:ce}=await sb.from('user_data').select('data').eq('id',uid).maybeSingle();
+    if(ce)throw ce;
+    if(row&&row.data&&(row.data.updatedAt||0)>(U.updatedAt||0)){DB.users[email]=row.data;U=row.data;}
+    cloudReady=true;
+  }catch(e){showToast('Cloud sync unavailable - working offline','error');}
   U.role=role;
   ['materials','attendance','goals','career','tasks','events','tx','semesters'].forEach(k=>{if(!U[k])U[k]=[];});
   if(!U.fees)U.fees={total:0,paid:0,due:''};
