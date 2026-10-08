@@ -644,6 +644,29 @@ function openSheet() {
     </div>
   `;
 }
+let pendingMatric = '';
+function askMatric(m) {
+  pendingMatric = m;
+  $('sheet').innerHTML = `
+    <div class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end" onclick="closeSheet()">
+      <div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 space-y-3 border-t border-slate-200 dark:border-slate-800 shadow-2xl" onclick="event.stopPropagation()" style="padding-bottom:max(1.5rem,env(safe-area-inset-bottom))">
+        <div class="lbl text-emerald-600 dark:text-emerald-400">Matric number found</div>
+        <div class="text-sm font-extrabold font-mono text-slate-800 dark:text-slate-100">${esc(m)}</div>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Link it to your account so lecturers can record your attendance? You can change it anytime in Profile.</p>
+        <button class="btn w-full" onclick="linkMatric()">Yes, link it</button>
+        <button class="btn2 w-full" onclick="closeSheet()">Not now</button>
+      </div>
+    </div>
+  `;
+}
+function linkMatric() {
+  const m = pendingMatric;
+  U.profile.matric = m;
+  save();
+  sb.from('profiles').update({ matric: m }).eq('id', uid).then(() => {});
+  closeSheet();
+  showToast('Matric number linked: ' + m);
+}
 const closeSheet = () => $('sheet').innerHTML = '';
 
 // ==========================================================================
@@ -1349,12 +1372,6 @@ function parsePasteTrojan() {
     const matricMatch = rawText.match(/\b(\d{2}\/[A-Z0-9]{2,8}\/[A-Z0-9]{2,8})\b/i) || rawText.match(/\b(20\d{2}\/?\d{6,7})\b/);
     if (matricMatch) {
       const m = matricMatch[0].toUpperCase();
-      if (m !== U.profile.matric && confirm('Link matric number ' + m + ' to your account so lecturers can record your attendance?')) {
-        U.profile.matric = m;
-        save();
-        sb.from('profiles').update({ matric: m }).eq('id', uid).then(() => {});
-        showToast('Matric number linked: ' + m);
-      }
     }
   } catch (e) {
     showToast('Parse error: ' + e.message, 'error');
