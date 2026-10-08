@@ -132,17 +132,6 @@ async function doLogin(){
   sb.from('profiles').update({last_seen:new Date().toISOString()}).eq('id',data.user.id).then(()=>{});
   boot(data.user);
 }
-async function boot(user){
-  uid=user.id;email=user.email;
-  const{data:p}=await sb.from('profiles').select('role').eq('id',uid).maybeSingle();
-  const role=p?.role||'student';
-  if(LEC_LINK&&role!=='lecturer'){await sb.auth.signOut();return authUI('login','This link is reserved for lecturers. Use the main link for student login.');}
-  U=DB.users[email]||(DB.users[email]=newUser(user.user_metadata?.name||email,role));
-  U.role=role;
-  ['materials','attendance','goals','career','tasks','events','tx','semesters'].forEach(k=>{if(!U[k])U[k]=[];});
-  if(!U.fees)U.fees={total:0,paid:0,due:''};
-  save();start();
-}
 function authOnboard(){
   $('app').classList.add('hidden');
   $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-5" style="background:#0b1030"><div class="card p-8 w-full max-w-md space-y-4 dark:bg-slate-900"><div class="text-center"><h1 class="text-2xl font-extrabold">Set Up Your Summit ⛰</h1></div><div class="space-y-3"><div><label class="lbl mb-1 block">University</label><input id="o-uni" class="inp" placeholder="e.g. University of Abuja"></div><div class="grid grid-cols-2 gap-2"><div><label class="lbl mb-1 block">Level</label><select id="o-level" class="inp">'+[100,200,300,400,500,600].map(l=>'<option '+((l==100)?'selected':'')+'>'+l+'</option>').join('')+'</select></div><div><label class="lbl mb-1 block">Grad Units</label><input id="o-units" type="number" class="inp" placeholder="120"></div></div><div><label class="lbl mb-1 block">Department</label><input id="o-prog" class="inp" placeholder="e.g. Political Science & IR"></div><button class="btn w-full py-3" onclick="doOnboard()">Initialize My Summit</button></div></div></div>';
@@ -910,19 +899,6 @@ async function bumpDept(fac,dep){
   const{data}=await sb.from('departments').select('id,uses').eq('faculty',fac).ilike('name',dep).maybeSingle();
   if(data){sb.from('departments').update({uses:(data.uses||1)+1}).eq('id',data.id).then(()=>{});}
   else{sb.from('departments').insert({faculty:fac,name:dep}).then(()=>{});}
-  }
-  async function boot(user){
-  uid=user.id;email=user.email;
-  const{data:p}=await sb.from('profiles').select('role').eq('id',uid).maybeSingle();
-  const role=p?.role||'student';
-  if(LEC_LINK&&role!=='lecturer'){await sb.auth.signOut();return authUI('login','This link is reserved for lecturers. Use the main link for student login.');}
-  U=DB.users[email]||(DB.users[email]=newUser(user.user_metadata?.name||email,role));
-  U.role=role;
-  ['materials','attendance','goals','career','tasks','events','tx','semesters'].forEach(k=>{if(!U[k])U[k]=[];});
-  if(!U.fees)U.fees={total:0,paid:0,due:''};
-  save();
-  if(!U.profile)return authOnboard();
-  start();
   }
 </script>
 <script>
