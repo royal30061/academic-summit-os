@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Academic Summit - Campus Operating System</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cpath%20d%3D%22M2%2054%2024%2016l12%2020%206-9%2020%2027z%22%20fill%3D%22%2310b981%22%2F%3E%3Cpath%20d%3D%22M26%2054%2042%2027l20%2027z%22%20fill%3D%22%23047857%22%2F%3E%3Cpath%20d%3D%22M24%2016l6%2010-4-2-2%204-4-4-1.5%201.5z%22%20fill%3D%22%23ecfdf5%22%2F%3E%3C%2Fsvg%3E">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -58,6 +59,7 @@ const days=d=>Math.ceil((new Date(d)-new Date().setHours(0,0,0,0))/864e5);
 const fmtD=d=>new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
 const iso=d=>d.toISOString().slice(0,10);
 const leftTxt=dt=>{if(!dt)return'';const ms=new Date(dt)-Date.now();if(ms<0)return'overdue';const m=Math.floor(ms/60000),h=Math.floor(m/60),d=Math.floor(h/24);return d?d+'d '+(h%24)+'h':h?h+'h '+(m%60)+'m':m+'m';};
+function MTN(c){return '<svg class="'+(c||'w-10 h-10')+'" viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M2 54 24 16l12 20 6-9 20 27z" fill="#10b981"/><path d="M26 54 42 27l20 27z" fill="#047857"/><path d="M24 16l6 10-4-2-2 4-4-4-1.5 1.5z" fill="#ecfdf5"/></svg>';}
 // SVG ICONS (no emojis)
 const IC={
 home:'<path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-7h-6v7H4a1 1 0 01-1-1z"/>',
@@ -132,7 +134,7 @@ const LECTURER_NAV=[['home','Attendance Hub','att'],['roster','Student Rosters',
 function start(){
   $('auth').innerHTML='';$('app').classList.remove('hidden');
   const nav=U.role==='lecturer'?LECTURER_NAV:STUDENT_NAV;
-  $('side').innerHTML='<div class="flex items-center gap-3 mb-8 px-2"><div class="w-10 h-10 rounded-2xl grad grid place-items-center font-extrabold text-sm">AS</div><div><div class="font-extrabold text-lg leading-tight">Academic</div><div class="text-xs text-violet-400 font-bold uppercase tracking-wider">'+(U.role==='lecturer'?'Lecturer Console':'Summit v13')+'</div></div></div><div class="space-y-1 flex-1 overflow-y-auto pr-1">'+nav.map(n=>'<button data-n="'+n[0]+'" onclick="go(\''+n[0]+'\')" class="nv w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:bg-violet-900/40 flex items-center gap-3">'+ic(n[2])+'<span>'+n[1]+'</span></button>').join('')+'</div><div class="mt-auto pt-4"><div class="rounded-2xl p-4 text-xs bg-violet-900/40 border border-violet-800/40 space-y-1"><b class="text-white block text-sm">'+(U.role==='lecturer'?'Active Session':'Target CGPA: '+U.target.toFixed(2))+'</b><p class="text-violet-300/80">Higher Goals, Bigger Future.</p></div></div>';
+  $('side').innerHTML='<div class="flex items-center gap-3 mb-8 px-2"><div class="w-10 h-10 shrink-0">'+MTN('w-10 h-10')+'</div><div><div class="font-extrabold text-lg leading-tight">Academic</div><div class="text-xs text-violet-400 font-bold uppercase tracking-wider">'+(U.role==='lecturer'?'Lecturer Console':'Summit v13')+'</div></div></div><div class="space-y-1 flex-1 overflow-y-auto pr-1">'+nav.map(n=>'<button data-n="'+n[0]+'" onclick="go(\''+n[0]+'\')" class="nv w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:bg-violet-900/40 flex items-center gap-3">'+ic(n[2])+'<span>'+n[1]+'</span></button>').join('')+'</div><div class="mt-auto pt-4"><div class="rounded-2xl p-4 text-xs bg-violet-900/40 border border-violet-800/40 space-y-1"><div class="mb-2">'+MTN('w-12 h-12')+'</div><b class="text-white block text-sm">'+(U.role==='lecturer'?'Active Session':'Target CGPA: '+U.target.toFixed(2))+'</b><p class="text-violet-300/80">Higher Goals, Bigger Future.</p></div></div>';
   const sh={home:'Home',acad:'Academics',plan:'Planner',fin:'Finance',roster:'Roster',prof:'Profile'};
   $('bnav').innerHTML=nav.slice(0,2).concat([['+']]).concat(nav.slice(2,4)).map(n=>n[0]==='+'?'<button onclick="openSheet()" class="grad w-12 h-12 -mt-5 rounded-full shadow-lg flex items-center justify-center text-white text-xl font-bold">+</button>':'<button data-n="'+n[0]+'" onclick="go(\''+n[0]+'\')" class="bn flex-1 py-2 text-[10px] font-semibold text-slate-400 flex flex-col items-center gap-1">'+ic(n[2],'w-5 h-5')+ (sh[n[0]]||n[1])+'</button>').join('');
   const ini=U.name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
@@ -763,7 +765,7 @@ function authUI(mode,msg){
   msg=msg||'';
   if(mode==='login'&&!localStorage.getItem('as_welcomed')&&!LEC_LINK)mode='welcome';
   if(mode==='welcome'){
-    $('auth').innerHTML='<div class="min-h-screen flex flex-col px-6 pt-10" style="background:#021812;padding-bottom:max(1.5rem,env(safe-area-inset-bottom))"><div class="flex-1 flex flex-col justify-center max-w-md w-full mx-auto space-y-4"><div class="w-12 h-1 rounded-full" style="background:#10b981"></div><h1 class="text-4xl font-extrabold text-white leading-tight">Welcome to Academic Summit</h1><p class="text-base" style="color:#a7f3d0">Your one companion for your academic journey.</p></div><div class="max-w-md w-full mx-auto flex justify-end"><button class="btn px-8 py-3" onclick="localStorage.setItem(\'as_welcomed\',\'1\');authUI(\'login\')">Continue</button></div></div>';
+    $('auth').innerHTML='<div class="min-h-screen flex flex-col px-6 pt-10" style="background:#021812;padding-bottom:max(1.5rem,env(safe-area-inset-bottom))"><div class="flex-1 flex flex-col justify-center max-w-md w-full mx-auto space-y-4">'+MTN('w-20 h-20')+'<h1 class="text-4xl font-extrabold text-white leading-tight">Welcome to Academic Summit</h1><p class="text-base" style="color:#a7f3d0">Your one companion for your academic journey.</p></div><div class="max-w-md w-full mx-auto flex justify-end"><button class="btn px-8 py-3" onclick="localStorage.setItem(\'as_welcomed\',\'1\');authUI(\'login\')">Continue</button></div></div>';
     $('app').classList.add('hidden');return;
   }
   const f={
