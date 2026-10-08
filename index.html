@@ -930,30 +930,16 @@ async function boot(user){
   uid=user.id;email=user.email;
   const{data:p}=await sb.from('profiles').select('role').eq('id',uid).maybeSingle();
   const role=p?.role||'student';
-  if(LEC_LINK&&role!=='lecturer'){await sb.auth.signOut();return authUI('login','This link is reserved for lecturers. Use the main link for student login.');}
+  if(LEC_LINK&&role!=='lecturer'){await sb.auth.signOut();return authUI('login','This link is reserved for lecturers.');}
   U=DB.users[email]||(DB.users[email]=newUser(user.user_metadata?.name||email,role));
   U.role=role;
   ['materials','attendance','goals','career','tasks','events','tx','semesters'].forEach(k=>{if(!U[k])U[k]=[];});
   if(!U.fees)U.fees={total:0,paid:0,due:''};
   save();
-  if(!U.profile)return authOnboard();
-  start();
-}
-</script>
-<script>
-async function boot(user){
-  uid=user.id;email=user.email;
-  const{data:p}=await sb.from('profiles').select('role').eq('id',uid).maybeSingle();
-  const role=p?.role||'student';
-  if(LEC_LINK&&role!=='lecturer'){await sb.auth.signOut();return authUI('login','This link is reserved for lecturers. Use the main link for student login.');}
-  U=DB.users[email]||(DB.users[email]=newUser(user.user_metadata?.name||email,role));
-  U.role=role;
-  ['materials','attendance','goals','career','tasks','events','tx','semesters'].forEach(k=>{if(!U[k])U[k]=[];});
-  if(!U.fees)U.fees={total:0,paid:0,due:''};
-  save();
-  if(!U.profile)return authOnboard();
+  if(!U.profile){$('auth').classList.remove('hidden');$('app').classList.add('hidden');return authOnboard();}
+  $('auth').classList.add('hidden');$('app').classList.remove('hidden');
   start();
 }
 </script>
 </body>
-  </html>
+</html>
