@@ -26,6 +26,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Plus Jakarta Sans',system
 .toast{pointer-events:auto;animation:slideIn .3s cubic-bezier(.16,1,.3,1) forwards}
 @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:#8b8bb0;border-radius:3px}
+#app.hidden~#tour-fab{display:none}
 @media print{aside,nav,header,.np,#toast-container{display:none!important}body{background:#fff!important;color:#000!important}.card{box-shadow:none!important;border:1px solid #ccc!important}}
 </style>
 </head>
@@ -131,7 +132,7 @@ const LECTURER_NAV=[['home','Attendance Hub','att'],['roster','Student Rosters',
 function start(){
   $('auth').innerHTML='';$('app').classList.remove('hidden');
   const nav=U.role==='lecturer'?LECTURER_NAV:STUDENT_NAV;
-  $('side').innerHTML='<div class="flex items-center gap-3 mb-8 px-2"><div class="w-10 h-10 rounded-2xl grad grid place-items-center font-extrabold text-xl">⛰</div><div><div class="font-extrabold text-lg leading-tight">Academic</div><div class="text-xs text-violet-400 font-bold uppercase tracking-wider">'+(U.role==='lecturer'?'Lecturer Console':'Summit v13')+'</div></div></div><div class="space-y-1 flex-1 overflow-y-auto pr-1">'+nav.map(n=>'<button data-n="'+n[0]+'" onclick="go(\''+n[0]+'\')" class="nv w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:bg-violet-900/40 flex items-center gap-3">'+ic(n[2])+'<span>'+n[1]+'</span></button>').join('')+'</div><div class="mt-auto pt-4"><div class="rounded-2xl p-4 text-xs bg-violet-900/40 border border-violet-800/40 space-y-1"><b class="text-white block text-sm">'+(U.role==='lecturer'?'Active Session':'Target CGPA: '+U.target.toFixed(2))+'</b><p class="text-violet-300/80">Higher Goals, Bigger Future.</p></div></div>';
+  $('side').innerHTML='<div class="flex items-center gap-3 mb-8 px-2"><div class="w-10 h-10 rounded-2xl grad grid place-items-center font-extrabold text-sm">AS</div><div><div class="font-extrabold text-lg leading-tight">Academic</div><div class="text-xs text-violet-400 font-bold uppercase tracking-wider">'+(U.role==='lecturer'?'Lecturer Console':'Summit v13')+'</div></div></div><div class="space-y-1 flex-1 overflow-y-auto pr-1">'+nav.map(n=>'<button data-n="'+n[0]+'" onclick="go(\''+n[0]+'\')" class="nv w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:bg-violet-900/40 flex items-center gap-3">'+ic(n[2])+'<span>'+n[1]+'</span></button>').join('')+'</div><div class="mt-auto pt-4"><div class="rounded-2xl p-4 text-xs bg-violet-900/40 border border-violet-800/40 space-y-1"><b class="text-white block text-sm">'+(U.role==='lecturer'?'Active Session':'Target CGPA: '+U.target.toFixed(2))+'</b><p class="text-violet-300/80">Higher Goals, Bigger Future.</p></div></div>';
   const sh={home:'Home',acad:'Academics',plan:'Planner',fin:'Finance',roster:'Roster',prof:'Profile'};
   $('bnav').innerHTML=nav.slice(0,2).concat([['+']]).concat(nav.slice(2,4)).map(n=>n[0]==='+'?'<button onclick="openSheet()" class="grad w-12 h-12 -mt-5 rounded-full shadow-lg flex items-center justify-center text-white text-xl font-bold">+</button>':'<button data-n="'+n[0]+'" onclick="go(\''+n[0]+'\')" class="bn flex-1 py-2 text-[10px] font-semibold text-slate-400 flex flex-col items-center gap-1">'+ic(n[2],'w-5 h-5')+ (sh[n[0]]||n[1])+'</button>').join('');
   const ini=U.name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
@@ -150,7 +151,7 @@ function go(v){
 }
 function openSheet(){
   const b=(t,f)=>'<button class="btn2 w-full text-left justify-start py-3" onclick="closeSheet();'+f+'">'+t+'</button>';
-  $('sheet').innerHTML='<div class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end" onclick="closeSheet()"><div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 space-y-3" onclick="event.stopPropagation()" style="padding-bottom:max(1.5rem,env(safe-area-inset-bottom))"><div class="lbl text-violet-600 dark:text-violet-400">Quick Actions</div>'+(U.role==='lecturer'?b('⚡ Generate Attendance OTP',"go('home')")+b('📋 Export Roster',"go('roster')"):b(ic('calc')+' Calculate GPA',"aTab='calc';editing=null;go('acad')")+b(ic('up')+' Import Portal Results',"aTab='calc';editing=null;go('acad');setTimeout(()=>$('paste').classList.remove('hidden'),30)")+b(ic('plan')+' Add Task / Event',"go('plan')")+b(ic('fin')+' Log Expense',"go('fin')")+b(ic('mat')+' Materials',"go('mat')")+b(ic('goal')+' Goals',"go('goal')")+b(ic('car')+' Career',"go('car')")+b(ic('prof')+' Profile',"go('prof')"))+'</div></div>';
+  $('sheet').innerHTML='<div class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end" onclick="closeSheet()"><div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 space-y-3" onclick="event.stopPropagation()" style="padding-bottom:max(1.5rem,env(safe-area-inset-bottom))"><div class="lbl text-violet-600 dark:text-violet-400">Quick Actions</div>'+(U.role==='lecturer'?b('Generate Attendance OTP',"go('home')")+b('Export Roster',"go('roster')"):b(ic('calc')+' Calculate GPA',"aTab='calc';editing=null;go('acad')")+b(ic('up')+' Import Portal Results',"aTab='calc';editing=null;go('acad');setTimeout(()=>$('paste').classList.remove('hidden'),30)")+b(ic('plan')+' Add Task / Event',"go('plan')")+b(ic('fin')+' Log Expense',"go('fin')")+b(ic('mat')+' Materials',"go('mat')")+b(ic('goal')+' Goals',"go('goal')")+b(ic('car')+' Career',"go('car')")+b(ic('prof')+' Profile',"go('prof')"))+'</div></div>';
 }
 const closeSheet=()=>$('sheet').innerHTML='';
 let pendingMatric='';
@@ -197,12 +198,12 @@ home(){
   const delta=last&&prev?last.g-prev.g:null;
   const up=[...U.events.filter(e=>days(e.date)>=0).map(e=>({t:e.title,s:e.type+' • '+fmtD(e.date),d:days(e.date)})),...U.tasks.filter(t=>!t.done).map(t=>({t:t.t,s:'Task'+(t.end?' • '+leftTxt(t.end):''),d:t.end?days(t.end):null}))].sort((a,b)=>(a.d??999)-(b.d??999)).slice(0,4);
   const notes=[];
-  U.events.filter(e=>days(e.date)>=0&&days(e.date)<=14).forEach(e=>notes.push(['📅','Exam reminder',e.title+' in '+days(e.date)+' day(s).']));
-  U.tasks.filter(t=>!t.done&&t.end&&(new Date(t.end)-Date.now())<864e5).forEach(t=>notes.push(['⏰','Task due soon',t.t+' — '+leftTxt(t.end)+'.']));
-  if(U.fees.total-U.fees.paid>0&&U.fees.due)notes.push(['💳','Fee alert',naira(U.fees.total-U.fees.paid)+' due '+fmtD(U.fees.due)+'.']);
-  U.goals.forEach(g=>{const st=goalStatus(g);if(st[0]==='Achieved')notes.push(['🎯','Milestone achieved',g.title]);});
-  if(last){const low=[...S[S.length-1].courses].sort((a,b)=>a.score-b.score)[0];if(low)notes.push(['💡','Academic insight','Lowest score last semester: '+esc(low.code)+' ('+low.score+').']);}
-  return '<div class="space-y-5"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"><div><h1 class="text-2xl font-extrabold">Good day, '+esc(U.name.split(' ')[0])+' 👋</h1><p class="text-xs text-slate-500">'+esc(U.profile?.program)+' • '+esc(U.profile?.level)+' Level'+(U.profile?.matric?' • '+esc(U.profile.matric):'')+'</p></div><button onclick="aTab=\'calc\';editing=null;go(\'acad\')" class="btn">'+ic('up')+' Import Portal Results</button></div>'+
+  U.events.filter(e=>days(e.date)>=0&&days(e.date)<=14).forEach(e=>notes.push(['plan','Exam reminder',e.title+' in '+days(e.date)+' day(s).']));
+  U.tasks.filter(t=>!t.done&&t.end&&(new Date(t.end)-Date.now())<864e5).forEach(t=>notes.push(['clock','Task due soon',t.t+' — '+leftTxt(t.end)+'.']));
+  if(U.fees.total-U.fees.paid>0&&U.fees.due)notes.push(['fin','Fee alert',naira(U.fees.total-U.fees.paid)+' due '+fmtD(U.fees.due)+'.']);
+  U.goals.forEach(g=>{const st=goalStatus(g);if(st[0]==='Achieved')notes.push(['goal','Milestone achieved',g.title]);});
+  if(last){const low=[...S[S.length-1].courses].sort((a,b)=>a.score-b.score)[0];if(low)notes.push(['acad','Academic insight','Lowest score last semester: '+esc(low.code)+' ('+low.score+').']);}
+  return '<div class="space-y-5"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"><div><h1 class="text-2xl font-extrabold">Good day, '+esc(U.name.split(' ')[0])+'</h1><p class="text-xs text-slate-500">'+esc(U.profile?.program)+' • '+esc(U.profile?.level)+' Level'+(U.profile?.matric?' • '+esc(U.profile.matric):'')+'</p></div><button onclick="aTab=\'calc\';editing=null;go(\'acad\')" class="btn">'+ic('up')+' Import Portal Results</button></div>'+
   '<div class="grid md:grid-cols-3 gap-4"><div class="grad rounded-3xl p-6 space-y-3 shadow-lg"><div class="text-xs font-bold uppercase tracking-wider opacity-80">Cumulative GPA</div><div class="flex items-end justify-between"><div class="text-4xl font-extrabold">'+c.g.toFixed(2)+'<span class="text-base opacity-75"> / 5.00</span></div><span class="text-[11px] bg-white/20 rounded-full px-3 py-1 font-bold">Target '+U.target.toFixed(2)+'</span></div><div class="h-2 rounded-full bg-white/30"><div class="h-2 rounded-full bg-white" style="width:'+(c.g/5*100)+'%"></div></div>'+(delta!==null?'<div class="text-xs font-semibold">'+(delta>=0?'↑ +':'↓ ')+delta.toFixed(2)+' from previous term</div>':'')+'</div>'+
   '<div class="card p-6 space-y-2"><div class="lbl">Last Semester GPA</div><div class="text-4xl font-extrabold">'+(last?last.g.toFixed(2):'—')+'<span class="text-base text-slate-400"> / 5.00</span></div><div class="text-xs text-slate-400">'+(last?S[S.length-1].courses.length+' courses • '+last.u+' units':'No semester recorded yet')+'</div></div>'+
   '<div class="card p-6 flex items-center justify-between gap-4"><div class="space-y-1"><div class="lbl">Degree Progress</div><div class="text-3xl font-extrabold">'+c.u+'<span class="text-sm text-slate-400"> / '+tot+'</span></div><div class="text-xs text-slate-400">'+Math.max(0,tot-c.u)+' units remaining</div></div>'+donut(pct,'#10b981',76,58,pct+'%')+'</div></div>'+
@@ -210,7 +211,7 @@ home(){
   '<div class="card p-6 space-y-3"><div class="font-extrabold">Quick Actions</div><div class="grid grid-cols-3 sm:grid-cols-6 gap-3 text-[11px] font-semibold text-center">'+[[ic('calc'),'GPA Calc',"aTab='calc';editing=null;go('acad')"],[ic('up'),'Import',"aTab='calc';go('acad')"],[ic('plan'),'Planner',"go('plan')"],[ic('fin'),'Finance',"go('fin')"],[ic('mat'),'Materials',"go('mat')"],[ic('goal'),'Goals',"go('goal')"]].map(q=>'<button onclick="'+q[2]+'" class="space-y-1.5"><div class="mx-auto w-12 h-12 rounded-2xl bg-violet-50 dark:bg-violet-950 text-violet-600 dark:text-violet-300 grid place-items-center">'+q[0]+'</div>'+q[1]+'</button>').join('')+'</div></div></div>'+
   '<div class="space-y-5"><div class="card p-6 space-y-2"><div class="flex justify-between items-center"><div class="font-extrabold">Next Up</div><button onclick="go(\'plan\')" class="text-xs font-bold text-violet-600 dark:text-violet-400">View Planner</button></div>'+up.map(u=>'<div class="flex justify-between items-center text-xs p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40"><div><b class="block">'+esc(u.t)+'</b><span class="text-slate-400 text-[11px]">'+esc(u.s)+'</span></div>'+(u.d!==null?'<span class="bg-violet-100 dark:bg-violet-950 text-violet-600 dark:text-violet-300 font-extrabold px-2.5 py-1 rounded-full text-[10px]">'+(u.d===0?'Today':u.d+' d')+'</span>':'')+'</div>').join('')||'<p class="text-xs text-slate-400">Nothing scheduled.</p>'+'</div>'+
   '<div class="card p-6 space-y-3"><div class="font-extrabold">Milestones</div>'+U.goals.slice(0,3).map(g=>{const st=goalStatus(g);return '<div class="flex justify-between items-center text-xs p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40"><span class="font-semibold">'+esc(g.title)+'</span>'+chip(st[0],st[1])+'</div>';}).join('')||'<p class="text-xs text-slate-400">Set goals to see them here.</p>'+'<button onclick="go(\'goal\')" class="btn2 w-full">Manage Goals</button></div>'+
-  '<div class="card p-6 space-y-2"><div class="font-extrabold">Notifications</div>'+notes.map(n=>'<div class="flex gap-3 text-xs"><span class="text-lg">'+n[0]+'</span><div><b>'+n[1]+'</b><div class="text-slate-500">'+esc(n[2])+'</div></div></div>').join('')||'<p class="text-xs text-slate-400">All clear.</p>'+'</div></div></div></div>';
+  '<div class="card p-6 space-y-2"><div class="font-extrabold">Notifications</div>'+notes.map(n=>'<div class="flex gap-3 text-xs"><span class="text-emerald-600 dark:text-emerald-400 mt-0.5" data-k="'+n[0]+'">'+ic(n[0],'w-5 h-5')+'</span><div><b>'+n[1]+'</b><div class="text-slate-500">'+esc(n[2])+'</div></div></div>').join('')||'<p class="text-xs text-slate-400">All clear.</p>'+'</div></div></div></div>';
 },
 acad(){
   const t=[['calc','GPA Calculator'],['det','Result Detective'],['dec','Menu of Decimals'],['rec','My Record']];
@@ -509,7 +510,7 @@ setTimeout(function(){
   var fb=document.createElement('button');
   fb.className='fixed right-4 z-40 w-10 h-10 rounded-full grad text-white font-extrabold shadow-lg';
   fb.style.bottom='calc(env(safe-area-inset-bottom,6px) + 76px)';
-  fb.textContent='?';fb.onclick=startTour;
+  fb.id='tour-fab';fb.textContent='?';fb.onclick=startTour;
   document.body.appendChild(fb);
 },800);
 // ===== SETTINGS SCREEN (v13 add-on) =====
@@ -544,11 +545,11 @@ applyTheme();
 const _home0=V.home;
 V.home=function(){
   const p=U.prefs||{};
-  const map={'📅':'exam','⏰':'tasks','💳':'fees','🎯':'goals'};
+  const map={'plan':'exam','clock':'tasks','fin':'fees','goal':'goals'};
   let html=_home0();
   Object.keys(map).forEach(function(e){
     if(p[map[e]]===false){
-      const re=new RegExp('<div class="flex gap-3 text-xs"><span class="text-lg">'+e+'[\\s\\S]*?</div></div>','g');
+      const re=new RegExp('<div class="flex gap-3 text-xs"><span class="[^"]*" data-k="'+e+'"[\\s\\S]*?</div></div></div>','g');
       html=html.replace(re,'');
     }
   });
@@ -626,7 +627,7 @@ function showToast(msg,type){
   const t=document.createElement('div');
   const bg=type==='success'?'bg-emerald-600 text-white':type==='error'?'bg-rose-600 text-white':'bg-slate-800 text-white';
   t.className='toast px-4 py-3 rounded-xl shadow-lg font-semibold text-xs '+bg;
-  t.innerHTML=(type==='error'?'⚠️ ':'✅ ')+esc(msg);
+  t.innerHTML=esc(msg);
   $('toast-container').appendChild(t);
   setTimeout(function(){t.style.opacity='0';setTimeout(function(){t.remove();},200);},3000);
 }
@@ -762,28 +763,20 @@ function authUI(mode,msg){
   msg=msg||'';
   if(mode==='login'&&!localStorage.getItem('as_welcomed')&&!LEC_LINK)mode='welcome';
   if(mode==='welcome'){
-    $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-6" style="background:#021812">'+
-    '<div class="max-w-md w-full text-center space-y-6">'+
-    '<div class="w-20 h-20 mx-auto rounded-3xl grad grid place-items-center text-3xl font-extrabold text-white shadow-lg">⛰</div>'+
-    '<h1 class="text-3xl font-extrabold text-white">Welcome to Academic Summit</h1>'+
-    '<p class="text-sm" style="color:#a7f3d0aa">Your one guide for the academic journey — built for every faculty, every department.</p>'+
-    '<div class="space-y-2 text-left">'+[['🎓','Smart GPA Engine','5.0-scale analytics & the Result Detective'],['📅','Planner & Attendance','Calendar, reminders and 90-second class OTP'],['🗂','Library & Past Questions','Department materials, uploads & backups']].map(f=>'<div class="flex gap-3 p-4 rounded-2xl bg-white/5 border border-white/10"><span class="text-xl">'+f[0]+'</span><div><b class="text-sm text-white">'+f[1]+'</b><p class="text-xs" style="color:#a7f3d099">'+f[2]+'</p></div></div>').join('')+'</div>'+
-    '<button class="btn w-full py-3.5" onclick="localStorage.setItem(\'as_welcomed\',\'1\');authUI(\'signup\')">Create my account</button>'+
-    '<button class="btn2 w-full" onclick="localStorage.setItem(\'as_welcomed\',\'1\');authUI(\'login\')">I already have an account</button>'+
-    '</div></div>';
+    $('auth').innerHTML='<div class="min-h-screen flex flex-col px-6 pt-10" style="background:#021812;padding-bottom:max(1.5rem,env(safe-area-inset-bottom))"><div class="flex-1 flex flex-col justify-center max-w-md w-full mx-auto space-y-4"><div class="w-12 h-1 rounded-full" style="background:#10b981"></div><h1 class="text-4xl font-extrabold text-white leading-tight">Welcome to Academic Summit</h1><p class="text-base" style="color:#a7f3d0">Your one companion for your academic journey.</p></div><div class="max-w-md w-full mx-auto flex justify-end"><button class="btn px-8 py-3" onclick="localStorage.setItem(\'as_welcomed\',\'1\');authUI(\'login\')">Continue</button></div></div>';
     $('app').classList.add('hidden');return;
   }
   const f={
     login:'<div class="space-y-3"><div><label class="lbl mb-1 block">Email</label><input id="a-email" type="email" class="inp" placeholder="user@uni.edu.ng"></div><div><label class="lbl mb-1 block">Password</label><input id="a-pass" type="password" class="inp" placeholder="••••••••"></div><button class="btn w-full py-3 mt-2" onclick="doLogin()">Enter Campus Portal</button><button class="text-xs text-slate-500 w-full hover:underline pt-2" onclick="authUI(\'signup\')">New here? Create account</button></div>',
     signup:'<div class="space-y-3"><div><label class="lbl mb-1 block">Full Name</label><input id="a-name" class="inp" placeholder="e.g. Miracle Moses"></div><div><label class="lbl mb-1 block">Email</label><input id="a-email" type="email" class="inp"></div><div><label class="lbl mb-1 block">Password</label><input id="a-pass" type="password" class="inp" placeholder="6+ characters"></div><button class="btn w-full py-3 mt-2" onclick="doSignup()">Create Account</button><button class="text-xs text-slate-500 w-full hover:underline pt-2" onclick="authUI(\'login\')">Have an account? Log in</button></div>'
   }[mode];
-  $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-5" style="background:#021812"><div class="card p-8 w-full max-w-md space-y-5 dark:bg-slate-900 shadow-2xl"><div class="text-center space-y-2"><div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold uppercase tracking-wider">⛰ Academic Summit</div><h1 class="text-2xl font-extrabold">'+(LEC_LINK?'Lecturer Console':'Student Operating System')+'</h1></div>'+f+(msg?'<p class="text-xs text-rose-500 text-center font-semibold bg-rose-500/10 py-2 rounded-lg">'+esc(msg)+'</p>':'')+'</div></div>';
+  $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-5" style="background:#021812"><div class="card p-8 w-full max-w-md space-y-5 dark:bg-slate-900 shadow-2xl"><div class="text-center space-y-2"><div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold uppercase tracking-wider">Academic Summit</div><h1 class="text-2xl font-extrabold">'+(LEC_LINK?'Lecturer Console':'Student Operating System')+'</h1></div>'+f+(msg?'<p class="text-xs text-rose-500 text-center font-semibold bg-rose-500/10 py-2 rounded-lg">'+esc(msg)+'</p>':'')+'</div></div>';
   $('app').classList.add('hidden');
   if(LEC_LINK){document.querySelectorAll('#auth button[onclick="authUI(\'signup\')"]').forEach(b=>b.style.display='none');}
 }
 function authOnboard(){
   $('app').classList.add('hidden');
-  $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-5" style="background:#021812"><div class="card p-8 w-full max-w-md space-y-4 dark:bg-slate-900"><div class="text-center"><h1 class="text-2xl font-extrabold">Set Up Your Summit ⛰</h1><p class="text-xs text-slate-500">For every faculty, every department.</p></div><div class="space-y-3">'+
+  $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-5" style="background:#021812"><div class="card p-8 w-full max-w-md space-y-4 dark:bg-slate-900"><div class="text-center"><h1 class="text-2xl font-extrabold">Set Up Your Summit </h1><p class="text-xs text-slate-500">For every faculty, every department.</p></div><div class="space-y-3">'+
   '<div><label class="lbl mb-1 block">University</label><input id="o-uni" class="inp" value="University of Abuja"></div>'+
   '<div><label class="lbl mb-1 block">Faculty</label><select id="o-fac" class="inp" onchange="facChanged()">'+Object.keys(SEED).map(k=>'<option>'+k+'</option>').join('')+'</select></div>'+
   '<div><label class="lbl mb-1 block">Department</label><select id="o-dep" class="inp" onchange="document.getElementById(\'o-dep-wrap\').classList.toggle(\'hidden\',this.value!==\'__other\')"></select></div>'+
