@@ -247,7 +247,7 @@ home(){
   U.goals.forEach(g=>{const st=goalStatus(g);if(st[0]==='Achieved')notes.push(['goal','Milestone achieved',g.title]);});
   if(last){const low=[...S[S.length-1].courses].sort((a,b)=>a.score-b.score)[0];if(low)notes.push(['acad','Academic insight','Lowest score last semester: '+esc(low.code)+' ('+low.score+').']);}
   return '<div class="space-y-5"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"><div><h1 class="text-2xl font-extrabold">'+greet()+' '+esc(U.name.split(' ')[0])+'</h1><p class="text-xs text-slate-500">'+esc(U.profile?.program)+' • '+esc(U.profile?.level)+' Level'+(U.profile?.matric?' • '+esc(U.profile.matric):'')+'</p></div><button onclick="aTab=\'calc\';editing=null;go(\'acad\')" class="btn">'+ic('up')+' Import Portal Results</button></div>'+
-  '<div class="grid md:grid-cols-3 gap-4"><div class="grad rounded-3xl p-6 space-y-3 shadow-lg"><div class="text-xs font-bold uppercase tracking-wider opacity-80">Cumulative GPA</div><div class="flex items-end justify-between"><div class="text-4xl font-extrabold">'+c.g.toFixed(2)+'<span class="text-base opacity-75"> / 5.00</span></div><span class="text-[11px] bg-white/20 rounded-full px-3 py-1 font-bold">Target '+U.target.toFixed(2)+'</span></div><div class="h-2 rounded-full bg-white/30"><div class="h-2 rounded-full bg-white" style="width:'+(c.g/5*100)+'%"></div></div>'+(delta!==null?'<div class="text-xs font-semibold">'+(delta>=0?'↑ +':'↓ ')+delta.toFixed(2)+' from previous term</div>':'')+'</div>'+
+  '<div class="grid md:grid-cols-3 gap-4"><div class="grad rounded-3xl p-6 space-y-3 shadow-lg"><div class="text-xs font-bold uppercase tracking-wider opacity-80">Cumulative GPA</div><div class="flex items-end justify-between"><div class="text-4xl font-extrabold">'+c.g.toFixed(2)+'<span class="text-base opacity-75"> / 5.00</span></div><span class="text-[11px] bg-white/20 rounded-full px-3 py-1 font-bold cursor-pointer" onclick="setTarget()">Target '+U.target.toFixed(2)+'</span></div><div class="h-2 rounded-full bg-white/30"><div class="h-2 rounded-full bg-white" style="width:'+(c.g/5*100)+'%"></div></div>'+(delta!==null?'<div class="text-xs font-semibold">'+(delta>=0?'↑ +':'↓ ')+delta.toFixed(2)+' from previous term</div>':'')+'</div>'+
   '<div class="card p-6 space-y-2"><div class="lbl">Last Semester GPA</div><div class="text-4xl font-extrabold">'+(last?last.g.toFixed(2):'—')+'<span class="text-base text-slate-400"> / 5.00</span></div><div class="text-xs text-slate-400">'+(last?S[S.length-1].courses.length+' courses • '+last.u+' units':'No semester recorded yet')+'</div></div>'+
   '<div class="card p-6 flex items-center justify-between gap-4"><div class="space-y-1"><div class="lbl">Degree Progress</div><div class="text-3xl font-extrabold">'+c.u+'<span class="text-sm text-slate-400"> / '+tot+'</span></div><div class="text-xs text-slate-400">'+Math.max(0,tot-c.u)+' units remaining</div></div>'+donut(pct,'#10b981',76,58,pct+'%')+'</div></div>'+
   '<div class="grid lg:grid-cols-3 gap-5"><div class="lg:col-span-2 space-y-5"><div class="card p-6 space-y-4"><div class="font-extrabold">GPA Trajectory</div><div class="grid sm:grid-cols-3 gap-4 items-center"><div class="sm:col-span-2">'+chart()+'</div><div class="text-xs space-y-3 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl"><div><div class="lbl">Current CGPA</div><b class="text-base">'+c.g.toFixed(2)+'</b></div><div><div class="lbl">Target</div><b class="text-base">'+U.target.toFixed(2)+'</b></div><div><div class="lbl">Required Avg</div><b class="text-base">'+(req===null?'—':req.toFixed(2))+'</b></div>'+(req>5?'<p class="text-[11px] text-rose-500 font-bold">Target unachievable in remaining units.</p>':'')+'</div></div></div>'+
@@ -1185,6 +1185,42 @@ function saveSem(){
   const x=semS({courses:courses}),c=cum();
   go('home');showToast('Saved! Semester GPA: '+x.g.toFixed(2)+' | New CGPA: '+c.g.toFixed(2));
 }
+</script>
+<script>
+function setTarget(){
+  const v=prompt('New target CGPA (0.00 - 5.00):',U.target.toFixed(2));
+  if(v===null)return;
+  const t=parseFloat(v);
+  if(isNaN(t)||t<0||t>5)return showToast('Target must be between 0 and 5','error');
+  U.target=t;save();start();showToast('Target updated to '+t.toFixed(2));
+}
+function attBar(){
+  var h='<div class="mt-5 rounded-3xl p-5 space-y-3 grad shadow-lg">';
+  h+='<div class="flex items-center justify-between"><div class="font-extrabold text-white">Class Attendance</div><span class="text-[10px] bg-white/20 rounded-full px-2.5 py-1 font-bold text-white">LIVE</span></div>';
+  h+='<p class="text-xs text-white/80">In class now? Enter your course code and the lecturer\'s 5-digit pin.</p>';
+  h+='<div class="grid grid-cols-3 gap-2">';
+  h+='<input id="ha-course" class="inp !bg-white/15 !text-white placeholder-white/50 uppercase font-mono font-bold" placeholder="POS 204">';
+  h+='<input id="ha-pin" class="inp !bg-white/15 !text-white placeholder-white/50 font-mono font-bold tracking-widest" placeholder="PIN" maxlength="5" inputmode="numeric">';
+  h+='<button style="background:#fff;color:#047857" class="btn" onclick="markFromHome()">Mark</button>';
+  h+='</div></div>';
+  return h;
+}
+async function markFromHome(){
+  const pin=$('ha-pin').value.trim();
+  const course=$('ha-course').value.trim().toUpperCase().replace(/\s+/g,'');
+  if(!/^\d{5}$/.test(pin))return showToast('Enter the 5-digit pin','error');
+  const{data,error}=await sb.rpc('mark_attendance',{p_code:pin});
+  if(error)return showToast(error.message,'error');
+  const got=String(data||'').toUpperCase().replace(/\s+/g,'');
+  U.attendance.push({code:data,lecturer:'',date:new Date().toISOString()});
+  save();
+  $('ha-pin').value='';
+  if(course&&got&&course!==got)showToast('Marked present for '+data+' (not '+course+')');
+  else showToast('Attendance marked for '+data);
+  if(window.posthog)posthog.capture('attendance_submitted',{source:'home'});
+}
+const _homeA=V.home;
+V.home=function(){return _homeA()+attBar();};
 </script>
 </body>
 </html>
