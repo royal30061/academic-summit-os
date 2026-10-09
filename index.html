@@ -155,7 +155,8 @@ async function doLogin(){
   sb.from('profiles').update({last_seen:new Date().toISOString()}).eq('id',data.user.id).then(()=>{});
   boot(data.user);
 }
-sb.auth.getSession().then(({data})=>data.session?(RECOVERY?resetUI(data.session.user):boot(data.session.user)):authUI('login'));
+function startSession(){sb.auth.getSession().then(({data})=>data.session?(RECOVERY?resetUI(data.session.user):boot(data.session.user)):authUI('login'));}
+if(document.addEventListener)document.addEventListener('DOMContentLoaded',startSession);else startSession();
 // shell
 const STUDENT_NAV=[['home','Dashboard','home'],['acad','Academics','acad'],['plan','Planner','plan'],['fin','Finance','fin'],['mat','Materials','mat'],['att','Attendance','att'],['goal','Goals','goal'],['car','Career & Portfolio','car'],['prof','Profile & Settings','prof']];
 const LECTURER_NAV=[['home','Attendance Hub','att'],['roster','Student Rosters','prof'],['prof','Account Settings','prof']];
