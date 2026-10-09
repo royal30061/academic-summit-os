@@ -791,7 +791,7 @@ function authUI(mode,msg){
   }[mode];
   $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-5" style="background:#021812"><div class="card p-8 w-full max-w-md space-y-5 dark:bg-slate-900 shadow-2xl"><div class="text-center space-y-2"><div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold uppercase tracking-wider">Academic Summit</div><h1 class="text-2xl font-extrabold">'+(LEC_LINK?'Lecturer Console':'Student Operating System')+'</h1></div>'+f+(msg?'<p class="text-xs text-rose-500 text-center font-semibold bg-rose-500/10 py-2 rounded-lg">'+esc(msg)+'</p>':'')+'</div></div>';
   $('app').classList.add('hidden');
-  if(LEC_LINK){document.querySelectorAll('#auth button[onclick="authUI(\'signup\')"]').forEach(b=>b.style.display='none');}
+  
 }
 function authOnboard(){
   $('app').classList.add('hidden');
@@ -835,7 +835,7 @@ async function boot(user){
   uid=user.id;email=user.email;
   const{data:p}=await sb.from('profiles').select('role').eq('id',uid).maybeSingle();
   const role=p?.role||'student';
-  if(LEC_LINK&&role!=='lecturer'){await sb.auth.signOut();return authUI('login','This link is reserved for lecturers.');}
+  if(LEC_LINK&&role!=='lecturer'){return pinGate(user);}
   U=DB.users[email]||(DB.users[email]=newUser(user.user_metadata?.name||email,role));
   cloudReady=false;
   try{
@@ -982,5 +982,21 @@ body{background:radial-gradient(900px 320px at 85% -10%,rgba(16,185,129,.12),tra
 const greet=()=>{const h=new Date().getHours();return h<12?'Good morning':h<17?'Good afternoon':h<21?'Good evening':'Good night';};
 function startTour(){tourI=0;localStorage.setItem('as_tour','1');tourStep();}
 </script>
+<script>
+let pinUser=null;
+function pinGate(user,msg){
+  pinUser=user||pinUser;
+  $('app').classList.add('hidden');
+  $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-5" style="background:#021812"><div class="card p-8 w-full max-w-md space-y-4"><h1 class="text-2xl font-extrabold text-center">Lecturer Access</h1><p class="text-xs text-slate-500 text-center">Enter the access PIN issued to you.</p><input id="l-pin" class="inp text-center font-mono font-bold uppercase" placeholder="ACCESS PIN" maxlength="12"><button class="btn w-full py-3" onclick="redeemPin()">Verify and Continue</button><button class="text-xs text-slate-500 w-full" onclick="logout()">Log out</button>'+(msg?'<p class="text-xs text-rose-500 text-center font-semibold">'+esc(msg)+'</p>':'')+'</div></div>';
+}
+async function redeemPin(){
+  const pin=$('l-pin').value.trim();
+  if(pin.length<4)return pinGate(null,'Enter your access PIN.');
+  const{error}=await sb.rpc('redeem_lecturer_pin',{p_pin:pin});
+  if(error)return pinGate(null,error.message);
+  boot(pinUser);
+}
+</script>
+
 </body>
 </html>
