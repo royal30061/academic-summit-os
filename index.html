@@ -71,7 +71,7 @@ const SB_URL='https://okajzlkeaydskdvogdaw.supabase.co';
 const SB_KEY='sb_publishable_xqUBfEtWElgUkKAz65bueg_66AkIHtr';
 const RECOVERY=/type=recovery/.test(location.hash);
 const sb=supabase.createClient(SB_URL,SB_KEY);
-const LEC_LINK=location.hash==='#lecturer';
+const LEC_LINK=location.hash==='#lecturer'||/[?&]lecturer=1/.test(location.search);
 // helpers
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -135,7 +135,7 @@ const requiredAvg=()=>{const c=cum(),tot=U?.profile?.totalUnits||120,R=tot-c.u;r
 async function doSignup(){
   const name=$('a-name').value.trim(),em=$('a-email').value.trim().toLowerCase(),pw=$('a-pass').value;
   if(!name||!em||pw.length<6)return authUI('signup','Complete all fields (password 6+ characters).');
-  const{data,error}=await sb.auth.signUp({email:em,password:pw,options:{data:{name}}});
+  const{data,error}=await sb.auth.signUp({email:em,password:pw,options:{data:{name},emailRedirectTo:location.origin+location.pathname+(LEC_LINK?'?lecturer=1':'')}});
   if(error)return authUI('signup',error.message);
   if(!data.session)return authUI('login','Check your email to confirm, then log in.');
   boot(data.user);
