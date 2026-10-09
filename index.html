@@ -1034,5 +1034,44 @@ function resetLocal(){
   };
 })();
 </script>
+<script>
+const semPrint=s=>(s.name||'')+'|'+(s.courses||[]).map(c=>c.code+':'+c.unit+':'+c.score).sort().join(',');
+function dedupeSems(){
+  const seen={},keep=[];
+  (U.semesters||[]).forEach(s=>{const k=semPrint(s);if(!seen[k]){seen[k]=1;keep.push(s);}});
+  const removed=(U.semesters||[]).length-keep.length;
+  U.semesters=keep;return removed;
+}
+function saveSem(){
+  const courses=[];
+  document.querySelectorAll('#rows > div').forEach(r=>{
+    const code=r.querySelector('.c-code').value.trim().toUpperCase();
+    const unit=parseFloat(r.querySelector('.c-unit').value);
+    const sc=r.querySelector('.c-score').value;
+    if(code&&unit>0&&sc!==''&&+sc>=0&&+sc<=100&&!courses.some(c=>c.code===code))courses.push({code,unit,score:+sc});
+  });
+  if(!courses.length)return showToast('Enter at least one valid course with score (0-100)','error');
+  const name=$('c-name').value.trim()||('Semester '+(U.semesters.length+1));
+  if(editing!==null){
+    const s=U.semesters.find(x=>x.id===editing);
+    s.name=name;s.courses=courses;editing=null;
+  }else{
+    const print=semPrint({name,courses});
+    const exact=U.semesters.find(s=>semPrint(s)===print);
+    if(exact)return showToast('Already recorded - duplicate blocked','error');
+    const sameName=U.semesters.find(s=>(s.name||'')===name);
+    if(sameName){
+      if(!confirm(name+' exists with different results. Replace it?'))return;
+      sameName.courses=courses;
+    }else U.semesters.push({id:Date.now(),name,courses});
+  }
+  save();
+  const x=semS({courses}),c=cum();
+  go('home');showToast('Saved! Semester GPA: '+x.g.toFixed(2)+' | New CGPA: '+c.g.toFixed(2));
+}
+var _dd=setInterval(function(){
+  if(U&&U.semesters){clearInterval(_dd);var n=dedupeSems();if(n){save();showToast('Cleaned '+n+' duplicate semester(s)');}}
+},2000);
+</script>
 </body>
 </html>
