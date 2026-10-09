@@ -147,7 +147,7 @@ let calY=new Date().getFullYear(),calM=new Date().getMonth(),selDay=iso(new Date
 // academic engine
 const gr=s=>{s=parseFloat(s);if(isNaN(s))return['-',0];return s>=70?['A',5]:s>=60?['B',4]:s>=50?['C',3]:s>=45?['D',2]:s>=40?['E',1]:['F',0];};
 const semS=s=>{let u=0,q=0;if(!s||!s.courses)return{u:0,q:0,g:0};s.courses.forEach(c=>{u+=+c.unit;q+=c.unit*gr(c.score)[1];});return{u,q,g:u?q/u:0};};
-const cum=()=>{let u=0,q=0;if(!U||!U.semesters)return{u:0,q:0,g:0};U.semesters.forEach(s=>{const x=semS(s);u+=x.u;q+=x.q;});return{u,q,g:u?q/u:0};};
+const cum=()=>{let u=0,q=0;if(!U||!U.semesters)return{u:0,q:0,g:0};U.semesters.forEach(s=>{(s.courses||[]).forEach(c=>{if(c.sup)return;u+=+c.unit;q+=c.unit*gr(c.score)[1];});});return{u,q,g:u?q/u:0};};
 const detective=(g1,cg,u1,u2)=>{const need=(cg*(u1+u2)-g1*u1)/u2;return{need,ok:need>=0&&need<=5};};
 const requiredAvg=()=>{const c=cum(),tot=U?.profile?.totalUnits||120,R=tot-c.u;return R>0?(U.target*tot-c.q)/R:null;};
 // auth
@@ -327,7 +327,7 @@ det(){
 },
 rec(){
   const c=cum();
-  $('sub').innerHTML='<div class="card p-6 space-y-4"><div class="flex justify-between items-center"><div class="font-extrabold">Academic Transcript</div><button class="btn2 text-xs np" onclick="window.print()">'+ic('print')+' Print</button></div><p class="text-xs text-slate-500">'+esc(U.name)+' • '+esc(U.profile?.uni)+' • '+esc(U.profile?.program)+'</p><div class="rounded-2xl bg-violet-50 dark:bg-violet-950/40 p-4 text-sm font-extrabold text-violet-900 dark:text-violet-200">CGPA: '+c.g.toFixed(2)+' / 5.00 ('+c.u+' units)</div>'+U.semesters.map(s=>{const x=semS(s);return '<div class="rounded-2xl bg-slate-50 dark:bg-slate-800/40 p-4 space-y-2"><div class="flex justify-between text-sm font-extrabold"><span>'+esc(s.name)+'</span><span class="text-violet-600 dark:text-violet-400">GPA '+x.g.toFixed(2)+' ('+x.u+'u)</span></div>'+s.courses.map(k=>'<div class="flex justify-between text-xs"><span class="font-mono text-slate-500">'+esc(k.code)+' ('+k.unit+'u)</span><b>Score: '+k.score+' ('+gr(k.score)[0]+')</b></div>').join('')+'<div class="flex gap-4 np pt-2 border-t border-slate-200/60 dark:border-slate-700/60"><button class="text-xs font-bold text-violet-600" onclick="editSem('+s.id+')">Edit</button><button class="text-xs font-bold text-rose-500" onclick="delSem('+s.id+')">Delete</button></div></div>';}).join('')||'<p class="text-xs text-slate-400 text-center py-6">No semesters stored.</p>'+'</div>';
+  $('sub').innerHTML='<div class="card p-6 space-y-4"><div class="flex justify-between items-center"><div class="font-extrabold">Academic Transcript</div><button class="btn2 text-xs np" onclick="window.print()">'+ic('print')+' Print</button></div><p class="text-xs text-slate-500">'+esc(U.name)+' • '+esc(U.profile?.uni)+' • '+esc(U.profile?.program)+'</p><div class="rounded-2xl bg-violet-50 dark:bg-violet-950/40 p-4 text-sm font-extrabold text-violet-900 dark:text-violet-200">CGPA: '+c.g.toFixed(2)+' / 5.00 ('+c.u+' units)</div>'+U.semesters.map(s=>{const x=semS(s);return '<div class="rounded-2xl bg-slate-50 dark:bg-slate-800/40 p-4 space-y-2"><div class="flex justify-between text-sm font-extrabold"><span>'+esc(s.name)+'</span><span class="text-violet-600 dark:text-violet-400">GPA '+x.g.toFixed(2)+' ('+x.u+'u)</span></div>'+s.courses.map(k=>'<div class="flex justify-between text-xs"><span class="font-mono text-slate-500">'+esc(k.code)+(k.sup?' ↺':'')+' ('+k.unit+'u)</span><b>Score: '+k.score+' ('+gr(k.score)[0]+')</b></div>').join('')+'<div class="flex gap-4 np pt-2 border-t border-slate-200/60 dark:border-slate-700/60"><button class="text-xs font-bold text-violet-600" onclick="editSem('+s.id+')">Edit</button><button class="text-xs font-bold text-rose-500" onclick="delSem('+s.id+')">Delete</button></div></div>';}).join('')||'<p class="text-xs text-slate-400 text-center py-6">No semesters stored.</p>'+'</div>';
 }
 };
 function addRow(code='',unit=3,score=''){
@@ -1094,6 +1094,96 @@ function saveLecProfile(){
   save();
   sb.from('profiles').update({name:U.name,uni:U.profile.uni,program:U.profile.program}).eq('id',uid).then(function(){});
   start();go('prof');showToast('Profile updated');
+}
+</script>
+<script>
+function scanCarryovers(){
+  const all=[];
+  U.semesters.forEach(function(s,si){(s.courses||[]).forEach(function(c,ci){all.push({si:si,ci:ci,code:c.code,score:c.score,unit:c.unit});});});
+  U.semesters.forEach(function(s){(s.courses||[]).forEach(function(c){delete c.sup;});});
+  const by={};
+  all.forEach(function(a){(by[a.code]=by[a.code]||[]).push(a);});
+  const owed=[];
+  Object.keys(by).forEach(function(code){
+    const list=by[code];
+    list.forEach(function(a){
+      if(gr(a.score)[1]!==0)return;
+      const later=list.find(function(b){return b.si>a.si&&gr(b.score)[1]>0;});
+      if(later){U.semesters[a.si].courses[a.ci].sup=true;}
+      else owed.push({code:code,unit:a.unit,score:a.score,sem:U.semesters[a.si].name});
+    });
+  });
+  return owed;
+}
+function refreshCarry(){if(!U||!U.semesters)return;U.carry=scanCarryovers();save();}
+var _cr=setInterval(function(){if(U&&U.semesters){clearInterval(_cr);refreshCarry();}},2500);
+function carryCard(){
+  const owed=(U&&U.carry)||[];
+  const log=(U&&U.cgpaLog)||[];
+  const last=log.length?log[log.length-1]:null;
+  var h='<div class="card p-5 space-y-2 mt-5">';
+  h+='<div class="lbl">Carryover Register</div>';
+  if(!owed.length){h+='<p class="text-xs text-slate-500">No outstanding carryovers. Clean sheet.</p>';}
+  else{h+=owed.map(function(o){return '<div class="flex justify-between text-xs p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30"><b>'+esc(o.code)+' ('+o.unit+'u)</b><span>failed '+esc(o.score)+' in '+esc(o.sem)+'</span></div>';}).join('');
+    h+='<p class="text-[11px] text-slate-400">Retake these, then paste the new result — the retake replaces the F in your CGPA automatically (↺).</p>';}
+  if(last){h+='<p class="text-[11px] text-slate-400">Live CGPA '+last.g.toFixed(2)+(last.d?(' ('+(last.d>=0?'+':'')+last.d.toFixed(2)+' this wave)'):'')+'. As more results drop, paste again — it shifts in real time.</p>';}
+  return h+'</div>';
+}
+const _homeC=V.home;
+V.home=function(){return _homeC()+carryCard();};
+function saveSem(){
+  const courses=[];
+  document.querySelectorAll('#rows > div').forEach(function(r){
+    const code=r.querySelector('.c-code').value.trim().toUpperCase();
+    const unit=parseFloat(r.querySelector('.c-unit').value);
+    const sc=r.querySelector('.c-score').value;
+    if(code&&unit>=1&&unit<=6&&sc!==''&&+sc>=0&&+sc<=100&&!courses.some(function(c){return c.code===c.code&&false;}))courses.push({code:code,unit:unit,score:+sc});
+  });
+  if(!courses.length)return showToast('Enter at least one valid course with score (0-100)','error');
+  const name=$('c-name').value.trim()||('Semester '+(U.semesters.length+1));
+  if(editing!==null){
+    const s=U.semesters.find(function(x){return x.id===editing;});
+    s.name=name;s.courses=courses;editing=null;
+    save();refreshCarry();
+    const x=semS(s),c=cum();
+    go('home');showToast('Updated! GPA '+x.g.toFixed(2)+' | CGPA '+c.g.toFixed(2));
+    return;
+  }
+  const print=semPrint({name:name,courses:courses});
+  const exact=U.semesters.find(function(s){return semPrint(s)===print;});
+  if(exact)return showToast('Already recorded - duplicate blocked','error');
+  const codes=courses.map(function(c){return c.code;});
+  const match=U.semesters.find(function(s){
+    const sc=(s.courses||[]).map(function(c){return c.code;});
+    const hit=codes.filter(function(c){return sc.indexOf(c)>-1;}).length;
+    return codes.length&&hit/codes.length>=0.6;
+  });
+  if(match){
+    const before=cum().g;
+    let upd=0,add=0;
+    courses.forEach(function(c){
+      const ex=match.courses.find(function(x){return x.code===c.code;});
+      if(ex){if(ex.score!==c.score||ex.unit!==c.unit){ex.score=c.score;ex.unit=c.unit;upd++;}}
+      else{match.courses.push(c);add++;}
+    });
+    save();refreshCarry();
+    const after=cum().g;
+    U.cgpaLog=U.cgpaLog||[];
+    U.cgpaLog.push({t:Date.now(),g:after,d:after-before});
+    save();
+    if(window.posthog)posthog.capture('semester_merged',{updated:upd,added:add});
+    go('home');
+    showToast('Merged: '+upd+' updated, '+add+' added. CGPA '+after.toFixed(2)+' ('+(after-before>=0?'+':'')+(after-before).toFixed(2)+')');
+    return;
+  }
+  const sameName=U.semesters.find(function(s){return (s.name||'')===name;});
+  if(sameName){
+    if(!confirm(name+' exists with different results. Replace it?'))return;
+    sameName.courses=courses;
+  }else U.semesters.push({id:Date.now(),name:name,courses:courses});
+  save();refreshCarry();
+  const x=semS({courses:courses}),c=cum();
+  go('home');showToast('Saved! Semester GPA: '+x.g.toFixed(2)+' | New CGPA: '+c.g.toFixed(2));
 }
 </script>
 </body>
