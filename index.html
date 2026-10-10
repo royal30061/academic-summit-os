@@ -1394,5 +1394,30 @@ if(!document.getElementById('splash')){
   window.addEventListener('load',function(){if(pct<92)pct=92;});
 })();
 </script>
+<script>
+function runDet(){
+  const g1=parseFloat($('d1').value),cg=parseFloat($('dc').value);
+  const u1=parseFloat($('du1').value)||20,u2=parseFloat($('du2').value)||20;
+  if(isNaN(g1)||isNaN(cg))return showToast('Enter both GPA values','error');
+  const q1=g1*u1,ut=u1+u2,qt=cg*ut,gap=qt-q1,need=gap/u2;
+  const step=(n,b,col)=>'<div class="p-4 rounded-2xl space-y-1" style="background:var(--sub);border-left:3px solid '+col+'"><div class="lbl" style="color:'+col+'">'+n+'</div><p class="text-xs leading-relaxed">'+b+'</p></div>';
+  var h='<div class="space-y-3">';
+  h+=step('Step 1 - Your starting point','Before these new results you had <b>'+u1+'</b> units at a CGPA of <b>'+g1.toFixed(2)+'</b> - that is <b>'+q1.toFixed(2)+'</b> grade points already banked. That number is real work. It counts.','#10b981');
+  h+=step('Step 2 - Where you are aiming','Your portal (or your target) reads <b>'+cg.toFixed(2)+'</b> across <b>'+ut+'</b> units. To hold that average you need <b>'+qt.toFixed(2)+'</b> grade points in total.','#06b6d4');
+  h+=step('Step 3 - The exact gap','The distance is <b>'+gap.toFixed(2)+'</b> grade points, to be earned in your <b>'+u2+'</b> pending units - an average of <b>'+need.toFixed(2)+'</b> in those courses.','#f59e0b');
+  const G=[['A',5],['B',4],['C',3],['D',2],['E',1]];
+  const combos=G.map(g=>({g:g[0],v:g[1],d:Math.abs(g[1]-need)})).sort((a,b)=>a.d-b.d).slice(0,3);
+  h+='<div class="p-4 rounded-2xl space-y-2" style="background:var(--sub)"><div class="lbl">What it looks like in grades (closest first)</div>'+combos.map(c=>'<div class="flex justify-between text-xs"><span>Every pending course at <b>'+c.g+'</b></span><b>'+c.v.toFixed(2)+'</b></div>').join('')+'</div>';
+  if(need>=0&&need<=5){
+    h+='<div class="p-4 rounded-2xl text-xs leading-relaxed" style="background:rgba(16,185,129,.12)"><b>We see you.</b> '+q1.toFixed(0)+' points got you here - that is effort, not luck. A '+need.toFixed(2)+' average across your next '+u2+' units keeps the dream alive, and the grade picture above shows it is within reach. One course at a time.</div>';
+  }else if(need>5){
+    h+='<div class="p-4 rounded-2xl text-xs leading-relaxed" style="background:rgba(244,63,94,.12)"><b>Honest, not harsh:</b> '+need.toFixed(2)+' sits above the 5.0 ceiling, so this exact target cannot be reached in '+u2+' units alone - and that is arithmetic, not a verdict on you. Widen the units (more semesters lie ahead) or let the target breathe. Your climb is still real.</div>';
+  }else{
+    h+='<div class="p-4 rounded-2xl text-xs leading-relaxed" style="background:rgba(16,185,129,.12)"><b>Good news:</b> your banked points already cover this target - the pending units only need to stay above '+Math.max(0,need).toFixed(2)+'. You are defending strong ground, not chasing a mirage.</div>';
+  }
+  h+='</div>';
+  $('d-res').innerHTML=h;
+}
+</script>
 </body>
 </html>
