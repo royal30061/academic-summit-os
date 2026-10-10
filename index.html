@@ -1298,5 +1298,41 @@ V.plan=function(){
   return h;
 };
 </script>
+<script>
+let deferredPrompt=null;
+const isStandalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault();deferredPrompt=e;
+  document.querySelectorAll('.install-btn').forEach(function(b){b.style.display='';});
+});
+function installApp(){
+  if(isStandalone)return showToast('Already installed','error');
+  if(!deferredPrompt){
+    const ios=/iphone|ipad/i.test(navigator.userAgent);
+    showToast(ios?'iPhone: Share, then Add to Home Screen':'Browser menu, then Add to Home screen','error');
+    return;
+  }
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(function(){deferredPrompt=null;});
+}
+(function(){
+  const l=document.createElement('link');l.rel='manifest';l.href='manifest.webmanifest';document.head.appendChild(l);
+  const m=document.createElement('meta');m.name='theme-color';m.content='#059669';document.head.appendChild(m);
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+  const _authP=authUI;
+  authUI=function(mode,msg){
+    const r=_authP(mode,msg);
+    if(!isStandalone&&mode==='welcome'){
+      const box=document.querySelector('#auth .space-y-6');
+      if(box){const b=document.createElement('button');b.className='btn w-full install-btn';b.style.display='none';b.onclick=installApp;b.textContent='Download the App';box.appendChild(b);if(deferredPrompt)b.style.display='';}
+    }
+    return r;
+  };
+  const _profP=V.prof;
+  V.prof=function(){
+    return _profP()+'<div class="card p-5 space-y-2 mt-5"><div class="lbl">App</div><button class="btn w-full" onclick="installApp()">Download Academic Summit App</button><p class="text-[11px] text-slate-400">Installs to home screen, works offline, opens full-screen.</p></div>';
+  };
+})();
+</script>
 </body>
 </html>

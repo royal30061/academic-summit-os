@@ -1,0 +1,10 @@
+{
+  "name": "Academic Summit",
+  "short_name": "Summit",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#02120c",
+  "theme_color": "#059669",
+  "description": "Your campus operating system",
+  "icons": [{"src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}]
+}

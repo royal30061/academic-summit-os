@@ -1,0 +1,10 @@
+const fs=require('fs');
+let s=fs.readFileSync('index.html','utf8');
+if(!/async function boot\(user\)/.test(s))throw new Error('boot function is missing from the file');
+const re=/^sb\.auth\.getSession\(\)\.then\(.*\);$/m;
+const m=s.match(re);
+if(!m||s.match(new RegExp(re.source,'gm')).length!==1)throw new Error('session line: expected exactly 1');
+const line=m[0];
+s=s.replace(line,()=>"function startSession(){"+line+"}\nif(document.addEventListener)document.addEventListener('DOMContentLoaded',startSession);else startSession();");
+fs.writeFileSync('index.html',s);
+console.log('SESSION START OK');
