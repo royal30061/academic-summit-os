@@ -1368,5 +1368,31 @@ if(!document.getElementById('splash')){
   document.body.insertAdjacentHTML('afterbegin',sp.join(''));
 }
 </script>
+<script>
+(function(){
+  var old=document.getElementById('splash');
+  if(old)old.remove();
+  var sp=[];
+  sp.push('<div id="splash" style="position:fixed;inset:0;z-index:99999;background:#02120c;');
+  sp.push('display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:0 32px;text-align:center">');
+  sp.push('<svg viewBox="0 0 512 512" style="width:88px;height:88px"><rect width="512" height="512" rx="112" fill="#07271d"/>');
+  sp.push('<path d="M80 384 L224 140 L300 268 L352 192 L432 384 Z" fill="#10b981"/>');
+  sp.push('<path d="M256 64 l40 52 h-26 v40 h-28 v-40 h-26 z" fill="#6ee7b7"/></svg>');
+  sp.push('<div style="color:#e7fff5;font-weight:800;font-size:19px;letter-spacing:.01em">Academic Summit</div>');
+  sp.push('<div style="color:#8fb8a9;font-size:11.5px;line-height:1.5;max-width:270px">Results, GPA intelligence, planner, finance & attendance - your whole campus in one place.</div>');
+  sp.push('<div style="width:160px;height:3px;border-radius:2px;background:#0d3f2e;overflow:hidden;margin-top:6px">');
+  sp.push('<div id="splash-bar" style="width:0%;height:100%;background:linear-gradient(90deg,#059669,#06b6d4);transition:width .25s"></div></div>');
+  sp.push('<div id="splash-tag" style="color:#6ee7b7;font-size:11px;font-weight:600">Academic success, within reach.</div></div>');
+  document.body.insertAdjacentHTML('afterbegin',sp.join(''));
+  var pct=0;
+  var fill=setInterval(function(){
+    if(splashDone){clearInterval(fill);return;}
+    var b=document.getElementById('splash-bar');
+    if(!b){clearInterval(fill);return;}
+    if(pct<90){pct+=(90-pct)*0.07+0.5;b.style.width=Math.min(90,pct).toFixed(1)+'%';}
+  },120);
+  window.addEventListener('load',function(){if(pct<92)pct=92;});
+})();
+</script>
 </body>
 </html>
