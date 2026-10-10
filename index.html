@@ -1351,5 +1351,22 @@ setTimeout(hideSplash,4000);
 const _bootS=boot;boot=async function(u){hideSplash();return _bootS(u);};
 const _authS=authUI;authUI=function(m,g){hideSplash();return _authS(m,g);};
 </script>
+<script>
+if(location.hash==='#lecturer')localStorage.setItem('as_lec','1');
+else if(localStorage.getItem('as_lec')==='1'&&!location.hash){location.hash='#lecturer';location.reload();}
+if(!document.getElementById('splash')){
+  var sp=[];
+  sp.push('<div id="splash" style="position:fixed;inset:0;z-index:99999;background:#02120c;');
+  sp.push('display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px">');
+  sp.push('<svg viewBox="0 0 512 512" style="width:84px;height:84px"><rect width="512" height="512" rx="112" fill="#07271d"/>');
+  sp.push('<path d="M80 384 L224 140 L300 268 L352 192 L432 384 Z" fill="#10b981"/>');
+  sp.push('<path d="M256 64 l40 52 h-26 v40 h-28 v-40 h-26 z" fill="#6ee7b7"/></svg>');
+  sp.push('<div style="color:#e7fff5;font-weight:800;font-size:18px">Academic Summit</div>');
+  sp.push('<div id="splash-tag" style="color:#8fb8a9;font-size:12px">Academic success, within reach.</div>');
+  sp.push('<div style="width:130px;height:3px;border-radius:2px;background:#0d3f2e;overflow:hidden">');
+  sp.push('<div id="splash-bar" style="width:0%;height:100%;background:linear-gradient(90deg,#059669,#06b6d4);transition:width .3s"></div></div></div>');
+  document.body.insertAdjacentHTML('afterbegin',sp.join(''));
+}
+</script>
 </body>
 </html>
