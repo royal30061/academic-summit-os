@@ -1334,5 +1334,22 @@ function installApp(){
   };
 })();
 </script>
+<script>
+const LOGO='<svg viewBox="0 0 64 64" style="width:22px;height:22px;display:inline-block;vertical-align:-4px"><path d="M8 52 L28 18 L38 34 L46 22 L56 52 Z" fill="url(#lgA)"/><defs><linearGradient id="lgA" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#34d399"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs><path d="M32 6 l6 8 h-4 v6 h-4 v-6 h-4 z" fill="#a7f3d0"/></svg>';
+const LOGO_L='<svg viewBox="0 0 64 64" style="width:22px;height:22px;display:inline-block;vertical-align:-4px"><path d="M8 52 L28 18 L38 34 L46 22 L56 52 Z" fill="url(#lgB)"/><defs><linearGradient id="lgB" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#34d399"/></linearGradient></defs><circle cx="46" cy="14" r="6" fill="#fbbf24"/></svg>';
+let splashDone=false;
+const TAGS=['Academic success, within reach.','Your summit starts here.','Every grade. One climb.','Climb smart. Rise fast.'];
+let tagI=0;
+const tagT=setInterval(function(){tagI=(tagI+1)%TAGS.length;const el=document.getElementById('splash-tag');if(el)el.textContent=TAGS[tagI];},1100);
+const barT=setInterval(function(){const b=document.getElementById('splash-bar');if(b){const w=parseInt(b.style.width)||0;if(w<70)b.style.width=(w+16)+'%';}},280);
+function hideSplash(){
+  if(splashDone)return;splashDone=true;
+  const b=document.getElementById('splash-bar');if(b)b.style.width='100%';
+  setTimeout(function(){clearInterval(tagT);clearInterval(barT);const s=document.getElementById('splash');if(s){s.style.transition='opacity .35s';s.style.opacity='0';setTimeout(function(){s.remove();},400);}},350);
+}
+setTimeout(hideSplash,4000);
+const _bootS=boot;boot=async function(u){hideSplash();return _bootS(u);};
+const _authS=authUI;authUI=function(m,g){hideSplash();return _authS(m,g);};
+</script>
 </body>
 </html>
