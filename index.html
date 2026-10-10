@@ -1352,8 +1352,6 @@ const _bootS=boot;boot=async function(u){hideSplash();return _bootS(u);};
 const _authS=authUI;authUI=function(m,g){hideSplash();return _authS(m,g);};
 </script>
 <script>
-if(location.hash==='#lecturer')localStorage.setItem('as_lec','1');
-else if(localStorage.getItem('as_lec')==='1'&&!location.hash){location.hash='#lecturer';location.reload();}
 if(!document.getElementById('splash')){
   var sp=[];
   sp.push('<div id="splash" style="position:fixed;inset:0;z-index:99999;background:#02120c;');
@@ -1417,6 +1415,23 @@ function runDet(){
   }
   h+='</div>';
   $('d-res').innerHTML=h;
+}
+</script>
+<script>
+// Only force lecturer mode if the app is actually installed as the lecturer PWA
+// OR if the user manually visits #lecturer (but don't trap them forever)
+if(location.hash==='#lecturer'){
+  localStorage.setItem('as_lec_session','1'); // Session-only flag
+}
+const isLecSession=localStorage.getItem('as_lec_session')==='1';
+if(isLecSession&&!location.hash){
+  // Only redirect if we're in the same session (tab not closed)
+  // Once they close the tab, the trap resets
+  location.hash='#lecturer';
+}
+// Clear the session flag when they explicitly go to student mode
+if(location.hash===''||location.hash==='#'){
+  localStorage.removeItem('as_lec_session');
 }
 </script>
 </body>
