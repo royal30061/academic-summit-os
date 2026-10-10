@@ -1222,5 +1222,81 @@ async function markFromHome(){
 const _homeA=V.home;
 V.home=function(){return _homeA()+attBar();};
 </script>
+<script>
+let pTab='month';
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const dow=ds=>(new Date(ds+'T00:00:00').getDay()+6)%7;
+const addDays=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n);return iso(d);};
+const weekStart=ds=>addDays(ds,-dow(ds));
+const ttLive=ds=>!U.ttEnd||ds<=U.ttEnd;
+function addTT(){
+  const code=$('tt-c').value.trim().toUpperCase();
+  if(!code)return showToast('Enter course code','error');
+  U.timetable=U.timetable||[];
+  U.timetable.push({day:+$('tt-d').value,code:code,venue:$('tt-v').value.trim(),start:$('tt-s').value||'08:00',end:$('tt-e').value||'10:00'});
+  save();go('plan');showToast('Class slot added - repeats weekly');
+}
+function addExam(){
+  const code=$('x-c').value.trim().toUpperCase(),date=$('x-d').value;
+  if(!code||!date)return showToast('Course and date required','error');
+  U.exams=U.exams||[];
+  U.exams.push({code:code,date:date,time:$('x-t').value||'',venue:$('x-v').value.trim()});
+  save();go('plan');showToast('Exam scheduled');
+}
+function planMonth(){
+  const first=new Date(calY,calM,1);
+  const startDow=(first.getDay()+6)%7;
+  const dim=new Date(calY,calM+1,0).getDate();
+  const mName=first.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  const dayHas=ds=>U.events.some(e=>e.date===ds)||U.tasks.some(t=>(t.end||t.start||'').slice(0,10)===ds)||(U.timetable||[]).some(t=>t.day===dow(ds)&&ttLive(ds));
+  let cells='';
+  for(let i=0;i<startDow;i++)cells+='<div></div>';
+  for(let d=1;d<=dim;d++){
+    const ds=calY+'-'+String(calM+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    cells+='<button onclick="selDay=\''+ds+'\';go(\'plan\')" class="aspect-square rounded-xl flex flex-col items-center justify-center gap-1 text-xs font-semibold '+(ds===selDay?'grad text-white':'bg-slate-50 dark:bg-slate-800/40')+' '+(ds===iso(new Date())?'ring-2 ring-emerald-400':'')+'">'+d+(dayHas(ds)?'<span class="w-1 h-1 rounded-full '+(ds===selDay?'bg-white':'bg-emerald-500')+'"></span>':'')+'</button>';
+  }
+  const dEv=U.events.filter(e=>e.date===selDay);
+  const dTk=U.tasks.filter(t=>(t.end||t.start||'').slice(0,10)===selDay);
+  const dTt=(U.timetable||[]).filter(t=>t.day===dow(selDay)&&ttLive(selDay));
+  var h='<div class="card p-5 space-y-3"><div class="flex justify-between items-center"><button class="btn2 px-2" onclick="calM--;if(calM<0){calM=11;calY--;}go(\'plan\')">'+ic('l')+'</button><div class="font-extrabold">'+mName+'</div><button class="btn2 px-2" onclick="calM++;if(calM>11){calM=0;calY++;}go(\'plan\')">'+ic('r')+'</button></div><div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400">'+['M','T','W','T','F','S','S'].map(d=>'<div>'+d+'</div>').join('')+'</div><div class="grid grid-cols-7 gap-1">'+cells+'</div></div>';
+  h+='<div class="card p-5 space-y-3"><div class="font-extrabold">'+fmtD(selDay)+' — Schedule</div>';
+  h+=(dTt.map(t=>'<div class="text-xs p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40"><b>'+esc(t.code)+'</b><div class="text-slate-500">Class • '+t.start+'–'+t.end+' • '+esc(t.venue||'TBA')+'</div></div>').join('')+dEv.map(e=>'<div class="text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40"><b>'+esc(e.title)+'</b><div class="text-slate-500">'+esc(e.type)+'</div></div>').join('')+dTk.map(t=>'<div class="text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40"><b>'+esc(t.t)+'</b><div class="text-slate-500">Task</div></div>').join(''))||'<p class="text-xs text-slate-400">Nothing this day.</p>';
+  h+='<div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800"><div class="lbl">Add event on this day</div><div class="flex gap-2"><input id="e-t" class="inp" placeholder="Title"><select id="e-k" class="inp"><option>Exam</option><option>Test</option><option>Assignment</option><option>Lecture</option></select></div><button class="btn w-full" onclick="addEvent()">Schedule Event</button></div></div>';
+  return h;
+}
+function planWeek(){
+  const ws=weekStart(selDay);
+  var h='<div class="card p-5 space-y-3"><div class="font-extrabold">Weekly Class Timetable</div><p class="text-[11px] text-slate-400">Lock it once — it repeats every week until exam week begins.</p>';
+  h+='<div class="space-y-2">'+DAYS.map(function(d,i){
+    const ds=addDays(ws,i);
+    const items=(U.timetable||[]).filter(t=>t.day===i&&ttLive(ds)).sort((a,b)=>a.start<b.start?-1:1);
+    const evs=U.events.filter(e=>e.date===ds);
+    return '<div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 space-y-1"><div class="flex justify-between text-xs font-extrabold"><span>'+d+'</span><span class="text-slate-400">'+fmtD(ds)+'</span></div>'+((items.length||evs.length)?items.map(t=>'<div class="text-xs flex justify-between"><b>'+esc(t.code)+'</b><span>'+t.start+'–'+t.end+' • '+esc(t.venue||'TBA')+'</span></div>').join('')+evs.map(e=>'<div class="text-xs flex justify-between"><b>'+esc(e.title)+'</b><span>'+esc(e.type)+'</span></div>').join(''):'<div class="text-[11px] text-slate-400">Free day</div>')+'</div>';
+  }).join('')+'</div>';
+  h+='<div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800"><div class="lbl">Add class slot</div><div class="grid grid-cols-2 gap-2"><select id="tt-d" class="inp">'+DAYS.map(function(d,i){return '<option value="'+i+'">'+d+'</option>';}).join('')+'</select><input id="tt-c" class="inp uppercase font-mono" placeholder="Course code"></div><div class="grid grid-cols-3 gap-2"><input id="tt-v" class="inp" placeholder="Venue"><input id="tt-s" type="time" class="inp"><input id="tt-e" type="time" class="inp"></div><button class="btn w-full" onclick="addTT()">Add to timetable</button><div class="lbl pt-2">Repeat until (exam week starts)</div><input type="date" class="inp" value="'+esc(U.ttEnd||'')+'" onchange="U.ttEnd=this.value;save();go(\'plan\')"></div>';
+  h+='<div class="space-y-1 pt-2">'+(U.timetable||[]).map(function(t,i){return '<div class="flex justify-between text-xs p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40"><span>'+DAYS[t.day]+' • <b>'+esc(t.code)+'</b> '+t.start+'–'+t.end+' '+esc(t.venue||'')+'</span><button class="text-rose-500 font-bold" onclick="U.timetable.splice('+i+',1);save();go(\'plan\')">'+ic('x','w-3 h-3')+'</button></div>';}).join('')+'</div></div>';
+  return h;
+}
+function planExams(){
+  var h='<div class="card p-5 space-y-3"><div class="font-extrabold">Exam Timetable</div>';
+  const ex=(U.exams||[]).slice().sort((a,b)=>a.date<b.date?-1:1);
+  h+=(ex.map(function(e,i){const d=days(e.date);return '<div class="flex justify-between items-center text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40"><div><b class="block">'+esc(e.code)+'</b><span class="text-slate-400">'+fmtD(e.date)+' • '+esc(e.time||'')+' • '+esc(e.venue||'')+'</span></div><span class="flex items-center gap-2">'+chip(d<0?'done':d+'d',d<0?'slate':d<=7?'rose':'violet')+'<button class="text-rose-500 font-bold" onclick="U.exams.splice('+i+',1);save();go(\'plan\')">'+ic('x','w-3 h-3')+'</button></span></div>';}).join(''))||'<p class="text-xs text-slate-400">No exams scheduled yet.</p>';
+  h+='<div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800"><div class="lbl">Add exam</div><div class="grid grid-cols-2 gap-2"><input id="x-c" class="inp uppercase font-mono" placeholder="Course code"><input id="x-d" type="date" class="inp"></div><div class="grid grid-cols-2 gap-2"><input id="x-t" type="time" class="inp"><input id="x-v" class="inp" placeholder="Venue"></div><button class="btn w-full" onclick="addExam()">Add exam</button></div></div>';
+  return h;
+}
+function planTasks(){
+  var h='<div class="card p-5 space-y-3"><div class="font-extrabold">Smart Tasks</div><div class="space-y-2"><input id="t-in" class="inp" placeholder="Task (e.g. Read CSC 200)"><div class="grid grid-cols-2 gap-2"><div><label class="lbl block mb-1">Start</label><input id="t-s" type="datetime-local" class="inp"></div><div><label class="lbl block mb-1">End</label><input id="t-e" type="datetime-local" class="inp"></div></div><button class="btn w-full" onclick="addTask()">Add Task</button></div><div class="space-y-2 pt-2">'+U.tasks.map(function(t,i){return '<div class="flex items-center justify-between text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40"><label class="flex items-center gap-3"><input type="checkbox" '+(t.done?'checked':'')+' onchange="U.tasks['+i+'].done=!U.tasks['+i+'].done;save();go(\'plan\')" class="accent-emerald-600"><span class="'+(t.done?'line-through text-slate-400':'font-semibold')+'">'+esc(t.t)+'</span></label><span class="flex items-center gap-2">'+(t.end?chip(leftTxt(t.end),(new Date(t.end)-Date.now())<0?'rose':'violet'):'')+'<button class="text-rose-500 font-bold" onclick="U.tasks.splice('+i+',1);save();go(\'plan\')">'+ic('x','w-3 h-3')+'</button></span></div>';}).join('')||'<p class="text-xs text-slate-400">No tasks yet.</p>'+'</div></div>';
+  return h;
+}
+V.plan=function(){
+  const tabs=[['month','Calendar'],['week','Timetable'],['exams','Exam Timetable']];
+  var h='<div class="space-y-5"><div class="flex gap-2 overflow-x-auto pb-1">'+tabs.map(function(t){return '<button onclick="pTab=\''+t[0]+'\';go(\'plan\')" class="'+(pTab===t[0]?'btn':'btn2')+' whitespace-nowrap">'+t[1]+'</button>';}).join('')+'</div>';
+  if(pTab==='month')h+=planMonth();
+  if(pTab==='week')h+=planWeek();
+  if(pTab==='exams')h+=planExams();
+  h+=planTasks()+'</div>';
+  return h;
+};
+</script>
 </body>
 </html>
