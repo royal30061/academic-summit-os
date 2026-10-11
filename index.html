@@ -1611,5 +1611,22 @@ function exportRosterCSV(){
   a.download='attendance-roster.csv';a.click();
 }
 </script>
+<script>
+// Only force lecturer mode if the app is actually installed as the lecturer PWA
+// OR if the user manually visits #lecturer (but don't trap them forever)
+if(location.hash==='#lecturer'){
+  localStorage.setItem('as_lec_session','1'); // Session-only flag
+}
+const isLecSession=localStorage.getItem('as_lec_session')==='1';
+if(isLecSession&&!location.hash){
+  // Only redirect if we're in the same session (tab not closed)
+  // Once they close the tab, the trap resets
+  location.hash='#lecturer';
+}
+// Clear the session flag when they explicitly go to student mode
+if(location.hash===''||location.hash==='#'){
+  localStorage.removeItem('as_lec_session');
+}
+</script>
 </body>
 </html>
