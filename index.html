@@ -1346,6 +1346,89 @@ async function runDet(){
   $('d-res').innerHTML=h;
 }
 </script>
+<script>
+function semProfile(courses){
+  const cnt={A:0,B:0,C:0,D:0,E:0,F:0};
+  (courses||[]).forEach(function(c){const g=gr(c.score)[0];if(cnt[g]!==undefined)cnt[g]++;});
+  const order=['A','B','C','D','E','F'];
+  const total=(courses||[]).length||1;
+  const modal=order.reduce(function(m,g){return cnt[g]>cnt[m]?g:m;},'A');
+  const carry=cnt.F||0;
+  const split=(carry>=Math.ceil(total/2)&&(cnt.A+cnt.B)>=1);
+  const label=cnt.A>=total/2?'an A student':cnt.B>=total/2?'a B student':cnt.C>=total/2?'a C student':carry>=total/2?'carrying a heavy load':'a mixed performer';
+  return{cnt:cnt,modal:modal,carry:carry,split:split,label:label,total:total};
+}
+V.acad=function(){
+  const t=[['calc','GPA Calculator'],['det','Result Detective'],['tgt','Target Setup'],['dec','Menu of Decimals'],['rec','My Record']];
+  return '<div class="space-y-5"><div class="flex gap-2 overflow-x-auto pb-1">'+t.map(function(x){return '<button onclick="aTab=\''+x[0]+'\';editing=null;go(\'acad\')" class="'+(aTab===x[0]?'btn':'btn2')+' whitespace-nowrap">'+x[1]+'</button>';}).join('')+'</div><div id="sub"></div></div>';
+};
+ACAD.tgt=function(){
+  const first=U.semesters&&U.semesters[0];
+  const fs=first?semS(first):null;
+  $('sub').innerHTML='<div class="card p-6 space-y-4"><div class="font-extrabold">'+ic('goal')+' Target Setup</div><p class="text-xs text-slate-500">You have first-semester results and a dream CGPA. This tells you the exact average your next semester must produce - and whether it is within reach.</p>'+
+  '<div class="grid sm:grid-cols-2 gap-3">'+
+  '<div><div class="lbl">1st Sem GPA</div><input id="t-g1" type="number" step="0.01" class="inp mt-1" value="'+(fs?fs.g.toFixed(2):'')+'" placeholder="4.80"></div>'+
+  '<div><div class="lbl">1st Sem Units</div><input id="t-u1" type="number" class="inp mt-1" value="'+(fs?fs.u:20)+'"></div>'+
+  '<div><div class="lbl">Dream CGPA</div><input id="t-cg" type="number" step="0.01" class="inp mt-1" placeholder="4.50"></div>'+
+  '<div><div class="lbl">Next Sem Units</div><input id="t-u2" type="number" class="inp mt-1" value="20"></div>'+
+  '</div><button class="btn w-full" onclick="runTarget()">What must I score?</button><div id="t-res"></div></div>';
+};
+async function runTarget(){
+  const g1=parseFloat($('t-g1').value),cg=parseFloat($('t-cg').value);
+  const u1=parseFloat($('t-u1').value)||20,u2=parseFloat($('t-u2').value)||20;
+  if(isNaN(g1)||isNaN(cg))return showToast('Enter first-sem GPA and dream CGPA','error');
+  $('t-res').innerHTML='<p class="text-xs text-slate-400 py-3 text-center">Crunching your plan...</p>';
+  const{data,error}=await sb.rpc('detect_second_sem',{p_g1:g1,p_u1:u1,p_cg:cg,p_u2:u2});
+  if(error||!data){$('t-res').innerHTML='';return showToast(error?error.message:'Connection error','error');}
+  const col={good:'#10b981',mid:'#f59e0b',hard:'#f43f5e'}[data.mood]||'#10b981';
+  let h='<div class="space-y-3 mt-3">';
+  h+='<div class="p-5 rounded-2xl text-center space-y-1" style="background:var(--sub);border-left:4px solid '+col+'"><div class="lbl">Required next-semester average</div><div class="text-4xl font-extrabold" style="color:'+col+'">'+(data.ok?Number(data.need).toFixed(2):'-')+'</div><div class="font-extrabold text-sm">'+esc(data.title)+'</div></div>';
+  h+='<div class="p-4 rounded-2xl text-xs leading-relaxed" style="background:var(--sub)">'+esc(data.message)+'</div>';
+  if(data.scenarios){h+='<div class="p-4 rounded-2xl space-y-2" style="background:var(--sub)"><div class="lbl">Ways to get there</div>'+data.scenarios.map(function(s){return '<div class="flex justify-between text-xs py-1.5 border-b border-slate-200/40"><b>'+esc(s.type)+'</b><span class="text-slate-500 text-right max-w-[60%]">'+esc(s.desc)+'</span></div>';}).join('')+'</div>';}
+  h+='<details class="p-4 rounded-2xl text-xs" style="background:var(--sub)"><summary class="font-bold cursor-pointer">How is this calculated?</summary><p class="pt-2 leading-relaxed" style="color:var(--mut)">'+esc(data.how)+'</p></details></div>';
+  $('t-res').innerHTML=h;
+}
+ACAD.det=function(){
+  $('sub').innerHTML='<div class="card p-6 space-y-4"><div class="font-extrabold">'+ic('search')+' Result Detective</div><p class="text-xs text-slate-500">Results are out (fully or partly). The Detective reads your portal CGPA and tells you what your second semester actually scored - plus the likely, conservative and unlikely grade shapes behind it, inferred from your own first semester.</p>'+
+  '<div class="grid sm:grid-cols-2 gap-3">'+
+  '<div><div class="lbl">1st Sem GPA</div><input id="d1" type="number" step="0.01" class="inp mt-1" placeholder="4.80"></div>'+
+  '<div><div class="lbl">1st Sem Units</div><input id="du1" type="number" class="inp mt-1" value="20"></div>'+
+  '<div><div class="lbl">Portal CGPA (actual)</div><input id="dc" type="number" step="0.01" class="inp mt-1" placeholder="4.65"></div>'+
+  '<div><div class="lbl">2nd Sem Units</div><input id="du2" type="number" class="inp mt-1" value="20"></div>'+
+  '</div><button class="btn w-full" onclick="runDet()">Detect my second semester</button><div id="d-res"></div></div>';
+};
+function runDet(){
+  const g1=parseFloat($('d1').value),cg=parseFloat($('dc').value);
+  const u1=parseFloat($('du1').value)||20,u2=parseFloat($('du2').value)||20;
+  if(isNaN(g1)||isNaN(cg))return showToast('Enter both GPA values','error');
+  const need=(cg*(u1+u2)-g1*u1)/u2;
+  const first=U.semesters&&U.semesters[0];
+  const hasProfile=!!(first&&first.courses&&first.courses.length);
+  const prof=semProfile(hasProfile?first.courses:[]);
+  const GL={5:'A',4:'B',3:'C',2:'D',1:'E',0:'F'},GP={A:5,B:4,C:3,D:2,E:1,F:0};
+  const mix=function(hi,lo){const x=hi===lo?u2:u2*(need-lo)/(hi-lo);const xr=Math.max(0,Math.min(u2,Math.round(x)));return xr+' at '+GL[hi]+' + '+(u2-xr)+' at '+GL[lo];};
+  const feasible=need>=0&&need<=5;
+  let h='<div class="space-y-3 mt-3">';
+  h+='<div class="p-5 rounded-2xl text-center space-y-1" style="background:var(--sub);border-left:4px solid '+(feasible?'#10b981':'#f43f5e')+'"><div class="lbl">Your 2nd semester GPA (deduced)</div><div class="text-4xl font-extrabold" style="color:'+(feasible?'#10b981':'#f43f5e')+'">'+(feasible?need.toFixed(2):'—')+'</div><div class="font-extrabold text-sm">'+(feasible?'This is what that semester scored - a result, not a goal.':'Outside 0-5: results likely incomplete')+'</div></div>';
+  if(hasProfile){
+    h+='<div class="p-4 rounded-2xl text-xs leading-relaxed" style="background:var(--sub)"><b>Reading your first semester:</b> you profile as '+prof.label+' (most common grade '+prof.modal+').'+(prof.carry?' You carry '+prof.carry+' course(s) - retakes replace those F\'s in your CGPA, and the Detective factors that into the cumulative picture.':'')+(prof.split?' Your first semester shows high grades alongside several F\'s - results may not be fully released, or a course script is missing. Double-check the portal.':'')+'</div>';
+  }
+  if(feasible){
+    const hi=Math.ceil(need),lo=Math.floor(need);
+    const p=GP[prof.modal]||3;
+    let chi,clo;
+    if(need>=p){chi=Math.min(5,p+1);clo=p;}else{chi=p;clo=Math.max(0,p-1);}
+    const consFeasible=need>=clo&&need<=chi;
+    h+='<div class="p-4 rounded-2xl space-y-2" style="background:var(--sub)"><div class="lbl">The grade shapes behind it</div>'+
+      '<div class="flex justify-between text-xs py-1.5 border-b border-slate-200/40"><b>Likely</b><span class="text-slate-500 text-right max-w-[60%]">'+mix(hi,lo)+'</span></div>'+
+      '<div class="flex justify-between text-xs py-1.5 border-b border-slate-200/40"><b>Conservative</b><span class="text-slate-500 text-right max-w-[60%]">'+(consFeasible?mix(chi,clo):'your first-sem level ('+prof.modal+'-anchored) doesn\'t reach this - see Target Setup')+'</span></div>'+
+      '<div class="flex justify-between text-xs py-1.5"><b>Most unlikely</b><span class="text-slate-500 text-right max-w-[60%]">'+mix(5,0)+'</span></div>'+
+      '</div>';
+  }
+  h+='<details class="p-4 rounded-2xl text-xs" style="background:var(--sub)"><summary class="font-bold cursor-pointer">How is this calculated?</summary><p class="pt-2 leading-relaxed" style="color:var(--mut)">Semester 1 contributed '+(g1*u1).toFixed(2)+' points. A CGPA of '+cg.toFixed(2)+' over '+(u1+u2)+' units needs '+(cg*(u1+u2)).toFixed(2)+' points total. The difference over '+u2+' units is your second semester\'s actual average.</p></details></div>';
+  $('d-res').innerHTML=h;
+}
+</script>
 </body>
 </html>
 
