@@ -1628,6 +1628,71 @@ if(location.hash===''||location.hash==='#'){
   localStorage.removeItem('as_lec_session');
 }
 </script>
+
+cat > ~/gpa-app/patch.js << 'EOF'
+// ===== patch.js v2: keeps the lecturer OTP alive across screens =====
+(function(){
+const K=()=>'as_live_'+uid;
+let tm=null,pl=null;
+const rd=()=>{try{return JSON.parse(localStorage.getItem(K()))}catch(e){return null}};
+const wr=s=>{try{localStorage.setItem(K(),JSON.stringify(s))}catch(e){}};
+const stop=()=>{clearInterval(tm);clearInterval(pl);tm=pl=null;};
+function paint(){
+  const s=rd();if(!s)return;
+  const o=$('otp-display'),t=$('timer-display');
+  if(!o||!t)return;
+  const left=Math.max(0,Math.round((s.end-Date.now())/1000));
+  o.textContent=left?s.code:'EXPIRED';
+  t.textContent=left?'Expires in '+left+'s':'Session closed';
+  const c=$('sub-count');if(c)c.textContent=(s.count||0)+' Present';
+}
+async function poll(){
+  const s=rd();if(!s)return;
+  try{
+    const r=await sb.from('attendance').select('id',{count:'exact',head:true}).eq('session_id',s.id);
+    const n=rd();if(n&&n.id===s.id){n.count=r.count||0;wr(n);}
+  }catch(e){}
+  paint();
+  if(Date.now()>s.end+5000)stop();
+}
+function run(){
+  stop();paint();poll();
+  tm=setInterval(function(){if(!rd())return stop();paint();},1000);
+  pl=setInterval(poll,3000);
+}
+const rpc0=sb.rpc.bind(sb);
+sb.rpc=function(name,...rest){
+  if(name!=='start_session')return rpc0(name,...rest);
+  const f={course:($('lec-course')||{}).value||'',topic:($('lec-topic')||{}).value||'',level:($('lec-level')||{}).value||''};
+  return Promise.resolve(rpc0(name,...rest)).then(function(res){
+    const s=res&&res.data&&res.data[0];
+    if(s&&!res.error){
+      wr({id:s.s_id,code:s.s_code,end:new Date(s.s_expires).getTime(),course:f.course,topic:f.topic,level:f.level,count:0});
+      setTimeout(run,0);
+    }
+    return res;
+  });
+};
+const h0=LECTURER_VIEWS.home;
+LECTURER_VIEWS.home=function(){
+  const html=h0.apply(this,arguments);
+  setTimeout(function(){
+    const s=rd();if(!s)return;
+    if(Date.now()>s.end+120000){localStorage.removeItem(K());return;}
+    const put=function(id,v){
+      const e=$(id);if(!e||!v)return;
+      if(e.tagName==='SELECT'){if(Array.from(e.options).some(function(o){return o.value===v;}))e.value=v;}
+      else e.value=v;
+    };
+    put('lec-course',s.course);put('lec-topic',s.topic);put('lec-level',s.level);
+    run();
+  },0);
+  return html;
+};
+})();
+// ===== end patch =====
+EOF
+
 <script>
 function parsePasteTrojan(){
   const raw=$('paste-a').value||'';
@@ -1661,7 +1726,6 @@ function parsePasteTrojan(){
   showToast(out.length+' courses parsed - review & save','success');
 }
 </script>
-<script src="patch.js?v=1"></script>
-<script src="patch.js?v=1"></script>
+<script src="patch.js?v=2"></script>
 </body>
 </html>
