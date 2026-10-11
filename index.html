@@ -76,7 +76,7 @@ html.dark #top button{color:#e7fff5}
 html.dark #top .text-sm.font-extrabold{background:none;color:#fff;-webkit-text-fill-color:#fff}
 html.dark .card{background:#07271d;border-color:#0d3f2e}
 
-/* ---------- Brand colour overrides (legacy violet utility classes -> emerald) ---------- */
+/* ---------- Brand colour overrides ---------- */
 [class*="text-violet"]{color:#047857!important}
 .dark [class*="text-violet"]{color:#34d399!important}
 #side [class*="text-violet"]{color:#6ee7b7!important}
@@ -131,7 +131,7 @@ body[data-role="lecturer"] #tour-fab{display:none!important}
 
 <script>
 /* =====================================================================
-   Academic Summit - single consolidated script
+   Academic Summit - single consolidated script (Parser Fixed)
    ===================================================================== */
 
 // ---------- Config ----------
@@ -140,8 +140,6 @@ const SB_KEY='sb_publishable_xqUBfEtWElgUkKAz65bueg_66AkIHtr';
 const RECOVERY=/type=recovery/.test(location.hash);
 const sb=supabase.createClient(SB_URL,SB_KEY);
 const LEC_LINK=location.hash==='#lecturer'||/[?&]lecturer=1/.test(location.search);
-
-// Lecturer-mode flag: visiting #lecturer pins this browser to the lecturer link
 
 // ---------- Helpers ----------
 const $=id=>document.getElementById(id);
@@ -177,7 +175,7 @@ search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/>',
 clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
 print:'<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/>'
 };
-const SI={ // settings icons
+const SI={
 pencil:'<path d="M4 20l4-1L20 7l-3-3L5 16z"/>',
 bell:'<path d="M6 9a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 004 0"/>',
 head:'<path d="M4 13a8 8 0 0116 0"/><rect x="3" y="13" width="4" height="6" rx="2"/><rect x="17" y="13" width="4" height="6" rx="2"/>',
@@ -187,7 +185,7 @@ moon:IC.moon,
 back:'<path d="M19 12H5m7-7l-7 7 7 7"/>',
 mega:'<path d="M3 11l14-5v12L3 13z"/><path d="M7 13v4a2 2 0 002 2h1"/>'
 };
-const PI={ // personal-info icons
+const PI={
 user:'<path d="M8 8a4 4 0 118 0 4 4 0 01-8 0"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
 id:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10h4M7 14h6"/><circle cx="16" cy="12" r="2"/>',
 dept:'<circle cx="6" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="12" r="2"/><path d="M8 7l8 4M8 17l8-4"/>',
@@ -410,7 +408,7 @@ const SEED={
 const normDept=s=>String(s||'').trim().replace(/\s+/g,' ').replace(/[.,]$/,'').split(' ').map(w=>w?w[0].toUpperCase()+w.slice(1).toLowerCase():w).join(' ');
 function authOnboard(){
   $('app').classList.add('hidden');
-  $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-5" style="background:#021812"><div class="card p-8 w-full max-w-md space-y-4 dark:bg-slate-900"><div class="text-center"><h1 class="text-2xl font-extrabold">Set Up Your Summit </h1><p class="text-xs text-slate-500">For every faculty, every department.</p></div><div class="space-y-3">'+
+  $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-5" style="background:#021812"><div class="card p-8 w-full max-w-md space-y-4 dark:bg-slate-900"><div class="text-center"><h1 class="text-2xl font-extrabold">Set Up Your Summit</h1><p class="text-xs text-slate-500">For every faculty, every department.</p></div><div class="space-y-3">'+
   '<div><label class="lbl mb-1 block">University</label><input id="o-uni" class="inp" value="University of Abuja"></div>'+
   '<div><label class="lbl mb-1 block">Faculty</label><select id="o-fac" class="inp" onchange="facChanged()">'+Object.keys(SEED).map(k=>'<option>'+k+'</option>').join('')+'</select></div>'+
   '<div><label class="lbl mb-1 block">Department</label><select id="o-dep" class="inp" onchange="document.getElementById(\'o-dep-wrap\').classList.toggle(\'hidden\',this.value!==\'__other\')"></select></div>'+
@@ -466,7 +464,7 @@ async function boot(user){
     if(!U.fees)U.fees={total:0,paid:0,due:''};
     const dupes=dedupeSems();
     if(dupes)showToast('Cleaned '+dupes+' duplicate semester(s)');
-    refreshCarry(); // also saves
+    refreshCarry();
     if(!U.profile&&role==='lecturer'){U.profile={uni:'',level:'',program:'',faculty:'',totalUnits:0,matric:'',phone:'',semail:''};save();}
     if(!U.profile)return authOnboard();
     start();
@@ -622,7 +620,6 @@ home(){
     ...U.events.filter(e=>days(e.date)>=0).map(e=>({t:e.title,s:e.type+' • '+fmtD(e.date),d:days(e.date)})),
     ...U.tasks.filter(t=>!t.done).map(t=>({t:t.t,s:'Task'+(t.end?' • '+leftTxt(t.end):''),d:t.end?days(t.end):null}))
   ].sort((a,b)=>(a.d??999)-(b.d??999)).slice(0,4);
-  // notifications (respecting the user's alert preferences)
   const notes=[];
   if(P.exam!==false)U.events.filter(e=>days(e.date)>=0&&days(e.date)<=14).forEach(e=>notes.push(['plan','Exam reminder',e.title+' in '+days(e.date)+' day(s).']));
   if(P.tasks!==false)U.tasks.filter(t=>!t.done&&t.end&&(new Date(t.end)-Date.now())<864e5).forEach(t=>notes.push(['clock','Task due soon',t.t+' — '+leftTxt(t.end)+'.']));
@@ -736,6 +733,8 @@ function addRow(code='',unit=3,score=''){
   d.innerHTML='<input class="inp col-span-4 !py-2 uppercase font-mono font-bold c-code" placeholder="Code" value="'+esc(code)+'"><input type="number" class="inp col-span-2 !py-2 text-center c-unit" value="'+esc(unit)+'"><input type="number" class="inp col-span-4 !py-2 text-center c-score" placeholder="Score" value="'+esc(score)+'" oninput="this.closest(\'div\').querySelector(\'.c-g\').textContent=gr(this.value)[0]"><b class="col-span-1 text-center text-xs c-g">'+gr(score)[0]+'</b><button class="col-span-1 text-rose-500 font-bold" onclick="this.closest(\'div\').remove()">'+ic('x','w-3 h-3')+'</button>';
   $('rows').appendChild(d);
 }
+
+// FIXED TROJAN HORSE PARSER (Filters out stray serial index numbers <= 15)
 function parsePasteTrojan(){
   const raw=$('paste-a').value||'';
   if(!raw.trim())return showToast('Paste portal text first','error');
@@ -750,21 +749,34 @@ function parsePasteTrojan(){
     for(let j=i+1;j<Math.min(tokens.length,i+18);j++){
       const t=tokens[j];
       if(codeRe.test(t))break;
-      if(unit===null&&/^\d{1,2}$/.test(t)){const n=+t;if(n>=1&&n<=12)unit=n;continue;}
-      if(unit!==null&&score===null&&/^\d{1,3}(\.\d+)?$/.test(t)){const s=+t;if(s>=0&&s<=100){score=s;break;}}
+      if(unit===null&&/^\d{1,2}$/.test(t)){
+        const n=+t;
+        if(n>=1&&n<=6)unit=n;
+        continue;
+      }
+      if(unit!==null&&score===null&&/^\d{1,3}(\.\d+)?$/.test(t)){
+        const s=+t;
+        if(s>=0&&s<=100){
+          score=s;
+          break;
+        }
+      }
     }
     const code=tk.replace(/^UA-/,'');
     if(unit===null||score===null||seen[code])continue;
+    // FIX: Reject stray table indices/row numbers (e.g. 1, 2, 3...) captured as fake scores
+    if(score<=15 && tokens[i-1] && /^\d{1,2}$/.test(tokens[i-1])) continue;
     seen[code]=1;out.push([code,unit,score]);
   }
   if(!out.length)return showToast('No course pattern found - paste the full results page, or add courses manually below','error');
   $('rows').innerHTML='';rowN=0;
   out.forEach(o=>addRow(...o));
   $('paste').classList.add('hidden');
-  showToast(out.length+' courses parsed - review & save');
+  showToast(out.length+' courses parsed cleanly - review & save');
   const mm=raw.match(/\b(\d{2}\/[A-Z0-9]{2,8}\/[A-Z0-9]{2,8})\b/i)||raw.match(/\b(20\d{2}\/?\d{6,7})\b/);
   if(mm){const m=mm[0].toUpperCase();if(m!==U.profile.matric)askMatric(m);}
 }
+
 function saveSem(){
   const courses=[];
   document.querySelectorAll('#rows > div').forEach(r=>{
@@ -784,7 +796,6 @@ function saveSem(){
   }
   if(U.semesters.some(s=>semPrint(s)===semPrint({name,courses})))return showToast('Already recorded - duplicate blocked','error');
 
-  // Same semester pasted again (>=60% course overlap): merge instead of duplicating
   const codes=courses.map(c=>c.code);
   const match=U.semesters.find(s=>{
     const sc=(s.courses||[]).map(c=>c.code);
@@ -982,7 +993,7 @@ async function markFromHome(){
   if(await markAttendance($('ha-pin').value.trim(),course,'home'))$('ha-pin').value='';
 }
 
-// ---------- Lecturer: live OTP session (persists across screens/reloads) ----------
+// ---------- Lecturer: live OTP session ----------
 const liveKey=()=>'as_live_'+uid;
 const liveGet=()=>{try{return JSON.parse(localStorage.getItem(liveKey()));}catch(e){return null;}};
 const liveSet=s=>{try{localStorage.setItem(liveKey(),JSON.stringify(s));}catch(e){}};
@@ -1101,7 +1112,7 @@ home(){
   h+='</div>';
   h+='<div class="card p-6 space-y-3"><div class="flex justify-between items-center"><div class="font-extrabold">Live Submissions</div><span id="sub-count" class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">0 Present</span></div><div class="h-3 rounded-full bg-slate-200 dark:bg-slate-800"><div id="sub-bar" class="h-full bg-emerald-500 w-0 transition-all"></div></div></div></div>';
   return h;
-    },
+},
 plan(){return V.plan();},
 roster(){
   return '<div class="space-y-5"><div class="card p-6 space-y-4"><div class="flex justify-between items-center"><div class="font-extrabold">Student Attendance Rosters</div><button class="btn2 text-xs" onclick="exportRosterCSV()">Export CSV</button></div><div class="overflow-x-auto"><table class="w-full text-xs text-left"><thead><tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400"><th class="p-3">#</th><th class="p-3">Matric</th><th class="p-3">Course</th><th class="p-3">Date</th><th class="p-3">Via</th></tr></thead><tbody id="roster-body" class="divide-y divide-slate-100 dark:divide-slate-800 font-mono"></tbody></table></div></div></div>';
@@ -1207,7 +1218,6 @@ function openPolicy(){
   sec('7. Contact','Questions? support@academicsummit.app')+
   '<p class="text-[10px] pt-2" style="color:var(--mut)">Last updated: October 2026</p>');
 }
-// ---------- Tours & first-run walkthrough ----------
 const TOUR=[
 ['Dashboard','Your CGPA, degree progress and GPA trajectory live here. Notifications warn you about exams, fees and due tasks.'],
 ['Academics','Calculate GPA, import portal results with one paste, and let the Result Detective predict a missing semester.'],
@@ -1221,7 +1231,7 @@ function startTour(){if(U&&U.role==='lecturer')return;tourI=0;tourStep();}
 function tourStep(){
   if(tourI>=TOUR.length)return closeSheet();
   const s=TOUR[tourI];
-  $('sheet').innerHTML='<div class="fixed inset-0 z-50 bg-black/60 flex items-end"><div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 space-y-4"><div class="lbl text-violet-600 dark:text-violet-400">Quick tour '+(tourI+1)+'/'+TOUR.length+'</div><div class="font-extrabold text-lg">'+s[0]+'</div><p class="text-sm text-slate-500 dark:text-slate-400">'+s[1]+'</p><div class="flex gap-1">'+TOUR.map((_,i)=>'<span class="h-1.5 flex-1 rounded-full '+(i<=tourI?'bg-violet-600':'bg-slate-200 dark:bg-slate-700')+'"></span>').join('')+'</div><div class="flex gap-2"><button class="btn2 flex-1" onclick="closeSheet()">Skip</button><button class="btn flex-1" onclick="tourI++;tourStep()">'+(tourI===TOUR.length-1?'Finish':'Next')+'</button></div></div></div>';
+  $('sheet').innerHTML='<div class="fixed inset-0 z-50 bg-black/60 flex items-end"><div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 space-y-4"><div class="lbl text-violet-600 dark:text-violet-400">Quick tour '+(tourI+1)+'/'+TOUR.length+'</div><div class="font-extrabold text-lg">'+s[0]+'</div><p class="text-sm text-slate-500 dark:text-slate-400">'+s[1]+'</p><div class="flex gap-1">'+TOUR.map((_,i)=><span class="h-1.5 flex-1 rounded-full '+(i<=tourI?'bg-violet-600':'bg-slate-200 dark:bg-slate-700')+'"></span>').join('')+'</div><div class="flex gap-2"><button class="btn2 flex-1" onclick="closeSheet()">Skip</button><button class="btn flex-1" onclick="tourI++;tourStep()">'+(tourI===TOUR.length-1?'Finish':'Next')+'</button></div></div></div>';
 }
 const LT=[
 ['Broadcast the code','When class starts, tap Generate. A 5-digit code appears and lives for 90 seconds - call it out or project it.'],
@@ -1233,7 +1243,7 @@ function lecTour(){ltI=0;ltStep();}
 function ltStep(){
   if(ltI>=LT.length){localStorage.setItem('as_lec_tour','1');return closeSheet();}
   const s=LT[ltI];
-  $('sheet').innerHTML='<div class="fixed inset-0 z-50 bg-black/60 flex items-end"><div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 space-y-4"><div class="lbl text-emerald-600 dark:text-emerald-400">Lecturer tour '+(ltI+1)+'/'+LT.length+'</div><div class="font-extrabold text-lg">'+s[0]+'</div><p class="text-sm text-slate-500 dark:text-slate-400">'+s[1]+'</p><div class="flex gap-1">'+LT.map((_,i)=>'<span class="h-1.5 flex-1 rounded-full '+(i<=ltI?'bg-emerald-500':'bg-slate-200 dark:bg-slate-700')+'"></span>').join('')+'</div><div class="flex gap-2"><button class="btn2 flex-1" onclick="localStorage.setItem(\'as_lec_tour\',\'1\');closeSheet()">Skip</button><button class="btn flex-1" onclick="ltI++;ltStep()">'+(ltI===LT.length-1?'Finish':'Next')+'</button></div></div></div>';
+  $('sheet').innerHTML='<div class="fixed inset-0 z-50 bg-black/60 flex items-end"><div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 space-y-4"><div class="lbl text-emerald-600 dark:text-emerald-400">Lecturer tour '+(ltI+1)+'/'+LT.length+'</div><div class="font-extrabold text-lg">'+s[0]+'</div><p class="text-sm text-slate-500 dark:text-slate-400">'+s[1]+'</p><div class="flex gap-1">'+LT.map((_,i)=><span class="h-1.5 flex-1 rounded-full '+(i<=ltI?'bg-emerald-500':'bg-slate-200 dark:bg-slate-700')+'"></span>').join('')+'</div><div class="flex gap-2"><button class="btn2 flex-1" onclick="localStorage.setItem(\'as_lec_tour\',\'1\');closeSheet()">Skip</button><button class="btn flex-1" onclick="ltI++;ltStep()">'+(ltI===LT.length-1?'Finish':'Next')+'</button></div></div></div>';
 }
 function rwShow(step){
   const S={1:['Bring your results home','In about two minutes we will import your real results from your portal and light up your dashboard - CGPA, trajectory, carryovers, everything.'],
@@ -1284,3 +1294,4 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(
 </script>
 </body>
 </html>
+
