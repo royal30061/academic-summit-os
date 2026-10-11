@@ -1435,5 +1435,81 @@ if(location.hash===''||location.hash==='#'){
 }
 </script>
 [your code here]
+<script>
+(function(){var s=document.createElement('style');s.textContent='@keyframes rwPulse{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.55)}50%{box-shadow:0 0 0 12px rgba(16,185,129,0)}}.rw-pulse{animation:rwPulse 1.4s infinite;border-color:#10b981!important}';document.head.appendChild(s);})();
+const _bootRW=boot;
+boot=async function(u){localStorage.setItem('as_tour','1');return _bootRW(u);};
+function rwShow(step){
+  const S={1:['Bring your results home','In about two minutes we will import your real results from your portal and light up your dashboard - CGPA, trajectory, carryovers, everything.'],
+           2:['Copy your results','Open your university portal in another tab or on another phone. Open your results page, select all the text, copy it, and come back here.']};
+  const s=S[step];
+  var h='<div class="fixed inset-0 z-50 bg-black/60 flex items-end" onclick="rwSkip()"><div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 space-y-4" onclick="event.stopPropagation()">';
+  h+='<div class="lbl text-emerald-600 dark:text-emerald-400">Step '+step+' of 2</div>';
+  h+='<div class="font-extrabold text-lg">'+s[0]+'</div>';
+  h+='<p class="text-sm text-slate-500 dark:text-slate-400">'+s[1]+'</p>';
+  h+='<div class="flex gap-1">'+[1,2].map(i=>'<span class="h-1.5 flex-1 rounded-full '+(i<=step?'bg-emerald-500':'bg-slate-200 dark:bg-slate-700')+'"></span>').join('')+'</div>';
+  if(step===1){h+='<div class="flex gap-2"><button class="btn2 flex-1" onclick="rwSkip()">Maybe later</button><button class="btn flex-1" onclick="rwShow(2)">Start now</button></div>';}
+  else{h+='<div class="flex gap-2"><button class="btn2 flex-1" onclick="rwShow(1)">Back</button><button class="btn flex-1" onclick="rwHandoff()">I have copied it</button></div>';}
+  h+='</div></div>';
+  $('sheet').innerHTML=h;
+}
+function rwSkip(){closeSheet();}
+function rwHandoff(){
+  closeSheet();
+  aTab='calc';editing=null;go('acad');
+  setTimeout(function(){
+    var p=$('paste');if(p)p.classList.remove('hidden');
+    var b=$('paste-a');if(b)b.classList.add('rw-pulse');
+    rwBubble();
+  },300);
+}
+function rwBubble(){
+  if($('rw-bubble'))return;
+  var b=document.createElement('div');b.id='rw-bubble';
+  b.className='fixed left-4 right-4 z-40 p-4 rounded-2xl text-xs font-semibold shadow-lg';
+  b.style.cssText='bottom:calc(env(safe-area-inset-bottom,6px) + 84px);background:#059669;color:#fff';
+  b.innerHTML='Paste your copied results in the glowing box, then tap <b>Parse & Auto-Fill</b>, then <b>Calculate & Save</b>. <span onclick="this.parentNode.remove()" style="float:right;cursor:pointer">✕</span>';
+  document.body.appendChild(b);
+}
+function rwDone(){
+  localStorage.setItem('as_rw','1');
+  var b=$('rw-bubble');if(b)b.remove();
+  var x=$('paste-a');if(x)x.classList.remove('rw-pulse');
+  showToast('First result in - your summit has begun');
+}
+const _rwSave=saveSem;
+saveSem=function(){
+  const before=(U.semesters||[]).length;
+  const r=_rwSave();
+  if((U.semesters||[]).length>before)rwDone();
+  return r;
+};
+const _homeRW=V.home;
+V.home=function(){
+  const html=_homeRW();
+  setTimeout(function(){
+    if(U&&U.role==='student'&&(U.semesters||[]).length===0&&!localStorage.getItem('as_rw')&&!window._rwShown){window._rwShown=1;rwShow(1);}
+    if(U&&U.role==='lecturer'&&!localStorage.getItem('as_lec_tour')&&!window._ltShown){window._ltShown=1;lecTour();}
+  },600);
+  return html;
+};
+let ltI=0;
+const LT=[['Broadcast the code','When class starts, tap Generate. A 5-digit code appears and lives for 90 seconds - call it out or project it.'],
+['Watch them land','The Live Submissions bar fills in real time as students mark present. No paper, no calling names.'],
+['Missed the window?','Re-issue sends a fresh code to the SAME class list, so latecomers join without creating duplicates.'],
+['Roster & export','The Roster tab lists matric numbers, numbered and in order. Export the CSV for your records.']];
+function lecTour(){ltI=0;ltStep();}
+function ltStep(){
+  if(ltI>=LT.length){localStorage.setItem('as_lec_tour','1');closeSheet();return;}
+  const s=LT[ltI];
+  var h='<div class="fixed inset-0 z-50 bg-black/60 flex items-end"><div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 space-y-4">';
+  h+='<div class="lbl text-emerald-600 dark:text-emerald-400">Lecturer tour '+(ltI+1)+'/'+LT.length+'</div>';
+  h+='<div class="font-extrabold text-lg">'+s[0]+'</div>';
+  h+='<p class="text-sm text-slate-500 dark:text-slate-400">'+s[1]+'</p>';
+  h+='<div class="flex gap-1">'+LT.map((_,i)=>'<span class="h-1.5 flex-1 rounded-full '+(i<=ltI?'bg-emerald-500':'bg-slate-200 dark:bg-slate-700')+'"></span>').join('')+'</div>';
+  h+='<div class="flex gap-2"><button class="btn2 flex-1" onclick="localStorage.setItem(\'as_lec_tour\',\'1\');closeSheet()">Skip</button><button class="btn flex-1" onclick="ltI++;ltStep()">'+(ltI===LT.length-1?'Finish':'Next')+'</button></div></div></div>';
+  $('sheet').innerHTML=h;
+}
+</script>
 </body>
 </html>
