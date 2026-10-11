@@ -1522,6 +1522,61 @@ function runDet(){
   $('d-res').innerHTML=h;
 }
 </script>
+<script>
+const DEPT_FAC={};
+Object.keys(SEED).forEach(function(f){SEED[f].forEach(function(d){DEPT_FAC[d]=f;});});
+const PREFIX_DEPT={POS:'Political Science',POL:'Political Science',ENL:'English Language',ENG:'English Language',LIN:'English Language',CSC:'Computer Science',MTH:'Mathematics',PHY:'Physics',CHM:'Chemistry',BIO:'Biology',MCB:'Microbiology',BCH:'Biochemistry',STA:'Statistics',ECO:'Economics',SOC:'Sociology',PSY:'Psychology',GEO:'Geography',IRL:'International Relations',MAC:'Mass Communication',MCM:'Mass Communication',ACC:'Accounting',BFN:'Banking & Finance',BUS:'Business Administration',MKT:'Marketing',ACT:'Actuarial Science',LAW:'Common Law',ARC:'Architecture',BLD:'Building Technology',EST:'Estate Management',QS:'Quantity Surveying',URP:'Urban & Regional Planning',MED:'Medicine & Surgery',NUR:'Nursing Science',PHA:'Pharmacy',MLS:'Medical Laboratory Science',PBH:'Public Health',ANS:'Animal Science',CRP:'Crop Science',AEC:'Agricultural Economics',SOIL:'Soil Science',ADE:'Adult Education',EDM:'Educational Management',HK:'Human Kinetics',ECE:'Early Childhood Education',HIS:'History',PHI:'Philosophy',THE:'Theatre Arts',FRE:'French',ARB:'Arabic Studies'};
+const SERVICE={GST:1,GNS:1,UA:1};
+function extractPortalInfo(raw){
+  const g=function(re){const m=(raw||'').match(re);return m?m[1].trim():'';};
+  return{name:g(/Name:\s*([A-Za-z][A-Za-z .'-]*)/i),fac:g(/Faculty:\s*([A-Za-z][A-Za-z &'-]*)/i),dept:g(/Department:\s*([A-Za-z][A-Za-z &'-]*)/i),level:g(/Current Level:\s*(\d{3})/i)};
+}
+function inferDeptFromCourses(courses){
+  const cnt={};
+  (courses||[]).forEach(function(c){
+    const p=(String(c.code).match(/^([A-Z]{2,4})/)||[])[1];
+    if(!p||SERVICE[p])return;
+    cnt[p]=(cnt[p]||0)+1;
+  });
+  const top=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a];})[0];
+  return top?(PREFIX_DEPT[top]||''):'';
+}
+function reconcileProfile(courses,raw){
+  if(!U||!U.profile)return;
+  const info=extractPortalInfo(raw||'');
+  let changed=false;
+  let dept=info.dept||inferDeptFromCourses(courses);
+  dept=dept?normDept(dept):'';
+  if(dept&&dept!==U.profile.program){U.profile.program=dept;changed=true;}
+  let fac=info.fac||(dept?DEPT_FAC[dept]:'');
+  if(fac&&fac!==U.profile.faculty){U.profile.faculty=fac;changed=true;}
+  if(info.name&&info.name!==U.name){U.name=info.name;changed=true;}
+  const len=(U.semesters||[]).length;
+  const inferred=100+Math.floor(len/2)*100;
+  const lvl=parseInt(info.level)||Math.max(inferred,parseInt(U.profile.level)||100);
+  if(lvl&&String(lvl)!==String(U.profile.level)){U.profile.level=String(lvl);changed=true;}
+  if(changed){
+    save();
+    sb.from('profiles').update({faculty:U.profile.faculty,program:U.profile.program,level:U.profile.level,name:U.name}).eq('id',uid).then(()=>{});
+    if(U.profile.faculty&&U.profile.program)bumpDept(U.profile.faculty,U.profile.program);
+    start();
+    showToast('Profile updated to match your uploaded result');
+  }
+}
+const _parse36=parsePasteTrojan;
+parsePasteTrojan=function(){window._lastPasteRaw=(($('paste-a')||{}).value)||'';return _parse36();};
+const _saveSem36=saveSem;
+saveSem=function(){
+  const r=_saveSem36();
+  const courses=[];
+  document.querySelectorAll('#rows > div').forEach(function(rr){
+    const code=rr.querySelector('.c-code').value.trim().toUpperCase();
+    if(code)courses.push({code:code});
+  });
+  reconcileProfile(courses,window._lastPasteRaw||'');
+  return r;
+};
+</script>
 </body>
 </html>
 
