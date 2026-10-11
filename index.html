@@ -1628,5 +1628,38 @@ if(location.hash===''||location.hash==='#'){
   localStorage.removeItem('as_lec_session');
 }
 </script>
+<script>
+function parsePasteTrojan(){
+  const raw=$('paste-a').value||'';
+  const merged=raw.replace(/([A-Z]{2,4})[ \t]+(\d{3}[A-Z]?)\b/g,'$1$2');
+  const tokens=merged.split(/[\s,;|]+/).map(t=>t.trim()).filter(Boolean);
+  const codeRe=/^[A-Z]{2,4}(?:-[A-Z]{2,6})?\d{3}[A-Z]?$/;
+  const out=[];const seen={};
+  for(let i=0;i<tokens.length;i++){
+    const tk=tokens[i];
+    if(!codeRe.test(tk))continue;
+    let unit=null,score=null;
+    for(let j=i+1;j<Math.min(tokens.length,i+18);j++){
+      const t=tokens[j];
+      if(codeRe.test(t))break;
+      if(unit===null&&/^\d{1,2}$/.test(t)){const n=+t;if(n>=1&&n<=12){unit=n;}continue;}
+      if(unit!==null&&score===null&&/^\d{1,3}(\.\d+)?$/.test(t)){const s=+t;if(s>=0&&s<=100){score=s;break;}}
+    }
+    if(unit===null||score===null||seen[tk])continue;
+    seen[tk]=1;out.push({code:tk,unit:unit,score:score});
+  }
+  if(!out.length)return showToast('No course pattern found - paste the full results page, or add courses manually below','error');
+  $('rows').innerHTML='';
+  out.forEach(function(c){
+    addRow();
+    const rs=document.querySelectorAll('#rows > div');
+    const r=rs[rs.length-1];
+    r.querySelector('.c-code').value=c.code;
+    r.querySelector('.c-unit').value=c.unit;
+    r.querySelector('.c-score').value=c.score;
+  });
+  showToast(out.length+' courses parsed - review & save','success');
+}
+</script>
 </body>
 </html>
