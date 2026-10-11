@@ -142,8 +142,6 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 const LEC_LINK=location.hash==='#lecturer'||/[?&]lecturer=1/.test(location.search);
 
 // Lecturer-mode flag: visiting #lecturer pins this browser to the lecturer link
-if(location.hash==='#lecturer')localStorage.setItem('as_lec_session','1');
-if(localStorage.getItem('as_lec_session')==='1'&&!location.hash)location.hash='#lecturer';
 
 // ---------- Helpers ----------
 const $=id=>document.getElementById(id);
@@ -1099,7 +1097,10 @@ home(){
   h+='<div class="sm:col-span-2"><label class="lbl block mb-1">Topic</label><input id="lec-topic" class="inp" placeholder="Class Session"></div></div>';
   h+='<div class="text-center p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl space-y-3"><div class="lbl">Broadcast 5-Digit OTP</div><div id="otp-display" class="text-6xl font-extrabold tracking-widest font-mono text-emerald-600 dark:text-emerald-400">-----</div><div id="timer-display" class="text-xs font-bold text-slate-400">Tap below to broadcast</div></div>';
   h+='<button class="btn w-full py-3 text-base" onclick="startAttendanceSession()">Generate 90-Second Code</button>';
-  h+='<div id="live-panel" class="hidden space-y-2"><button class="btn2 w-full" onclick="reissueCode()">Re-issue code (same class list)</button><div class="flex gap-2"><input id="man-matric" class="inp font-mono uppercase" placeholder="Matric to add manually"><button class="btn shrink-0" onclick="manu
+  h+='<div id="live-panel" class="hidden space-y-2"><button class="btn2 w-full" onclick="reissueCode()">Re-issue code (same class list)</button><div class="flex gap-2"><input id="man-matric" class="inp font-mono uppercase" placeholder="Matric to add manually"><button class="btn shrink-0" onclick="manualAdd()">Add</button></div></div>';
+  h+='</div>';
+  h+='<div class="card p-6 space-y-3"><div class="flex justify-between items-center"><div class="font-extrabold">Live Submissions</div><span id="sub-count" class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">0 Present</span></div><div class="h-3 rounded-full bg-slate-200 dark:bg-slate-800"><div id="sub-bar" class="h-full bg-emerald-500 w-0 transition-all"></div></div></div></div>';
+  return h;
     },
 plan(){return V.plan();},
 roster(){
