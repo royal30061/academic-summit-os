@@ -1585,6 +1585,56 @@ LECTURER_VIEWS.prof=function(){
   '<button class="btn2 w-full !text-rose-500" onclick="logout()">Log Out Console</button></div>';
 };
 </script>
+<script>
+function fwRemove(){var e=$('fw-overlay');if(e)e.remove();}
+function fwStep(n,t,s){return '<div class="flex gap-3 items-start"><div class="w-8 h-8 shrink-0 rounded-full grad text-white grid place-items-center text-xs font-extrabold">'+n+'</div><div><div class="font-extrabold text-sm text-white">'+t+'</div><p class="text-xs leading-relaxed" style="color:#a7f3d0">'+s+'</p></div></div>';}
+function showFwImport(){
+  const name=U?U.name.split(' ')[0]:'';
+  $('sheet').innerHTML='';
+  var h='<div id="fw-overlay" class="fixed inset-0 z-[70] overflow-y-auto" style="background:linear-gradient(180deg,#021812,#04271c)"><div class="min-h-full flex flex-col px-6 py-5 max-w-md mx-auto">';
+  h+='<div class="flex justify-end"><button class="text-xs font-bold px-3 py-2" style="color:#6ee7b7" onclick="fwRemove()">Skip</button></div>';
+  h+='<div class="flex-1 flex flex-col justify-center space-y-7 py-4">'+MTN('w-16 h-16')+
+  '<div class="space-y-2"><div class="lbl" style="color:#34d399">Congratulations</div><h1 class="text-3xl font-extrabold text-white leading-tight">Welcome to Academic Summit, '+esc(name)+'</h1><p class="text-sm" style="color:#a7f3d0">Your one companion for your academic journey.</p></div>'+
+  '<div class="space-y-4">'+fwStep(1,'Import your portal results','Paste your results page once - the app reads your courses, units and scores for you.')+fwStep(2,'Watch your dashboard light up','CGPA, GPA trajectory, carryover register and degree progress - all live, all yours.')+fwStep(3,'Plan with the Detective & Target Setup','Know exactly what your next semester must score to hit your dream CGPA.')+'</div></div>';
+  h+='<div class="space-y-2 pb-2"><button class="btn w-full py-4 text-base" onclick="fwRemove();rwHandoff();">Start: Import my results</button><p class="text-[11px] text-center" style="color:rgba(167,243,208,.6)">Takes about 2 minutes. Skip anytime and explore on your own.</p></div>';
+  h+='</div></div>';
+  document.body.insertAdjacentHTML('beforeend',h);
+}
+function showFwDet(){
+  const name=U?U.name.split(' ')[0]:'';
+  $('sheet').innerHTML='';
+  var h='<div id="fw-overlay" class="fixed inset-0 z-[70] overflow-y-auto" style="background:linear-gradient(180deg,#021812,#04271c)"><div class="min-h-full flex flex-col px-6 py-5 max-w-md mx-auto">';
+  h+='<div class="flex justify-end"><button class="text-xs font-bold px-3 py-2" style="color:#6ee7b7" onclick="fwRemove()">Skip</button></div>';
+  h+='<div class="flex-1 flex flex-col justify-center space-y-7 py-4"><div class="text-5xl">🕵️</div>'+
+  '<div class="space-y-2"><div class="lbl" style="color:#34d399">Your results are in</div><h1 class="text-3xl font-extrabold text-white leading-tight">Now meet your Result Detective, '+esc(name)+'</h1><p class="text-sm" style="color:#a7f3d0">The feature most students never find - until it changes how they plan.</p></div>'+
+  '<div class="space-y-4">'+fwStep(1,'It reads your CGPA backwards','Type your portal CGPA and it deduces what your second semester actually scored.')+fwStep(2,'It shows the grade shapes behind it','Likely, conservative and most-unlikely course combinations - inferred from your own first semester.')+fwStep(3,'It flags the hidden traps','Carryovers, incomplete results, missing scripts - the Detective sees them before they cost you.')+'</div></div>';
+  h+='<div class="space-y-2 pb-2"><button class="btn w-full py-4 text-base" onclick="fwRemove();aTab=\'det\';go(\'acad\');">Open Result Detective</button><p class="text-[11px] text-center" style="color:rgba(167,243,208,.6)">Skip anytime - it will be waiting under Academics.</p></div>';
+  h+='</div></div>';
+  document.body.insertAdjacentHTML('beforeend',h);
+}
+function fullWelcomeMaybe(){
+  if($('fw-overlay')||!U||U.role!=='student')return;
+  const hasSems=(U.semesters||[]).length>0;
+  if(!hasSems){
+    if(localStorage.getItem('as_fw_import'))return;
+    window._rwShown=1;
+    localStorage.setItem('as_fw_import','1');
+    showFwImport();
+  }else{
+    if(localStorage.getItem('as_det_used')||localStorage.getItem('as_det_nudge'))return;
+    localStorage.setItem('as_det_nudge','1');
+    showFwDet();
+  }
+}
+const _homeFW=V.home;
+V.home=function(){
+  const html=_homeFW();
+  setTimeout(fullWelcomeMaybe,300);
+  return html;
+};
+const _detFW=ACAD.det;
+ACAD.det=function(){localStorage.setItem('as_det_used','1');return _detFW();};
+</script>
 </body>
 </html>
 
