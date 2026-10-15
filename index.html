@@ -1818,6 +1818,96 @@ authUI=function(mode,msg){
   }
 };
 </script>
+<script>
+const _onboard45=authOnboard;
+authOnboard=function(){
+  if(U&&U.role==='lecturer'){
+    U.profile=U.profile||{uni:'',level:'',program:'',faculty:'',totalUnits:0,matric:'',phone:'',semail:''};
+    save();start();lecSetup();return;
+  }
+  _onboard45();
+  const wrap=$('auth');
+  if(wrap&&!wrap.querySelector('#lec-rescue')){
+    const b=document.createElement('button');
+    b.id='lec-rescue';b.className='text-xs text-slate-500 w-full hover:underline pt-3';
+    b.textContent='Are you a lecturer? Enter your access PIN';
+    b.onclick=function(){pinGate({id:uid,email:email});};
+    const card=wrap.querySelector('.card');if(card)card.appendChild(b);
+  }
+};
+function lecSetup(){
+  const L=U.lec||{};
+  const cs=(L.courses&&L.courses.length)?L.courses:[{code:'',dept:'',levels:[]}];
+  window._lecRows=cs.map(function(c){return{code:c.code||'',dept:c.dept||'',levels:(c.levels||(c.level?String(c.level).split('/').map(Number):[])).slice()};});
+  paintLecSetup();
+}
+function paintLecSetup(){
+  const LV=[100,200,300,400,500,600];
+  const rows=window._lecRows.map(function(r,i){
+    return '<div class="space-y-2 p-4 rounded-2xl" style="background:var(--sub)">'+
+      '<div class="grid grid-cols-2 gap-2"><input id="lc-c'+i+'" class="inp uppercase font-mono" placeholder="Code (POS 204)" value="'+esc(r.code)+'"><input id="lc-d'+i+'" class="inp" placeholder="Dept (Political Science)" value="'+esc(r.dept)+'"></div>'+
+      '<div class="lbl">Levels taught</div><div class="flex flex-wrap gap-2">'+LV.map(function(v){const on=r.levels.indexOf(v)>-1;return '<button type="button" class="'+(on?'btn':'btn2')+' text-xs" onclick="toggleLecLevel('+i+','+v+')">'+v+'</button>';}).join('')+'</div>'+
+      '<button class="text-xs font-bold text-rose-500" onclick="removeLecRow('+i+')">Remove course</button></div>';
+  }).join('');
+  fullScreen('Teaching Profile','<div class="space-y-3">'+rows+
+    '<button class="btn2 w-full" onclick="addLecRow()">+ Add another course</button>'+
+    '<div class="space-y-2 pt-2"><div class="lbl">Weekly slots (optional, one per line: Mon 08:00-10:00 CODE)</div><textarea id="lc-s" rows="3" class="inp font-mono text-xs" placeholder="Mon 08:00-10:00 POS 204">'+((U.lec&&U.lec.sched)||[]).map(function(s){return DAYS[s.day]+' '+s.start+'-'+s.end+' '+s.code;}).join('\n')+'</textarea></div>'+
+    '<button class="btn w-full" onclick="saveLecSetup()">Save & continue</button></div>');
+}
+function syncLecInputs(){(window._lecRows||[]).forEach(function(r,i){const c=$('lc-c'+i),d=$('lc-d'+i);if(c)r.code=c.value.trim();if(d)r.dept=d.value.trim();});}
+function toggleLecLevel(i,v){syncLecInputs();const r=window._lecRows[i];const k=r.levels.indexOf(v);if(k>-1)r.levels.splice(k,1);else r.levels.push(v);paintLecSetup();}
+function addLecRow(){syncLecInputs();window._lecRows.push({code:'',dept:'',levels:[]});paintLecSetup();}
+function removeLecRow(i){syncLecInputs();window._lecRows.splice(i,1);if(!window._lecRows.length)window._lecRows.push({code:'',dept:'',levels:[]});paintLecSetup();}
+function saveLecSetup(){
+  syncLecInputs();
+  const cs=window._lecRows.filter(function(r){return r.code;}).map(function(r){
+    const lv=r.levels.slice().sort(function(a,b){return a-b;});
+    return{code:r.code.toUpperCase(),dept:r.dept,levels:lv,level:lv.join('/')};
+  });
+  const sc=($('lc-s')||{value:''}).value.split('\n').map(function(l){return l.trim();}).filter(Boolean).map(function(l){
+    const m=l.match(/^(\w{3})\s+(\d{2}:\d{2})-(\d{2}:\d{2})\s+(.+)$/i);if(!m)return null;
+    const day=['mon','tue','wed','thu','fri','sat','sun'].indexOf(m[1].toLowerCase());
+    return day<0?null:{day:day,start:m[2],end:m[3],code:m[4].toUpperCase()};
+  }).filter(Boolean);
+  U.lec=U.lec||{};U.lec.courses=cs;U.lec.sched=sc;U.lec.setupDone=true;save();closeSheet();go('home');showToast('Teaching profile saved');
+}
+function matricKey(m){
+  const s=String(m||'').toUpperCase();
+  const g=(s.match(/\/([A-Z]{2,6})\//)||[])[1]||(s.match(/[A-Z]{2,6}/)||[])[0]||'ZZZ';
+  const n=(s.match(/\d+/g)||['0']).map(Number);
+  return{g:g,n:n};
+}
+function rosterSort(rows){
+  return (rows||[]).slice().sort(function(a,b){
+    const A=matricKey(a.profiles&&a.profiles.matric),B=matricKey(b.profiles&&b.profiles.matric);
+    if(A.g!==B.g)return A.g<B.g?-1:1;
+    const L=Math.max(A.n.length,B.n.length);
+    for(let i=0;i<L;i++){const x=A.n[i]||0,y=B.n[i]||0;if(x!==y)return x-y;}
+    return 0;
+  });
+}
+function paintRoster(){
+  const body=$('roster-body');if(!body)return;
+  body.innerHTML=rosterRows.map(function(r,i){return '<tr><td class="p-3">'+(i+1)+'</td><td class="p-3">'+esc((r.profiles&&r.profiles.matric)||'—')+'</td><td class="p-3">'+esc(r.sessions&&r.sessions.course)+'</td><td class="p-3">'+fmtD(r.marked_at)+'</td><td class="p-3">'+(r.method==='manual'?'M':'OTP')+'</td></tr>';}).join('')||'<tr><td class="p-3 text-slate-400" colspan="5">No attendance recorded yet.</td></tr>';
+}
+const _load45=loadRoster;
+loadRoster=async function(){
+  await _load45();
+  rosterRows=rosterSort(rosterRows);
+  paintRoster();
+};
+exportRosterCSV=function(){
+  const rows=rosterSort(rosterRows);
+  const cell=function(v){v=String(v==null?'':v);if(/^[=+\-@]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';};
+  const out=[['No','Matric','Dept','Course','Date','Method']].concat(rows.map(function(r,i){
+    return[i+1,(r.profiles&&r.profiles.matric)||'',matricKey((r.profiles&&r.profiles.matric)||'').g,(r.sessions&&r.sessions.course)||'',r.marked_at,r.method||'otp'];
+  }));
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([out.map(function(r){return r.map(cell).join(',');}).join('\n')],{type:'text/csv'}));
+  a.download='attendance-roster.csv';a.click();
+  showToast('Roster exported - sorted by department');
+};
+</script>
 </body>
 </html>
 
