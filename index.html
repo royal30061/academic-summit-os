@@ -1776,6 +1776,48 @@ parsePasteTrojan=function(){
   return r;
 };
 </script>
+<script>
+function resendConfirm(){
+  const el=$('a-email');
+  const em=((el&&el.value)||window._lastLoginEmail||'').trim().toLowerCase();
+  if(!em)return showToast('Enter your email first','error');
+  sb.auth.resend({type:'signup',email:em}).then(function(r){
+    if(r.error)return showToast(r.error.message,'error');
+    showToast('Confirmation email sent to '+em);
+  });
+}
+const _doLogin44=doLogin;
+doLogin=async function(){
+  const el=$('a-email');
+  if(el)window._lastLoginEmail=el.value.trim().toLowerCase();
+  return _doLogin44();
+};
+const _authUI44=authUI;
+authUI=function(mode,msg){
+  _authUI44(mode,msg);
+  if(mode!=='login')return;
+  const wrap=$('auth');if(!wrap)return;
+  const forgot=wrap.querySelector('button[onclick="forgotUI()"]');
+  if(forgot&&!wrap.querySelector('#resend-link')){
+    const l=document.createElement('button');
+    l.id='resend-link';
+    l.className='text-xs text-slate-500 w-full hover:underline pt-2';
+    l.textContent="Didn't get the confirmation email? Resend it";
+    l.onclick=resendConfirm;
+    forgot.insertAdjacentElement('afterend',l);
+  }
+  if(msg&&/not confirmed|check your email/i.test(msg)){
+    const p=Array.from(wrap.querySelectorAll('p')).find(function(x){return /not confirmed|check your email/i.test(x.textContent);});
+    if(p&&!wrap.querySelector('#resend-box')){
+      const b=document.createElement('div');
+      b.id='resend-box';
+      b.className='space-y-2';
+      b.innerHTML='<button class="btn2 w-full" onclick="resendConfirm()">Resend confirmation email</button>';
+      p.insertAdjacentElement('afterend',b);
+    }
+  }
+};
+</script>
 </body>
 </html>
 
