@@ -1908,6 +1908,45 @@ exportRosterCSV=function(){
   showToast('Roster exported - sorted by department');
 };
 </script>
+<style>
+#auth button.text-xs.text-slate-500{font-size:.82rem!important;font-weight:700!important;color:#6ee7b7!important;}
+</style>
+<script>
+const _authUI46=authUI;
+authUI=function(mode,msg){
+  _authUI46(mode,msg);
+  const rl=$('resend-link');if(rl)rl.remove();
+};
+const _doForgot46=doForgot;
+doForgot=async function(){
+  const el=$('f-email');if(el)window._lastForgotEmail=el.value.trim().toLowerCase();
+  return _doForgot46();
+};
+function resendForgot(){
+  const em=window._lastForgotEmail||'';
+  if(!em)return showToast('Enter your email first','error');
+  sb.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname}).then(function(r){
+    if(r.error)return showToast(r.error.message,'error');
+    showToast('Reset link sent again to '+em);
+  });
+}
+const _forgotUI46=forgotUI;
+forgotUI=function(msg,bad){
+  _forgotUI46(msg,bad);
+  if(msg&&!bad&&/reset link is on its way/i.test(msg)){
+    const wrap=$('auth');
+    if(wrap&&!wrap.querySelector('#resend-forgot')){
+      const p=Array.from(wrap.querySelectorAll('p')).find(function(x){return /reset link is on its way/i.test(x.textContent);});
+      if(p){
+        const b=document.createElement('div');
+        b.id='resend-forgot';b.className='space-y-2';
+        b.innerHTML='<button class="btn2 w-full" onclick="resendForgot()">Resend reset link</button>';
+        p.insertAdjacentElement('afterend',b);
+      }
+    }
+  }
+};
+</script>
 </body>
 </html>
 
