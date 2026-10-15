@@ -1718,6 +1718,64 @@ V.prof=function(){
   return h;
 };
 </script>
+<script>
+function showInstantDetective(courses,raw){
+  const u2=courses.reduce(function(a,c){return a+c.unit;},0);
+  const g2dir=semS({courses:courses}).g;
+  const cgM=raw.match(/CGPA[^0-9]{0,6}([0-5]\.\d{1,2})/i)||raw.match(/CUMULATIVE[^0-9]{0,12}([0-5]\.\d{1,2})/i);
+  const cg=cgM?parseFloat(cgM[1]):null;
+  const c=cum();
+  const hasPrior=c.u>0;
+  let head=null,label='',sub='';
+  if(hasPrior&&cg!==null){
+    const ded=(cg*(c.u+u2)-c.q)/u2;
+    if(ded>=0&&ded<=5){
+      head=ded;
+      label='Your 2nd semester GPA (deduced)';
+      sub='Read from your saved first semester ('+c.g.toFixed(2)+' over '+c.u+' units) and your portal CGPA '+cg.toFixed(2)+' over '+(c.u+u2)+' units.';
+      window._detPrefill={g1:c.g,u1:c.u,cg:cg,u2:u2};
+    }
+  }
+  if(head===null){
+    head=g2dir;
+    label=hasPrior?'This semester\'s GPA':'GPA of the courses you just pasted';
+    sub='Computed directly from the '+courses.length+' courses in your paste.';
+  }
+  const box=document.createElement('div');
+  box.className='card p-5 space-y-2 mb-4';
+  box.style.borderLeft='4px solid #10b981';
+  box.innerHTML='<div class="lbl" style="color:#059669">Result Detective - instant read</div><div class="text-3xl font-extrabold" style="color:#059669">'+head.toFixed(2)+'<span class="text-sm text-slate-400"> / 5.00</span></div><div class="font-extrabold text-xs">'+label+'</div><p class="text-xs text-slate-500">'+sub+'</p><button class="btn2 w-full text-xs" onclick="prefillDet()">See full Detective breakdown</button>';
+  const rows=$('rows');
+  if(rows&&rows.parentNode)rows.parentNode.insertBefore(box,rows);
+}
+function prefillDet(){
+  const p=window._detPrefill;
+  aTab='det';go('acad');
+  setTimeout(function(){
+    if(p){
+      if($('d1'))$('d1').value=p.g1.toFixed(2);
+      if($('du1'))$('du1').value=p.u1;
+      if($('dc'))$('dc').value=p.cg.toFixed(2);
+      if($('du2'))$('du2').value=p.u2;
+      runDet();
+    }
+  },150);
+}
+const _parse43=parsePasteTrojan;
+parsePasteTrojan=function(){
+  const raw=((($('paste-a')||{}).value))||'';
+  const r=_parse43();
+  const courses=[];
+  document.querySelectorAll('#rows > div').forEach(function(row){
+    const code=row.querySelector('.c-code').value.trim().toUpperCase();
+    const unit=parseFloat(row.querySelector('.c-unit').value);
+    const sc=parseFloat(row.querySelector('.c-score').value);
+    if(code&&unit>=1&&unit<=6&&!isNaN(sc))courses.push({code:code,unit:unit,score:sc});
+  });
+  if(courses.length)showInstantDetective(courses,raw);
+  return r;
+};
+</script>
 </body>
 </html>
 
