@@ -2315,31 +2315,14 @@ lecSetup=ls2Open;
 })();
 </script>
 <script>
-function deleteLecAccount(){
-  if(!confirm('Are you sure? This will sign you out and remove your lecturer access.')) return;
-  sb.auth.signOut().then(function(){
-    localStorage.clear();
-    location.reload();
-  });
+async function deleteLecAccount(){
+  if(!confirm('Delete your account permanently? This cannot be undone.')) return;
+  var r = await sb.rpc('delete_my_account');
+  if(r.error){ alert('Could not delete: ' + r.error.message); return; }
+  await sb.auth.signOut();
+  location.reload();
 }
-const _origProf56 = V.prof;
-V.prof = function(){
-  let h = _origProf56();
-  if(U && U.role === 'lecturer' && h.indexOf('deleteLecAccount') === -1){
-    // Insert the delete button right above the logout button
-    h = h.replace(/(<button[^>]*onclick="logout\(\)"[^>]*>.*?<\/button>)/, '<button class="btn2 w-full !text-rose-500 mb-3" onclick="deleteLecAccount()">Delete Account</button>$1');
-  }
-  return h;
-};
-</script>
-<script>
-function deleteLecAccount(){
-  if(!confirm('Are you sure? This will sign you out and remove your lecturer access.')) return;
-  sb.auth.signOut().then(function(){
-    localStorage.clear();
-    location.reload();
-  });
-}
+
 const _origProf57 = V.prof;
 V.prof = function(){
   let h = _origProf57();
