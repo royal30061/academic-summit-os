@@ -2000,6 +2000,49 @@ go=function(v){
   return _go49(v);
 };
 </script>
+<script>
+const _authUI50=authUI;
+authUI=function(mode,msg){
+  if(LEC_LINK&&!window._lecDoorOff&&mode!=='leccode'){
+    $('sheet').innerHTML='';
+    var h='<div class="min-h-screen grid place-items-center p-6" style="background:#021812"><div class="card p-8 space-y-4 w-full max-w-md text-center">'+MTN('w-14 h-14 mx-auto')+
+    '<div class="lbl" style="color:#34d399">Lecturer Console</div><div class="font-extrabold text-xl">Sign in with your email code</div>'+
+    (msg?'<p class="text-xs text-rose-500 font-semibold">'+esc(msg)+'</p>':'')+
+    '<div class="text-left"><div class="lbl">Institutional email</div><input id="lec-em" type="email" class="inp mt-1" placeholder="name@uni.edu.ng"></div>'+
+    '<button class="btn w-full" onclick="lecSendCode()">Email me my 6-digit code</button>'+
+    '<button class="btn2 w-full text-xs" onclick="window._lecDoorOff=1;authUI(\'login\')">Use password instead</button>'+
+    '<p class="text-[11px] text-slate-400">First time? Your account is created automatically when you verify - then your Access PIN unlocks the console.</p></div></div>';
+    $('auth').innerHTML=h;return;
+  }
+  if(mode==='leccode'){
+    $('sheet').innerHTML='';
+    var h2='<div class="min-h-screen grid place-items-center p-6" style="background:#021812"><div class="card p-8 space-y-4 w-full max-w-md text-center">'+MTN('w-14 h-14 mx-auto')+
+    '<div class="font-extrabold text-xl">Enter your code</div><p class="text-xs text-slate-500">We sent a 6-digit code to<br><b style="color:#34d399">'+esc(window._lecOtpEmail||'')+'</b></p>'+
+    '<input id="lec-code" class="inp text-center font-mono text-xl tracking-widest" inputmode="numeric" maxlength="6" placeholder="------">'+
+    '<button class="btn w-full" onclick="lecVerify()">Verify & continue</button>'+
+    '<button class="btn2 w-full text-xs" onclick="lecSendCode()">Send a new code</button></div></div>';
+    $('auth').innerHTML=h2;return;
+  }
+  return _authUI50(mode,msg);
+};
+function lecSendCode(){
+  const em=(($('lec-em')||{}).value)||window._lecOtpEmail||'';
+  if(!/^[^@]+@[^@]+\.[^@]+$/.test(em.trim()))return showToast('Enter your email first','error');
+  window._lecOtpEmail=em.trim().toLowerCase();
+  sb.auth.signInWithOtp({email:window._lecOtpEmail,options:{shouldCreateUser:true,emailRedirectTo:location.origin+location.pathname+'?lecturer=1'}}).then(function(r){
+    if(r.error)return showToast(r.error.message,'error');
+    authUI('leccode');
+  });
+}
+function lecVerify(){
+  const code=(($('lec-code')||{}).value)||'';
+  if(code.length<6)return showToast('Enter the 6-digit code','error');
+  sb.auth.verifyOtp({email:window._lecOtpEmail,token:code,type:'email'}).then(function(r){
+    if(r.error)return showToast(r.error.message,'error');
+    boot(r.data.user);
+  });
+}
+</script>
 </body>
 </html>
 
