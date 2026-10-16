@@ -1365,7 +1365,7 @@ V.acad=function(){
 ACAD.tgt=function(){
   const first=U.semesters&&U.semesters[0];
   const fs=first?semS(first):null;
-  $('sub').innerHTML='<div class="card p-6 space-y-4"><div class="font-extrabold">'+ic('goal')+' Target Setup</div><p class="text-xs text-slate-500">You have first-semester results and a dream CGPA. This tells you the exact average your next semester must produce - and whether it is within reach.</p>'+
+  $('sub').innerHTML='<div class="card p-6 space-y-4"><div class="font-extrabold">'+ic('goal')+' Target Setup</div><p class="text-xs text-slate-500">Set your dream CGPA. We show the average your next semester must hit, and whether it is within reach.</p>'+
   '<div class="grid sm:grid-cols-2 gap-3">'+
   '<div><div class="lbl">1st Sem GPA</div><input id="t-g1" type="number" step="0.01" class="inp mt-1" value="'+(fs?fs.g.toFixed(2):'')+'" placeholder="4.80"></div>'+
   '<div><div class="lbl">1st Sem Units</div><input id="t-u1" type="number" class="inp mt-1" value="'+(fs?fs.u:20)+'"></div>'+
@@ -1385,7 +1385,7 @@ async function runTarget(){
   h+='<div class="p-5 rounded-2xl text-center space-y-1" style="background:var(--sub);border-left:4px solid '+col+'"><div class="lbl">Required next-semester average</div><div class="text-4xl font-extrabold" style="color:'+col+'">'+(data.ok?Number(data.need).toFixed(2):'-')+'</div><div class="font-extrabold text-sm">'+esc(data.title)+'</div></div>';
   h+='<div class="p-4 rounded-2xl text-xs leading-relaxed" style="background:var(--sub)">'+esc(data.message)+'</div>';
   if(data.scenarios){h+='<div class="p-4 rounded-2xl space-y-2" style="background:var(--sub)"><div class="lbl">Ways to get there</div>'+data.scenarios.map(function(s){return '<div class="flex justify-between text-xs py-1.5 border-b border-slate-200/40"><b>'+esc(s.type)+'</b><span class="text-slate-500 text-right max-w-[60%]">'+esc(s.desc)+'</span></div>';}).join('')+'</div>';}
-  h+='<details class="p-4 rounded-2xl text-xs" style="background:var(--sub)"><summary class="font-bold cursor-pointer">How is this calculated?</summary><p class="pt-2 leading-relaxed" style="color:var(--mut)">'+esc(data.how)+'</p></details></div>';
+  h+='<details class="p-4 rounded-2xl text-xs" style="background:var(--sub)"><summary class="font-bold cursor-pointer">The maths behind this</summary><p class="pt-2 leading-relaxed" style="color:var(--mut)">'+esc(data.how)+'</p></details></div>';
   $('t-res').innerHTML=h;
 }
 ACAD.det=function(){
@@ -1409,9 +1409,9 @@ function runDet(){
   const mix=function(hi,lo){const x=hi===lo?u2:u2*(need-lo)/(hi-lo);const xr=Math.max(0,Math.min(u2,Math.round(x)));return xr+' at '+GL[hi]+' + '+(u2-xr)+' at '+GL[lo];};
   const feasible=need>=0&&need<=5;
   let h='<div class="space-y-3 mt-3">';
-  h+='<div class="p-5 rounded-2xl text-center space-y-1" style="background:var(--sub);border-left:4px solid '+(feasible?'#10b981':'#f43f5e')+'"><div class="lbl">Your 2nd semester GPA (deduced)</div><div class="text-4xl font-extrabold" style="color:'+(feasible?'#10b981':'#f43f5e')+'">'+(feasible?need.toFixed(2):'—')+'</div><div class="font-extrabold text-sm">'+(feasible?'This is what that semester scored - a result, not a goal.':'Outside 0-5: results likely incomplete')+'</div></div>';
+  h+='<div class="p-5 rounded-2xl text-center space-y-1" style="background:var(--sub);border-left:4px solid '+(feasible?'#10b981':'#f43f5e')+'"><div class="lbl">Your 2nd semester GPA (deduced)</div><div class="text-4xl font-extrabold" style="color:'+(feasible?'#10b981':'#f43f5e')+'">'+(feasible?need.toFixed(2):'—')+'</div><div class="font-extrabold text-sm">'+(feasible?'This is what the semester scored. A result, not a target.':'Outside 0-5: results likely incomplete')+'</div></div>';
   if(hasProfile){
-    h+='<div class="p-4 rounded-2xl text-xs leading-relaxed" style="background:var(--sub)"><b>Reading your first semester:</b> you profile as '+prof.label+' (most common grade '+prof.modal+').'+(prof.carry?' You carry '+prof.carry+' course(s) - retakes replace those F\'s in your CGPA, and the Detective factors that into the cumulative picture.':'')+(prof.split?' Your first semester shows high grades alongside several F\'s - results may not be fully released, or a course script is missing. Double-check the portal.':'')+'</div>';
+    h+='<div class="p-4 rounded-2xl text-xs leading-relaxed" style="background:var(--sub)"><b>Your first semester:</b> '+prof.label+' (most common grade '+prof.modal+').'+(prof.carry?' You carry '+prof.carry+' course(s) - retakes replace those F\'s in your CGPA, and the Detective factors that into the cumulative picture.':'')+(prof.split?' Your first semester shows high grades alongside several F\'s - results may not be fully released, or a course script is missing. Double-check the portal.':'')+'</div>';
   }
   if(feasible){
     const hi=Math.ceil(need),lo=Math.floor(need);
@@ -1425,7 +1425,7 @@ function runDet(){
       '<div class="flex justify-between text-xs py-1.5"><b>Most unlikely</b><span class="text-slate-500 text-right max-w-[60%]">'+mix(5,0)+'</span></div>'+
       '</div>';
   }
-  h+='<details class="p-4 rounded-2xl text-xs" style="background:var(--sub)"><summary class="font-bold cursor-pointer">How is this calculated?</summary><p class="pt-2 leading-relaxed" style="color:var(--mut)">Semester 1 contributed '+(g1*u1).toFixed(2)+' points. A CGPA of '+cg.toFixed(2)+' over '+(u1+u2)+' units needs '+(cg*(u1+u2)).toFixed(2)+' points total. The difference over '+u2+' units is your second semester\'s actual average.</p></details></div>';
+  h+='<details class="p-4 rounded-2xl text-xs" style="background:var(--sub)"><summary class="font-bold cursor-pointer">The maths behind this</summary><p class="pt-2 leading-relaxed" style="color:var(--mut)">Semester 1 contributed '+(g1*u1).toFixed(2)+' points. A CGPA of '+cg.toFixed(2)+' over '+(u1+u2)+' units needs '+(cg*(u1+u2)).toFixed(2)+' points total. The difference over '+u2+' units is your second semester\'s actual average.</p></details></div>';
   $('d-res').innerHTML=h;
 }
 </script>
@@ -1454,7 +1454,7 @@ ACAD.tgt=function(){
   const first=U.semesters&&U.semesters[0];
   const fs=first?semS(first):null;
   const intro=_introDone('tgt')?'':introBanner('What is Target Setup?','Dream big, plan precisely. Enter where you are (your first-semester GPA) and where you want to end up (your dream CGPA). The app will tell you the exact average your next semester must produce, and whether that goal is within reach.');
-  $('sub').innerHTML='<div class="card p-6 space-y-4">'+intro+'<div class="font-extrabold">'+ic('goal')+' Target Setup</div><p class="text-xs text-slate-500">You have first-semester results and a dream CGPA. This tells you the exact average your next semester must produce - and whether it is within reach.</p>'+
+  $('sub').innerHTML='<div class="card p-6 space-y-4">'+intro+'<div class="font-extrabold">'+ic('goal')+' Target Setup</div><p class="text-xs text-slate-500">Set your dream CGPA. We show the average your next semester must hit, and whether it is within reach.</p>'+
   '<div class="grid sm:grid-cols-2 gap-3">'+
   '<div><div class="lbl">1st Sem GPA</div><input id="t-g1" type="number" step="0.01" class="inp mt-1" value="'+(fs?fs.g.toFixed(2):'')+'" placeholder="Your 1st sem GPA"></div>'+
   '<div><div class="lbl">1st Sem Units</div><input id="t-u1" type="number" class="inp mt-1" value="'+(fs?fs.u:20)+'"></div>'+
@@ -1475,7 +1475,7 @@ async function runTarget(){
   h+='<div class="p-5 rounded-2xl text-center space-y-1" style="background:var(--sub);border-left:4px solid '+col+'"><div class="lbl">Required next-semester average</div><div class="text-4xl font-extrabold" style="color:'+col+'">'+(data.ok?Number(data.need).toFixed(2):'-')+'</div><div class="font-extrabold text-sm">'+esc(data.title)+'</div></div>';
   h+='<div class="p-4 rounded-2xl text-xs leading-relaxed" style="background:var(--sub)">'+esc(data.message)+'</div>';
   if(data.scenarios){h+='<div class="p-4 rounded-2xl space-y-2" style="background:var(--sub)"><div class="lbl">Ways to get there</div>'+data.scenarios.map(function(s){return '<div class="flex justify-between text-xs py-1.5 border-b border-slate-200/40"><b>'+esc(s.type)+'</b><span class="text-slate-500 text-right max-w-[60%]">'+esc(s.desc)+'</span></div>';}).join('')+'</div>';}
-  h+='<details class="p-4 rounded-2xl text-xs" style="background:var(--sub)"><summary class="font-bold cursor-pointer">How is this calculated?</summary><p class="pt-2 leading-relaxed" style="color:var(--mut)">'+esc(data.how)+'</p></details></div>';
+  h+='<details class="p-4 rounded-2xl text-xs" style="background:var(--sub)"><summary class="font-bold cursor-pointer">The maths behind this</summary><p class="pt-2 leading-relaxed" style="color:var(--mut)">'+esc(data.how)+'</p></details></div>';
   $('t-res').innerHTML=h;
 }
 
@@ -1504,7 +1504,7 @@ function runDet(){
   let h='<div class="space-y-3 mt-3">';
   h+='<div class="p-5 rounded-2xl text-center space-y-1" style="background:var(--sub);border-left:4px solid '+(feasible?'#10b981':'#f43f5e')+'"><div class="lbl">Your 2nd semester GPA (deduced)</div><div class="text-4xl font-extrabold" style="color:'+(feasible?'#10b981':'#f43f5e')+'">'+(feasible?need.toFixed(2):'—')+'</div><div class="font-extrabold text-sm">'+(feasible?'This is the average your second semester produced.':'Outside 0-5: results likely incomplete')+'</div></div>';
   if(hasProfile){
-    h+='<div class="p-4 rounded-2xl text-xs leading-relaxed" style="background:var(--sub)"><b>Reading your first semester:</b> you profile as '+prof.label+' (most common grade '+prof.modal+').'+(prof.carry?' You carry '+prof.carry+' course(s) - retakes replace those F\'s in your CGPA, and the Detective factors that into the cumulative picture.':'')+(prof.split?' Your first semester shows high grades alongside several F\'s - results may not be fully released, or a course script is missing. Double-check the portal.':'')+'</div>';
+    h+='<div class="p-4 rounded-2xl text-xs leading-relaxed" style="background:var(--sub)"><b>Your first semester:</b> '+prof.label+' (most common grade '+prof.modal+').'+(prof.carry?' You carry '+prof.carry+' course(s) - retakes replace those F\'s in your CGPA, and the Detective factors that into the cumulative picture.':'')+(prof.split?' Your first semester shows high grades alongside several F\'s - results may not be fully released, or a course script is missing. Double-check the portal.':'')+'</div>';
   }
   if(feasible){
     const hi=Math.ceil(need),lo=Math.floor(need);
@@ -1518,7 +1518,7 @@ function runDet(){
       '<div class="flex justify-between text-xs py-1.5"><b>Most unlikely</b><span class="text-slate-500 text-right max-w-[60%]">'+mix(5,0)+'</span></div>'+
       '</div>';
   }
-  h+='<details class="p-4 rounded-2xl text-xs" style="background:var(--sub)"><summary class="font-bold cursor-pointer">How is this calculated?</summary><p class="pt-2 leading-relaxed" style="color:var(--mut)">Semester 1 contributed '+(g1*u1).toFixed(2)+' points. A CGPA of '+cg.toFixed(2)+' over '+(u1+u2)+' units needs '+(cg*(u1+u2)).toFixed(2)+' points total. The difference over '+u2+' units is your second semester\'s actual average.</p></details></div>';
+  h+='<details class="p-4 rounded-2xl text-xs" style="background:var(--sub)"><summary class="font-bold cursor-pointer">The maths behind this</summary><p class="pt-2 leading-relaxed" style="color:var(--mut)">Semester 1 contributed '+(g1*u1).toFixed(2)+' points. A CGPA of '+cg.toFixed(2)+' over '+(u1+u2)+' units needs '+(cg*(u1+u2)).toFixed(2)+' points total. The difference over '+u2+' units is your second semester\'s actual average.</p></details></div>';
   $('d-res').innerHTML=h;
 }
 </script>
@@ -2145,6 +2145,76 @@ start=function(){
       }
     }
   }catch(e){}
+};
+</script>
+<script>
+function fwTour(){
+  const rows=[['🏠','Home','Your standing at a glance - CGPA, last semester, degree progress.'],['📊','Academics','Your results, the Detective, and your target for next semester.'],['🎓','Attend','The live code box for class, plus your attendance record.'],['📅','Planner','Timetable, exam calendar and tasks in one place.'],['💸','Finance','Fees and spending, tracked.']];
+  var h='<div id="fw-overlay" class="fixed inset-0 z-[70] overflow-y-auto" style="background:linear-gradient(180deg,#021812,#04271c)"><div class="min-h-full flex flex-col px-6 py-5 max-w-md mx-auto">';
+  h+='<div class="flex justify-end"><button class="text-xs font-bold px-3 py-2" style="color:#6ee7b7" onclick="fwRemove()">Skip</button></div>';
+  h+='<div class="flex-1 flex flex-col justify-center space-y-6 py-4"><div class="space-y-1"><div class="lbl" style="color:#34d399">A quick map</div><h1 class="text-2xl font-extrabold text-white leading-tight">Where everything lives</h1></div><div class="space-y-3">'+rows.map(function(r){return '<div class="flex gap-3 items-start p-4 rounded-2xl" style="background:rgba(255,255,255,.05)"><span class="text-xl">'+r[0]+'</span><div><div class="font-extrabold text-sm text-white">'+r[1]+'</div><p class="text-xs" style="color:#a7f3d0">'+r[2]+'</p></div></div>';}).join('')+'</div></div>';
+  h+='<div class="pb-2"><button class="btn w-full py-4 text-base" onclick="fwRemove();go(\'home\');">Got it - take me in</button></div></div></div>';
+  document.body.insertAdjacentHTML('beforeend',h);
+}
+function showFwImport(){
+  const name=U?U.name.split(' ')[0]:'';
+  $('sheet').innerHTML='';
+  var h='<div id="fw-overlay" class="fixed inset-0 z-[70] overflow-y-auto" style="background:linear-gradient(180deg,#021812,#04271c)"><div class="min-h-full flex flex-col px-6 py-5 max-w-md mx-auto">';
+  h+='<div class="flex justify-end"><button class="text-xs font-bold px-3 py-2" style="color:#6ee7b7" onclick="fwRemove()">Skip</button></div>';
+  h+='<div class="flex-1 flex flex-col justify-center items-center text-center space-y-6 py-4">'+MTN('w-20 h-20')+
+  '<div class="space-y-3"><div class="lbl" style="color:#34d399">Congratulations'+(name?', '+esc(name):'')+'</div><h1 class="text-3xl font-extrabold text-white leading-tight">Welcome to Academic Summit</h1><p class="text-sm" style="color:#a7f3d0">The one companion you need for your academic journey.</p></div></div>';
+  h+='<div class="pb-2"><button class="btn w-full py-4 text-base" onclick="fwRemove();fwTour();">Continue</button></div></div></div>';
+  document.body.insertAdjacentHTML('beforeend',h);
+}
+function showFwDet(){
+  $('sheet').innerHTML='';
+  var h='<div id="fw-overlay" class="fixed inset-0 z-[70] overflow-y-auto" style="background:linear-gradient(180deg,#021812,#04271c)"><div class="min-h-full flex flex-col px-6 py-5 max-w-md mx-auto">';
+  h+='<div class="flex justify-end"><button class="text-xs font-bold px-3 py-2" style="color:#6ee7b7" onclick="fwRemove()">Skip</button></div>';
+  h+='<div class="flex-1 flex flex-col justify-center space-y-7 py-4"><div class="text-5xl">🕵️</div>'+
+  '<div class="space-y-2"><div class="lbl" style="color:#34d399">Your results are in</div><h1 class="text-3xl font-extrabold text-white leading-tight">Meet your Result Detective</h1><p class="text-sm" style="color:#a7f3d0">It reads your portal CGPA and tells you what your latest semester actually scored.</p></div>'+
+  '<div class="space-y-4">'+fwStep(1,'The number first','Your second-semester GPA, isolated from your CGPA.')+fwStep(2,'The shapes behind it','Likely, conservative and unlikely course combinations.')+fwStep(3,'The traps','Carryovers and incomplete results, flagged before they cost you.')+'</div></div>';
+  h+='<div class="pb-2"><button class="btn w-full py-4 text-base" onclick="fwRemove();aTab=\'det\';go(\'acad\');">Open the Detective</button></div></div></div>';
+  document.body.insertAdjacentHTML('beforeend',h);
+}
+function showInstantDetective(courses,raw){
+  const u2=courses.reduce(function(a,c){return a+c.unit;},0);
+  const g2dir=semS({courses:courses}).g;
+  const cgM=raw.match(/CGPA[^0-9]{0,6}([0-5]\.\d{1,2})/i)||raw.match(/CUMULATIVE[^0-9]{0,12}([0-5]\.\d{1,2})/i);
+  const cg=cgM?parseFloat(cgM[1]):null;
+  const c=cum();
+  const hasPrior=c.u>0;
+  let head=null,label='',sub='';
+  if(hasPrior&&cg!==null){
+    const ded=(cg*(c.u+u2)-c.q)/u2;
+    if(ded>=0&&ded<=5){
+      head=ded;label='Your second-semester GPA';sub='Source: your portal CGPA and your first-semester record.';
+      window._detPrefill={g1:c.g,u1:c.u,cg:cg,u2:u2};
+    }
+  }
+  if(head===null){head=g2dir;label='Your GPA for these courses';sub='Source: the results you just pasted.';}
+  const box=document.createElement('div');
+  box.className='card p-5 space-y-2 mb-4';
+  box.style.borderLeft='4px solid #10b981';
+  box.innerHTML='<div class="lbl" style="color:#059669">Result Detective</div><div class="text-3xl font-extrabold" style="color:#059669">'+head.toFixed(2)+'<span class="text-sm text-slate-400"> / 5.00</span></div><div class="font-extrabold text-xs">'+label+'</div><p class="text-xs text-slate-500">'+sub+'</p><button class="btn2 w-full text-xs" onclick="prefillDet()">Open the full breakdown</button>';
+  const rows=$('rows');
+  if(rows&&rows.parentNode)rows.parentNode.insertBefore(box,rows);
+}
+function showCongrats(){
+  const g=cum().g;
+  fullScreen('Congratulations, '+((U.name||'').split(' ')[0])+'!','<div class="space-y-4 text-center"><div class="text-5xl font-extrabold" style="color:#059669">'+g.toFixed(2)+'</div><p class="text-xs text-slate-500">Your CGPA, live.</p><div class="space-y-2 text-left">'+
+  '<div class="p-3 rounded-xl" style="background:var(--sub)"><b class="text-xs">🕵️ Result Detective & Target Setup</b><p class="text-[11px] text-slate-500">What next semester must score, and whether it is within reach.</p></div>'+
+  '<div class="p-3 rounded-xl" style="background:var(--sub)"><b class="text-xs">📅 Planner</b><p class="text-[11px] text-slate-500">Timetable, exam calendar, tasks.</p></div>'+
+  '<div class="p-3 rounded-xl" style="background:var(--sub)"><b class="text-xs">💸 Finance &  Materials</b><p class="text-[11px] text-slate-500">Spending tracked; past questions handy.</p></div>'+
+  '<div class="p-3 rounded-xl" style="background:var(--sub);border-left:3px solid #059669"><b class="text-xs">🎓 Attend</b><p class="text-[11px] text-slate-500">Your lecturer calls a code; you mark present in seconds.</p></div>'+
+  '</div><button class="btn w-full" onclick="closeSheet();go(\'home\');">Explore my dashboard</button></div>');
+}
+const _rw53=rwDone;
+rwDone=function(){
+  const first=!localStorage.getItem('as_congrats');
+  localStorage.setItem('as_congrats','1');
+  const r=_rw53();
+  if(first){localStorage.setItem('as_det_nudge','1');setTimeout(showCongrats,600);}
+  return r;
 };
 </script>
 </body>
