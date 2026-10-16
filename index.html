@@ -2332,6 +2332,30 @@ V.prof = function(){
   return h;
 };
 </script>
+<script>
+function deleteLecAccount(){
+  if(!confirm('Are you sure? This will sign you out and remove your lecturer access.')) return;
+  sb.auth.signOut().then(function(){
+    localStorage.clear();
+    location.reload();
+  });
+}
+const _origProf57 = V.prof;
+V.prof = function(){
+  let h = _origProf57();
+  if(U && U.role === 'lecturer' && h.indexOf('deleteLecAccount') === -1){
+    // Target the button by its text content
+    var btnRegex = /(<button[^>]*>Log Out Console<\/button>)/i;
+    if(btnRegex.test(h)) {
+      h = h.replace(btnRegex, '<button class="btn2 w-full !text-rose-500 mb-3" onclick="deleteLecAccount()">Delete Account</button>$1');
+    } else {
+      // Fallback: if we can't find the button, append it to the end of the profile content
+      h = h + '<button class="btn2 w-full !text-rose-500 mt-4" onclick="deleteLecAccount()">Delete Account</button>';
+    }
+  }
+  return h;
+};
+</script>
 </body>
 </html>
 
