@@ -2461,6 +2461,38 @@ authUI=function(mode,msg){
  },true);
 })();
 </script>
+<script>
+(function(){
+ var MX=/^\d{2}\/\d{2,3}[A-Z]{2,6}\/\d{3,5}$/;
+ async function matricGate(){
+  try{
+   if(typeof sb==='undefined'||typeof uid==='undefined'||typeof U==='undefined'||!U)return;
+   if(U.role==='lecturer'||U.role==='admin'||window._mxAsked)return;
+   var r=await sb.from('profiles').select('matric').eq('id',uid).maybeSingle();
+   if(r.error||(r.data&&r.data.matric))return;
+   var loc=(U.profile&&U.profile.matric)?String(U.profile.matric).trim().toUpperCase():'';
+   if(MX.test(loc)){await sb.from('profiles').update({matric:loc}).eq('id',uid);return;}
+   window._mxAsked=1;
+   fullScreen('Your matric number','<div class="card p-5 space-y-3"><p class="text-xs text-slate-500">Your lecturer needs this to record your attendance correctly. You only enter it once.</p><input id="mx-in" class="inp font-mono uppercase" placeholder="e.g. 25/209POS/2056"><button class="btn w-full" onclick="saveMatric(this)">Save</button></div>');
+  }catch(e){}
+ }
+ window.saveMatric=async function(b){
+  var v=($('mx-in').value||'').trim().toUpperCase().replace(/\s+/g,'');
+  if(!MX.test(v))return showToast('Use the format 25/209POS/2056','error');
+  b.disabled=true;
+  var r=await sb.from('profiles').update({matric:v}).eq('id',uid);
+  b.disabled=false;
+  if(r.error)return showToast(String(r.error.message).indexOf('duplicate')>-1?'That matric number is already registered':r.error.message,'error');
+  if(U.profile)U.profile.matric=v;
+  try{save();}catch(e){}
+  closeSheet();showToast('Matric number saved');
+ };
+ if(typeof onHomeShown==='function'){
+  var prev=onHomeShown;
+  onHomeShown=function(){prev.apply(this,arguments);setTimeout(matricGate,1200);};
+ }
+})();
+</script>
 </body>
 </html>
 
