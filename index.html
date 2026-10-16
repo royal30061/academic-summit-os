@@ -2461,6 +2461,56 @@ authUI=function(mode,msg){
  },true);
 })();
 </script>
+<script>
+async function loadRoster(){
+  const {data, error} = await sb.from('attendance').select('*, user_id, profiles!inner(matric, name)').eq('session_id', sid).order('created_at', {ascending: true});
+  if(error) return showToast(error.message, 'error');
+  rosterRows = data || [];
+  paintRoster();
+}
+function paintRoster(){
+  const body = $('roster-body');
+  if(!body) return;
+  body.innerHTML = rosterRows.map(function(r, i){
+    const matric = (r.profiles && r.profiles.matric) || '-';
+    const name = (r.profiles && r.profiles.name) || '';
+    return '<tr><td class="p-3">'+(i+1)+'</td><td class="p-3 font-mono text-xs">'+esc(matric)+'</td><td class="p-3 text-xs">'+esc(name)+'</td><td class="p-3 text-xs">'+esc(r.course||'')+'</td><td class="p-3 text-xs">'+fmtD(r.created_at)+'</td><td class="p-3 text-xs">'+(r.method||'OTP')+'</td></tr>';
+  }).join('') || '<tr><td class="p-3 text-slate-400" colspan="6">No attendance recorded yet.</td></tr>';
+}
+function manualAddMatric(){
+  const matric = prompt('Enter student matric number:');
+  if(!matric || !matric.trim()) return;
+  const course = $('lec-course') ? $('lec-course').value : '';
+  const session_id = window._currentSessionId;
+  if(!session_id) return showToast('No active session', 'error');
+  sb.from('attendance').insert({
+    session_id: session_id,
+    user_id: uid,
+    course: course,
+    matric_override: matric.trim().toUpperCase(),
+    method: 'manual'
+  }).then(function(r){
+    if(r.error) return showToast(r.error.message, 'error');
+    showToast('Added manually');
+    loadRoster();
+  });
+}
+const _initAtt58 = initAttendance;
+initAttendance = function(){
+  _initAtt58();
+  const addBtn = document.querySelector('[onclick="manualAddMatric()"]');
+  if(!addBtn){
+    const manualSection = document.querySelector('.manual-add-section');
+    if(manualSection){
+      const btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.textContent = 'Add';
+      btn.onclick = manualAddMatric;
+      manualSection.appendChild(btn);
+    }
+  }
+};
+</script>
 </body>
 </html>
 
