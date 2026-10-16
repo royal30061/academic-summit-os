@@ -2043,6 +2043,110 @@ function lecVerify(){
   });
 }
 </script>
+<script>
+function gateCard(){
+  if($('gate-card'))return;
+  const sub=$('sub');if(!sub)return;
+  const d=document.createElement('div');
+  d.id='gate-card';d.className='card p-5 space-y-2 mb-4';
+  d.style.borderLeft='4px solid #059669';
+  d.innerHTML='<div class="font-extrabold text-sm">Import your results - three steps</div><p class="text-xs leading-relaxed" style="color:var(--mut)">1. Open your school portal on any device and sign in. 2. Copy the page showing this semester\'s courses and scores. 3. Paste it into the box below and tap parse. Your CGPA appears instantly and every other door opens. If your results are not out yet, the planner, tracker and attendance are fully yours meanwhile - this box stays here for you.</p>';
+  sub.insertBefore(d,sub.firstChild);
+}
+function showFwImport(){
+  const name=U?U.name.split(' ')[0]:'';
+  const lvl=parseInt((U.profile||{}).level||100);
+  $('sheet').innerHTML='';
+  var h='<div id="fw-overlay" class="fixed inset-0 z-[70] overflow-y-auto" style="background:linear-gradient(180deg,#021812,#04271c)"><div class="min-h-full flex flex-col px-6 py-5 max-w-md mx-auto">';
+  h+='<div class="flex justify-end"><button class="text-xs font-bold px-3 py-2" style="color:#6ee7b7" onclick="fwRemove()">Skip</button></div>';
+  if(lvl>=200){
+    h+='<div class="flex-1 flex flex-col justify-center space-y-7 py-4">'+MTN('w-16 h-16')+
+    '<div class="space-y-2"><div class="lbl" style="color:#34d399">Welcome back to school</div><h1 class="text-3xl font-extrabold text-white leading-tight">Your results belong here, '+esc(name)+'</h1><p class="text-sm" style="color:#a7f3d0">Paste once - we read courses, units and scores, and your CGPA appears instantly.</p></div>'+
+    '<div class="space-y-4">'+fwStep(1,'Import your portal results','Copy your results page from the school portal and paste it below.')+fwStep(2,'See your standing instantly','CGPA, trajectory, carryovers - computed the moment you parse.')+fwStep(3,'Then everything else unlocks','Planner, exams, finance, class attendance - all yours.')+'</div></div>';
+    h+='<div class="space-y-2 pb-2"><button class="btn w-full py-4 text-base" onclick="fwRemove();rwHandoff();">Start: Import my results</button></div>';
+  }else{
+    h+='<div class="flex-1 flex flex-col justify-center space-y-7 py-4">'+MTN('w-16 h-16')+
+    '<div class="space-y-2"><div class="lbl" style="color:#34d399">Congratulations</div><h1 class="text-3xl font-extrabold text-white leading-tight">Welcome to Academic Summit, '+esc(name)+'</h1><p class="text-sm" style="color:#a7f3d0">Fresh semester, clean slate. Here is what we organize for you from day one.</p></div>'+
+    '<div class="space-y-4">'+fwStep(1,'Your semester, organized','Timetable, exam calendar and tasks in one planner.')+fwStep(2,'Money & materials','Track fees and spending; keep past questions and handouts.')+fwStep(3,'Class attendance, paperless','When your lecturer calls a code, you mark present in seconds.')+fwStep(4,'Results, when released','When your results are released, paste them and we compute everything. Until then the planner, tracker and attendance are fully yours.')+'</div></div>';
+    h+='<div class="space-y-2 pb-2"><button class="btn w-full py-4 text-base" onclick="fwRemove();go(\'home\');">Show me my dashboard</button><button class="btn2 w-full" onclick="fwRemove();rwHandoff();">I already have results - paste them</button></div>';
+  }
+  h+='</div></div>';
+  document.body.insertAdjacentHTML('beforeend',h);
+}
+const _fs52=fullScreen;
+fullScreen=function(t,b){
+  if(/Congratulations,/.test(t||'')){
+    b=(b||'').replace('<button class="btn w-full" onclick="closeSheet();go(\'home\');">','<p class="text-xs font-extrabold pt-1" style="color:#34d399">Academic Summit is not a one-time calculator. It works for you every day of the semester.</p><button class="btn w-full" onclick="closeSheet();go(\'home\');">');
+  }
+  return _fs52(t,b);
+};
+const _rpc52=sb.rpc.bind(sb);
+function _attCall(name,args,tries){
+  return _rpc52(name,args).then(function(r){
+    if(r&&r.error&&tries<1&&/timeout|fetch|connection|network|reset/i.test(r.error.message||''))return _attCall(name,args,tries+1);
+    return r;
+  });
+}
+sb.rpc=function(name,args){
+  if(/attend/i.test(name)){
+    return new Promise(function(res){setTimeout(function(){res(_attCall(name,args,0));},Math.floor(Math.random()*2500));});
+  }
+  return _rpc52(name,args);
+};
+const _home52=V.home;
+V.home=function(){
+  const h=_home52();
+  try{
+    const i=h.indexOf('Class Attendance');
+    if(i>-1){
+      const st=h.lastIndexOf('<div class="card',i);
+      let en=h.indexOf('<div class="card',i);
+      if(en<0)en=h.length;
+      window._attCardHTML=h.slice(st,en);
+    }
+  }catch(e){}
+  return h;
+};
+V.att=function(){
+  let h='<div class="space-y-5"><div class="card p-6 space-y-1"><div class="font-extrabold text-lg">Class Attendance</div><p class="text-xs text-slate-500">Enter the code your lecturer calls out. You are marked in seconds - no paper, no missing names.</p></div>';
+  h+=window._attCardHTML||'<div class="card p-6 text-xs text-slate-500">Visit Home once to load the live code box, then return here.</div>';
+  h+='<div class="card p-6 space-y-3"><div class="font-extrabold">My attendance</div><div id="att-hist" class="space-y-2 text-xs text-slate-500">Loading...</div></div></div>';
+  setTimeout(attHistory,80);
+  return h;
+};
+function attHistory(){
+  const box=$('att-hist');if(!box)return;
+  const cols=['student','user_id','uid'];
+  (function attempt(i){
+    if(i>=cols.length){box.innerHTML='History unavailable on this device.';return;}
+    sb.from('attendance').select('*,sessions(*)').eq(cols[i],uid).order('marked_at',{ascending:false}).limit(20).then(function(r){
+      if(r.error)return attempt(i+1);
+      const rows=r.data||[];
+      if(!rows.length){box.innerHTML='Nothing recorded yet. Your first marked class appears here.';return;}
+      const per={};
+      rows.forEach(function(x){const c=(x.sessions&&x.sessions.course)||'Class';per[c]=(per[c]||0)+1;});
+      box.innerHTML=rows.map(function(x){return '<div class="flex justify-between py-1.5 border-b border-slate-200/40"><span>'+esc((x.sessions&&x.sessions.course)||'Class')+'</span><span class="text-slate-400">'+fmtD(x.marked_at)+(x.method==='manual'?' • M':'')+'</span></div>';}).join('')+
+      '<div class="pt-2 font-bold">Sessions per course: '+Object.keys(per).map(function(k){return k+' ('+per[k]+')';}).join(', ')+'</div>';
+    });
+  })(0);
+}
+const _start52=start;
+start=function(){
+  _start52();
+  try{
+    if(U&&U.role==='student'&&!document.querySelector('[data-n="att"]')){
+      const p=document.querySelector('[data-n="planner"]');
+      if(p){
+        const b=p.cloneNode(true);
+        b.setAttribute('data-n','att');
+        b.onclick=function(){go('att');};
+        b.innerHTML='<span class="text-lg">🎓</span><span class="text-[10px] font-bold">Attend</span>';
+        p.parentNode.insertBefore(b,p);
+      }
+    }
+  }catch(e){}
+};
+</script>
 </body>
 </html>
 
