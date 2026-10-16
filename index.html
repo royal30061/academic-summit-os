@@ -2339,6 +2339,105 @@ V.prof = function(){
   return h;
 };
 </script>
+<script>
+var LA={e:''};
+function lecCard(t,h){fullScreen(t,'<div class="card p-5 space-y-3">'+h+'</div>');}
+function lecBusy(b,on){b.disabled=on;b.style.opacity=on?.6:1;}
+function lecAuthOpen(){lecCard('Lecturer console',
+ '<input id="la-e" type="email" class="inp" placeholder="Email" value="'+esc(LA.e)+'">'+
+ '<input id="la-p" type="password" class="inp" placeholder="Password">'+
+ '<button class="btn w-full" onclick="lecLogin(this)">Log in</button>'+
+ '<button class="text-xs font-bold text-emerald-600" onclick="lecForgot()">Forgot password?</button>'+
+ '<p class="text-center text-xs text-slate-500 pt-2">New lecturer?</p>'+
+ '<button class="btn2 w-full" onclick="lecReg1()">Create account</button>');}
+async function lecLogin(b){
+ var e=$('la-e').value.trim().toLowerCase(),p=$('la-p').value;LA.e=e;
+ if(!e||!p)return showToast('Enter your email and password','error');
+ lecBusy(b,true);var r=await sb.auth.signInWithPassword({email:e,password:p});lecBusy(b,false);
+ if(r.error)return showToast('Wrong email or password','error');
+ lecAfter();}
+async function lecAfter(){
+ var u=(await sb.auth.getUser()).data.user;
+ var q=await sb.from('profiles').select('role').eq('id',u.id).maybeSingle();
+ if(q.data&&q.data.role==='lecturer')location.reload();else lecPin();}
+function lecReg1(){lecCard('Create lecturer account',
+ '<p class="text-xs text-slate-500">Step 1 of 4. We email you a code once to confirm your address.</p>'+
+ '<input id="lr-e" type="email" class="inp" placeholder="Email" value="'+esc(LA.e)+'">'+
+ '<button class="btn w-full" onclick="lecReg1Go(this)">Send code</button>'+
+ '<button class="btn2 w-full" onclick="lecAuthOpen()">Back</button>');}
+async function lecReg1Go(b){
+ var e=$('lr-e').value.trim().toLowerCase();if(!e)return showToast('Enter your email','error');
+ LA.e=e;lecBusy(b,true);
+ var r=await sb.auth.signInWithOtp({email:e,options:{shouldCreateUser:true}});lecBusy(b,false);
+ if(r.error)return showToast(r.error.message,'error');lecReg2();}
+function lecReg2(){lecCard('Enter your code',
+ '<p class="text-xs text-slate-500">Step 2 of 4. Sent to '+esc(LA.e)+'.</p>'+
+ '<input id="lr-c" inputmode="numeric" maxlength="10" class="inp font-mono" placeholder="Code">'+
+ '<button class="btn w-full" onclick="lecReg2Go(this)">Confirm</button>'+
+ '<button class="btn2 w-full" onclick="lecReg1()">Back</button>');}
+async function lecReg2Go(b){
+ var c=$('lr-c').value.trim();if(!c)return showToast('Enter the code','error');
+ lecBusy(b,true);var r=await sb.auth.verifyOtp({email:LA.e,token:c,type:'email'});lecBusy(b,false);
+ if(r.error)return showToast('Wrong or expired code','error');lecPw();}
+function lecPw(){lecCard('Create a password',
+ '<p class="text-xs text-slate-500">Step 3 of 4. You will use this to log in from now on.</p>'+
+ '<input id="lp-1" type="password" class="inp" placeholder="Password (8+ characters)">'+
+ '<input id="lp-2" type="password" class="inp" placeholder="Repeat password">'+
+ '<button class="btn w-full" onclick="lecPwGo(this)">Save password</button>');}
+async function lecPwGo(b){
+ var a=$('lp-1').value,c=$('lp-2').value;
+ if(a.length<8)return showToast('Use at least 8 characters','error');
+ if(a!==c)return showToast('Passwords do not match','error');
+ lecBusy(b,true);var r=await sb.auth.updateUser({password:a});lecBusy(b,false);
+ if(r.error)return showToast(r.error.message,'error');lecPin();}
+function lecPin(){lecCard('Lecturer access PIN',
+ '<p class="text-xs text-slate-500">Step 4 of 4. Enter the PIN the administrator gave you. You only do this once.</p>'+
+ '<input id="lq-p" class="inp font-mono" placeholder="PIN">'+
+ '<button class="btn w-full" onclick="lecPinGo(this)">Verify</button>');}
+async function lecPinGo(b){
+ var p=$('lq-p').value.trim();if(!p)return;
+ lecBusy(b,true);var r=await sb.rpc('redeem_lecturer_pin',{p_pin:p});lecBusy(b,false);
+ if(r.error||r.data!==true)return showToast('Invalid or already used PIN','error');
+ location.reload();}
+function lecForgot(){lecCard('Reset password',
+ '<input id="lf-e" type="email" class="inp" placeholder="Email" value="'+esc(LA.e)+'">'+
+ '<button class="btn w-full" onclick="lecForgotGo(this)">Send code</button>'+
+ '<button class="btn2 w-full" onclick="lecAuthOpen()">Back</button>');}
+async function lecForgotGo(b){
+ var e=$('lf-e').value.trim().toLowerCase();if(!e)return showToast('Enter your email','error');
+ LA.e=e;lecBusy(b,true);var r=await sb.auth.resetPasswordForEmail(e);lecBusy(b,false);
+ if(r.error)return showToast(r.error.message,'error');lecForgot2();}
+function lecForgot2(){lecCard('New password',
+ '<p class="text-xs text-slate-500">Enter the code we sent to '+esc(LA.e)+'.</p>'+
+ '<input id="lf-c" inputmode="numeric" maxlength="10" class="inp font-mono" placeholder="Code">'+
+ '<input id="lf-p" type="password" class="inp" placeholder="New password (8+ characters)">'+
+ '<button class="btn w-full" onclick="lecForgot2Go(this)">Reset password</button>');}
+async function lecForgot2Go(b){
+ var c=$('lf-c').value.trim(),p=$('lf-p').value;
+ if(!c||p.length<8)return showToast('Enter the code and a password of 8+ characters','error');
+ lecBusy(b,true);var r=await sb.auth.verifyOtp({email:LA.e,token:c,type:'recovery'});
+ if(r.error){lecBusy(b,false);return showToast('Wrong or expired code','error');}
+ var u=await sb.auth.updateUser({password:p});lecBusy(b,false);
+ if(u.error)return showToast(u.error.message,'error');
+ showToast('Password changed');lecAfter();}
+</script>
+<script>
+function lecCard(t,h){$('sheet').innerHTML='';$('auth').innerHTML='<div class="min-h-screen grid place-items-center p-5" style="background:#021812"><div class="card p-6 w-full max-w-md space-y-3"><div class="text-xs font-extrabold uppercase tracking-widest text-emerald-500">Lecturer console</div><h2 class="text-xl font-extrabold">'+t+'</h2>'+h+'</div></div>';}
+function lecAfter(){location.reload();}
+function lecPin(){location.reload();}
+function lecReg1(){lecCard('Create lecturer account','<p class="text-xs text-slate-500">Step 1 of 4. We email you a code once to confirm your address.</p><input id="lr-n" class="inp" placeholder="Full name" value="'+esc(LA.n||'')+'"><input id="lr-e" type="email" class="inp" placeholder="Email" value="'+esc(LA.e)+'"><button class="btn w-full" onclick="lecReg1Go(this)">Send code</button><button class="btn2 w-full" onclick="lecAuthOpen()">Back</button>');}
+async function lecReg1Go(b){
+ var n=$('lr-n').value.trim(),e=$('lr-e').value.trim().toLowerCase();
+ if(!n||!e)return showToast('Enter your name and email','error');
+ LA.e=e;LA.n=n;lecBusy(b,true);
+ var r=await sb.auth.signInWithOtp({email:e,options:{shouldCreateUser:true,data:{name:n}}});lecBusy(b,false);
+ if(r.error)return showToast(r.error.message,'error');lecReg2();}
+const _authUI59=authUI;
+authUI=function(mode,msg){
+ if(LEC_LINK&&!window._lecDoorOff&&mode!=='leccode'){lecAuthOpen();return;}
+ return _authUI59(mode,msg);
+};
+</script>
 </body>
 </html>
 
