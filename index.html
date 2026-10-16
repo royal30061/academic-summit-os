@@ -1978,6 +1978,28 @@ authUI=function(mode,msg){
   }
 };
 </script>
+<script>
+function gateCard(){
+  if($('gate-card'))return;
+  const sub=$('sub');if(!sub)return;
+  const d=document.createElement('div');
+  d.id='gate-card';d.className='card p-5 space-y-2 mb-4';
+  d.style.borderLeft='4px solid #059669';
+  d.innerHTML='<div class="font-extrabold text-sm">First things first: your results</div><p class="text-xs leading-relaxed" style="color:var(--mut)">Open your school portal on any device, sign in, and copy the page that shows this semester\'s courses and scores. Come back here, paste it into the box below, and tap parse - we read the rest for you. No results at hand right now? No pressure at all. The box will be right here when you are, and everything else in the app opens the moment your first result is in.</p>';
+  sub.insertBefore(d,sub.firstChild);
+}
+const _go49=go;
+go=function(v){
+  if(U&&U.role==='student'&&(U.semesters||[]).length===0){
+    if(v!=='acad'&&v!=='prof'){
+      aTab='calc';v='acad';
+      if(!window._gateCool){window._gateCool=1;setTimeout(function(){window._gateCool=0;},6000);showToast('Paste your first result to unlock the rest');}
+    }else if(v==='acad'&&['det','tgt','dec','rec'].indexOf(aTab)>-1){aTab='calc';}
+    if(v==='acad'&&aTab==='calc')setTimeout(gateCard,80);
+  }
+  return _go49(v);
+};
+</script>
 </body>
 </html>
 
