@@ -1947,6 +1947,37 @@ forgotUI=function(msg,bad){
   }
 };
 </script>
+<script>
+const _doSignup48=doSignup;
+doSignup=async function(){
+  const el=$('a-email');if(el)window._lastSignupEmail=el.value.trim().toLowerCase();
+  return _doSignup48();
+};
+function resendConfirmTo(em){
+  sb.auth.resend({type:'signup',email:em}).then(function(r){
+    if(r.error)return showToast(r.error.message,'error');
+    showToast('Confirmation sent to '+em);
+  });
+}
+function resendConfirm(){
+  const el=$('a-email');
+  const em=((el&&el.value)||window._lastSignupEmail||window._lastLoginEmail||'').trim().toLowerCase();
+  if(!em)return showToast('Enter your email first','error');
+  resendConfirmTo(em);
+}
+const _authUI48=authUI;
+authUI=function(mode,msg){
+  _authUI48(mode,msg);
+  if(mode==='login'&&msg&&/check your email/i.test(msg)&&window._lastSignupEmail){
+    const wrap=$('auth');if(!wrap)return;
+    wrap.innerHTML='<div class="card p-8 space-y-4 text-center">'+MTN('w-12 h-12 mx-auto')+
+      '<div class="font-extrabold text-lg">Confirm your email</div>'+
+      '<p class="text-xs text-slate-500">We sent a confirmation link to<br><b style="color:#34d399">'+esc(window._lastSignupEmail)+'</b><br>Tap it, then come back and log in.</p>'+
+      '<button class="btn w-full" onclick="resendConfirmTo(&quot;'+esc(window._lastSignupEmail)+'&quot;)">Resend confirmation email</button>'+
+      '<button class="btn2 w-full" onclick="authUI(\'login\')">I have confirmed - take me to login</button></div>';
+  }
+};
+</script>
 </body>
 </html>
 
