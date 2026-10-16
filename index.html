@@ -2493,6 +2493,21 @@ authUI=function(mode,msg){
  }
 })();
 </script>
+<script>
+(function(){
+ var RX=/\b\d{2}\/\d{2,3}[A-Z]{2,6}\/\d{3,5}\b/;
+ async function syncMatric(){
+  try{
+   if(typeof sb==='undefined'||typeof uid==='undefined'||typeof U==='undefined'||!U||U.role==='lecturer')return;
+   var m=(JSON.stringify(U)||'').match(RX);if(!m)return;
+   var r=await sb.from('profiles').select('matric').eq('id',uid).maybeSingle();
+   if(r.error||!r.data||r.data.matric)return;
+   await sb.from('profiles').update({matric:m[0].toUpperCase()}).eq('id',uid);
+  }catch(e){}
+ }
+ if(typeof onHomeShown==='function'){var prev=onHomeShown;onHomeShown=function(){prev.apply(this,arguments);setTimeout(syncMatric,800);};}
+})();
+</script>
 </body>
 </html>
 
