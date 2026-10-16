@@ -2438,6 +2438,29 @@ authUI=function(mode,msg){
  return _authUI59(mode,msg);
 };
 </script>
+<script>
+(function(){
+ function eyeify(){document.querySelectorAll('input[type=password]:not([data-eye])').forEach(function(i){
+  i.dataset.eye=1;
+  var w=document.createElement('div');w.style.position='relative';
+  i.parentNode.insertBefore(w,i);w.appendChild(i);
+  i.style.paddingRight='3.5rem';
+  var b=document.createElement('button');b.type='button';b.textContent='Show';
+  b.setAttribute('aria-label','Show password');
+  b.style.cssText='position:absolute;right:.8rem;top:50%;transform:translateY(-50%);font-size:.7rem;font-weight:700;color:#10b981;background:none;border:0;padding:.3rem';
+  b.onclick=function(e){e.preventDefault();var s=i.type==='password';i.type=s?'text':'password';b.textContent=s?'Hide':'Show';};
+  w.appendChild(b);});}
+ new MutationObserver(eyeify).observe(document.body,{childList:true,subtree:true});
+ eyeify();
+ document.addEventListener('click',function(e){
+  var b=e.target.closest&&e.target.closest('#auth .btn,#sheet .btn');
+  if(!b)return;
+  if(b.dataset.lock){e.preventDefault();e.stopImmediatePropagation();return;}
+  b.dataset.lock=1;var t=b.textContent;b.style.opacity='.6';b.textContent='Please wait…';
+  setTimeout(function(){delete b.dataset.lock;b.style.opacity='';b.textContent=t;},1500);
+ },true);
+})();
+</script>
 </body>
 </html>
 
