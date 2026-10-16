@@ -2217,6 +2217,25 @@ rwDone=function(){
   return r;
 };
 </script>
+<script>
+const _authUI54=authUI;
+authUI=function(mode,msg){
+  _authUI54(mode,msg);
+  const wrap=$('auth');if(!wrap)return;
+  if(LEC_LINK&&!window._lecDoorOff){
+    const fb=Array.from(wrap.querySelectorAll('button')).find(function(b){return /Use password instead/.test(b.textContent);});
+    if(fb)fb.remove();
+  }else if(/check your email/i.test(msg||'')){
+    if(!wrap.querySelector('#stu-failsafe')){
+      const d=document.createElement('p');
+      d.id='stu-failsafe';
+      d.className='text-[11px] text-slate-500 pt-2';
+      d.innerHTML='Students enter without email verification. Seeing this screen means our settings changed by mistake - write to support@academic-summit.com.ng and it is fixed within the hour.';
+      wrap.appendChild(d);
+    }
+  }
+};
+</script>
 </body>
 </html>
 
