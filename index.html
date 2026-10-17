@@ -2714,6 +2714,146 @@ V.acad=function(){
   return h;
 };
 </script>
+<script>
+function discoverSid(){
+  var c=[window.sid,window._curSid,window.curSid,window._sid,window._lastSessionId,window._currentSessionId,window._rosterSid];
+  for(var i=0;i<c.length;i++)if(c[i])return c[i];
+  var el=document.querySelector('[data-n="roster"] [data-sid],[data-sid]');
+  if(el)return el.getAttribute('data-sid');
+  return null;
+}
+async function loadRoster(){
+  var s=discoverSid();
+  if(!s){
+    var cols=['lecturer_id','lecturer','user_id','owner'];
+    for(var i=0;i<cols.length;i++){
+      var r=await sb.from('sessions').select('id').eq(cols[i],uid).order('created_at',{ascending:false}).limit(1);
+      if(!r.error&&r.data&&r.data.length){s=r.data[0].id;break;}
+    }
+  }
+  window._rosterSid=s||null;
+  if(!s){rosterRows=[];paintRoster();return;}
+  var q=await sb.from('attendance').select('*, profiles(matric,name)').eq('session_id',s).order('marked_at',{ascending:true});
+  if(q.error)return showToast(q.error.message,'error');
+  rosterRows=rosterSort(q.data||[]);
+  paintRoster();
+}
+function deleteRoster(){
+  var s=window._rosterSid||discoverSid();
+  if(!s)return showToast('Open a roster first','error');
+  if(!confirm('WARNING: this permanently deletes this class roster and every attendance record inside it. Export the CSV first if you need it. Proceed?'))return;
+  if(!confirm('Final check - delete this roster for good?'))return;
+  sb.from('attendance').delete().eq('session_id',s).then(function(){
+    sb.from('sessions').delete().eq('id',s).then(function(b){
+      if(b.error)return showToast(b.error.message,'error');
+      showToast('Roster deleted');
+      window._rosterSid=null;
+      loadRoster();
+    });
+  });
+}
+function isInstalled(){
+  try{
+    if(localStorage.getItem('as_installed'))return true;
+    if(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)return true;
+    if(window.navigator.standalone)return true;
+  }catch(e){}
+  return false;
+}
+function hideDownloadBtns(){
+  if(!isInstalled())return;
+  document.querySelectorAll('.card').forEach(function(c){
+    if(/Installs to home screen/i.test(c.textContent||''))c.remove();
+  });
+  Array.from(document.querySelectorAll('button')).forEach(function(b){
+    if(/^Download .*App$/i.test((b.textContent||'').trim()))b.remove();
+  });
+}
+window.addEventListener('appinstalled',function(){localStorage.setItem('as_installed','1');hideDownloadBtns();});
+const _parse61=parsePasteTrojan;
+parsePasteTrojan=function(){
+  var el=$('paste-a');
+  if(el&&/\bUA-[A-Z]{2,6}\d{3}\b/.test(el.value||'')){
+    el.value=el.value.replace(/\bUA-([A-Z]{2,6}\d{3})\b/g,'$1');
+    showToast('Normalised UA- course codes');
+  }
+  return _parse61();
+};
+const _save61=saveSem;
+saveSem=function(){
+  var r=_save61();
+  try{
+    var raw=window._lastRaw||'';
+    var m=raw.match(/CUMMULATIVE\s+GRADE\s+POINT\s+AVERAGE\s*:?\s*([0-5]\.\d{1,2})/i)||raw.match(/CUMULATIVE[^0-9]{0,8}([0-5]\.\d{1,2})/i);
+    if(m){U.portalCGPA=parseFloat(m[1]);U.portalCGPAAt=Date.now();}
+    (U.semesters||[]).forEach(function(s,i){s.label='Semester '+(i+1);});
+    save();
+    setTimeout(patchCgpaDisplay,120);
+  }catch(e){}
+  return r;
+};
+function patchCgpaDisplay(){
+  try{
+    if(!U||!U.portalCGPA)return;
+    var v=U.portalCGPA.toFixed(2);
+    document.querySelectorAll('div,span,b,h1,h2,h3').forEach(function(el){
+      var t=(el.textContent||'').trim();
+      if(t==='CUMULATIVE GPA'){
+        var card=el.closest('.card')||el.parentNode;
+        if(card){
+          var big=Array.from(card.querySelectorAll('*')).find(function(x){return /\/\s*5\.00/.test(x.textContent||'')&&(x.textContent||'').length<15;});
+          if(big&&big.childNodes.length)big.childNodes[0].nodeValue=v;
+        }
+      }
+      if(/^CGPA:/.test(t)&&t.length<40){
+        el.innerHTML=el.innerHTML.replace(/\d\.\d{1,2}/,v);
+      }
+    });
+  }catch(e){}
+}
+const _home61=V.home;
+V.home=function(){
+  var h=_home61();
+  if(U&&U.role==='student'&&h.indexOf('Mark attendance')===-1){
+    h='<div class="card p-4 mb-4" style="background:linear-gradient(135deg,#059669,#0ea5e9)"><button class="w-full text-left" onclick="go(\'att\')"><div class="font-extrabold text-white text-base">🎓 In class now? Mark attendance</div><p class="text-[11px] text-white/80">Enter the code your lecturer calls out - two seconds, no paper.</p></button></div>'+h;
+  }
+  return h;
+};
+function fixNav(){
+  if(document.querySelector('[data-n="att"]'))return;
+  var homeBtn=Array.from(document.querySelectorAll('button,a')).find(function(b){
+    return /Home/.test(b.textContent||'')&&/go\(['"]home['"]\)/.test(b.getAttribute&&b.getAttribute('onclick')||'');
+  });
+  if(!homeBtn)return;
+  var b=homeBtn.cloneNode(true);
+  b.setAttribute('data-n','att');
+  b.setAttribute('onclick',"go('att')");
+  b.innerHTML='<span style="font-size:18px">🎓</span><span style="font-size:10px;font-weight:700">Attend</span>';
+  homeBtn.parentNode.insertBefore(b,homeBtn.nextSibling);
+}
+const _start61=start;
+start=function(){
+  _start61();
+  setTimeout(fixNav,150);
+  setTimeout(hideDownloadBtns,150);
+};
+const _go61=go;
+go=function(v){
+  var r=_go61(v);
+  setTimeout(function(){hideDownloadBtns();patchCgpaDisplay();},140);
+  return r;
+};
+if(typeof V.roster==='function'){
+  const _roster61=V.roster;
+  V.roster=function(){
+    var h=_roster61();
+    if(h.indexOf('deleteRoster')===-1){
+      h+='<div class="card p-4 mt-4 space-y-2" style="border:1px solid rgba(225,29,72,.4)"><div class="font-extrabold text-xs" style="color:#e11d48">Danger zone</div><p class="text-[11px] text-slate-500">Deletes the open roster and every attendance record inside it. Export the CSV first if you need it.</p><button class="btn2 w-full" style="color:#e11d48" onclick="deleteRoster()">Delete this roster</button></div>';
+    }
+    return h;
+  };
+}
+</script>
 </body>
 </html>
 
