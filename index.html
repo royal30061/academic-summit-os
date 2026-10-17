@@ -2854,6 +2854,83 @@ if(typeof V.roster==='function'){
   };
 }
 </script>
+<script>
+function semStats62(s){
+  var st=semS({courses:s.courses||[]});
+  var uRel=st.u||0;
+  var q=(st.q!=null)?st.q:(st.g||0)*uRel;
+  var uReg=uRel+((s.pending||[]).reduce(function(a,c){return a+(c.unit||0);},0));
+  return {uRel:uRel,q:q,uReg:uReg,rel:uRel?q/uRel:0};
+}
+function capturePortalGPAs(){
+  var groups=semGroupsFromRaw(window._lastRaw||'');
+  if(!groups)return;
+  var vals=groups.map(function(g){
+    var m=g.section.match(/Grade Point Average\s*\(GPA\)\s*:?\s*([0-5]\.\d{1,2})/i);
+    return m?parseFloat(m[1]):null;
+  });
+  (U.semesters||[]).forEach(function(s,i){if(vals[i]!=null)s.portalGPA=vals[i];});
+  deduceMissing();
+  save();
+}
+function deduceMissing(){
+  var sems=U.semesters||[];
+  if(sems.length<2||!U.portalCGPA)return;
+  sems.forEach(function(s,i){
+    if(s.portalGPA!=null||s.deducedGPA!=null)return;
+    var other=null;
+    sems.forEach(function(o,j){if(j!==i&&o.portalGPA!=null)other=o;});
+    if(!other)return;
+    var A=semStats62(other),B=semStats62(s);
+    if(!B.uReg)return;
+    var d=(U.portalCGPA*(A.uReg+B.uReg)-A.portalGPA*A.uReg)/B.uReg;
+    if(d>=0&&d<=5)s.deducedGPA=Math.round(d*100)/100;
+  });
+}
+function headGpa(s){
+  if(s.portalGPA!=null)return {v:s.portalGPA,src:'portal'};
+  if(s.deducedGPA!=null)return {v:s.deducedGPA,src:'deduced'};
+  return {v:semStats62(s).rel,src:'released'};
+}
+function patchSemDisplays(){
+  try{
+    if(!U||!(U.semesters||[]).length)return;
+    var els=Array.from(document.querySelectorAll('*')).filter(function(el){
+      return el.children.length===0&&/^GPA \d\.\d{2} \(\d+u\)$/.test((el.textContent||'').trim());
+    });
+    els.forEach(function(el,i){
+      var s=(U.semesters||[])[i];if(!s)return;
+      var h=headGpa(s),st=semStats62(s);
+      el.textContent='GPA '+h.v.toFixed(2)+' ('+st.uReg+'u)';
+      var card=el.closest('.card');
+      if(card&&!card.querySelector('[data-gpanote]')&&h.src!=='released'){
+        var p=document.createElement('p');
+        p.setAttribute('data-gpanote','1');
+        p.className='text-[11px] text-slate-500 pt-1';
+        p.textContent=(h.src==='portal'?'Portal GPA. ':'Deduced from your portal CGPA. ')+'Released courses only: '+st.rel.toFixed(2)+'.';
+        card.appendChild(p);
+      }
+    });
+    var lab=Array.from(document.querySelectorAll('*')).find(function(el){return el.children.length===0&&(el.textContent||'').trim()==='LAST SEMESTER GPA';});
+    if(lab){
+      var card2=lab.closest('.card');
+      var big=card2&&Array.from(card2.querySelectorAll('*')).find(function(el){return el.children.length===0&&/^\d\.\d{2}$/.test((el.textContent||'').trim());});
+      var ls=U.semesters[U.semesters.length-1];
+      if(big&&ls)big.textContent=headGpa(ls).v.toFixed(2);
+    }
+  }catch(e){}
+}
+const _save62=saveSem;
+saveSem=function(){
+  var r=_save62();
+  try{capturePortalGPAs();setTimeout(patchSemDisplays,160);}catch(e){}
+  return r;
+};
+const _go62=go;
+go=function(v){var r=_go62(v);setTimeout(patchSemDisplays,160);return r;};
+const _start62=start;
+start=function(){_start62();try{deduceMissing();}catch(e){}setTimeout(patchSemDisplays,200);};
+</script>
 </body>
 </html>
 
