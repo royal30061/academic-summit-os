@@ -2590,6 +2590,130 @@ function paintRoster(){
   }).join('')||'<tr><td class="p-3 text-slate-400" colspan="5">No attendance recorded yet.</td></tr>';
 }
 </script>
+<script>
+normSems=function(){return false;};
+function sanitizeSems(){
+  var sems=(U&&U.semesters)||[];
+  if(!sems.length)return false;
+  var t=null;
+  sems.forEach(function(s){if(!t&&Object.keys(s).length>2)t=s;});
+  if(!t)return false;
+  var changed=false;
+  sems.forEach(function(s,i){
+    if(Object.keys(s).length<2){sems[i]=Object.assign({},t,{courses:s.courses||[],pending:s.pending||[]});changed=true;}
+    if(sems[i].pending===undefined)sems[i].pending=[];
+  });
+  if(changed)save();
+  return changed;
+}
+function semGroupsFromRaw(raw){
+  var re=/(\d{4}\s*\/\s*\d{4})\s+(First|Second|Third)\s+Semester/gi;
+  var m,marks=[];
+  while((m=re.exec(raw)))marks.push({idx:m.index,name:m[2].toLowerCase()});
+  if(!marks.length)return null;
+  return marks.map(function(mk,i){
+    var end=i+1<marks.length?marks[i+1].idx:raw.length;
+    return{name:mk.name,section:raw.slice(mk.idx,end)};
+  });
+}
+function buildSemesters(raw,scoredRows){
+  var groups=semGroupsFromRaw(raw);
+  if(!groups)return null;
+  var byCode={};
+  (scoredRows||[]).forEach(function(c){byCode[c.code]=c;});
+  return groups.map(function(g){
+    var codes=[],re=/\b[A-Z]{2,6}(?:-[A-Z]{2,6})?\d{3}\b/g,m;
+    while((m=re.exec(g.section)))if(codes.indexOf(m[0].toUpperCase())<0)codes.push(m[0].toUpperCase());
+    var courses=[],pending=[];
+    codes.forEach(function(code){
+      var sc=byCode[code];
+      if(sc){courses.push({code:sc.code,unit:sc.unit,score:sc.score});}
+      else{
+        var i=g.section.indexOf(code);
+        var tail=g.section.slice(i+code.length,i+code.length+90);
+        var um=tail.match(/(?:^|\D)([1-6])(?:\D|$)/);
+        pending.push({code:code,unit:um?parseInt(um[1],10):2});
+      }
+    });
+    return{name:g.name,courses:courses,pending:pending};
+  });
+}
+function templateSem(){
+  var t=null;
+  (U.semesters||[]).forEach(function(s){if(!t&&Object.keys(s).length>2)t=s;});
+  return t?Object.assign({},t,{courses:[],pending:[]}):{courses:[],pending:[]};
+}
+const _parse60=parsePasteTrojan;
+parsePasteTrojan=function(){
+  var el=$('paste-a');
+  window._lastRaw=el?el.value:'';
+  var r=_parse60();
+  var rows=[];
+  document.querySelectorAll('#rows > div').forEach(function(row){
+    var code=row.querySelector('.c-code').value.trim().toUpperCase();
+    var unit=parseFloat(row.querySelector('.c-unit').value);
+    var sc=parseFloat(row.querySelector('.c-score').value);
+    if(code&&unit>=1&&unit<=6&&!isNaN(sc))rows.push({code:code,unit:unit,score:sc});
+  });
+  window._parsedRows=rows;
+  return r;
+};
+const _save60=saveSem;
+saveSem=function(){
+  var len=(U.semesters||[]).length;
+  var r=_save60();
+  try{
+    var built=buildSemesters(window._lastRaw||'',window._parsedRows||[]);
+    if(built&&built.length){
+      var blob=(U.semesters||[]).length>len?U.semesters[len]:null;
+      var used=[];
+      built.forEach(function(g){
+        if(!g.courses.length&&!g.pending.length)return;
+        var target=null;
+        (U.semesters||[]).forEach(function(s){
+          if(target)return;
+          var codes=(s.courses||[]).map(function(c){return c.code;});
+          if(!codes.length)return;
+          var hit=g.courses.filter(function(c){return codes.indexOf(c.code)>-1;}).length;
+          if(hit>0&&hit/Math.max(codes.length,1)>=0.5)target=s;
+        });
+        if(target){target.courses=g.courses.slice();target.pending=g.pending.slice();used.push(target);}
+        else{var e=Object.assign({},templateSem(),{courses:g.courses.slice(),pending:g.pending.slice()});U.semesters.push(e);used.push(e);}
+      });
+      if(blob&&used.indexOf(blob)<0){
+        var bi=U.semesters.indexOf(blob);
+        if(bi>-1)U.semesters.splice(bi,1);
+      }
+      save();
+      if(typeof refreshCarry==='function')refreshCarry();
+      showToast('Semesters split from your portal headers');
+      setTimeout(function(){go('acad');},500);
+    }
+  }catch(e){}
+  return r;
+};
+const _start60=start;
+start=function(){
+  try{sanitizeSems();}catch(e){}
+  _start60();
+};
+const _acad60=V.acad;
+V.acad=function(){
+  var h=_acad60();
+  try{
+    var pend=(U.semesters||[]).map(function(s,i){return{i:i,p:s.pending||[]};}).filter(function(x){return x.p.length;});
+    if(pend.length){
+      var card='<div class="card p-5 space-y-2 mt-4"><div class="font-extrabold text-sm">Awaiting results</div>';
+      pend.forEach(function(x){
+        card+='<p class="text-xs text-slate-500">Semester '+(x.i+1)+': '+x.p.map(function(c){return c.code;}).join(', ')+' - registered, scores not released yet. They join your GPA automatically the next time you paste.</p>';
+      });
+      card+='</div>';
+      h+=card;
+    }
+  }catch(e){}
+  return h;
+};
+</script>
 </body>
 </html>
 
