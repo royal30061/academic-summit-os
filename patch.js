@@ -1,28 +1,20 @@
-/* Academic Summit - patch v64
-   Load with ONE script tag at the very end of index.html (after all inline scripts):
-   <script src="patch.js?v=64"></script>
-   Replaces the v63 inline block's behaviour (that block can stay; it is neutralised here). */
+/* Academic Summit - patch v65 */
 (function () {
   var W = window;
   var GC = { A: '#10b981', B: '#3b82f6', C: '#f59e0b', D: '#fb923c', E: '#f43f5e', F: '#b91c1c' };
-  var NARROW_MAX = 44; // E band: 40-44. Exactly 40 gets the loudest warning.
+  var NARROW_MAX = 44;
   var TS = { lv: null };
-
-  /* ---------- neutralise the v63 inline block (it matched uppercase text that never exists in textContent) ---------- */
   W.homeExtras = function () {};
   W.acadExtras = function () {};
   W.makeHomeCardsClickable = function () {};
   W.fixTrajectory = function () {};
   W.fixSemTitle = function () {};
   W.fixAttHero = function () {};
-
   if (typeof document !== 'undefined' && document.head) {
     var st = document.createElement('style');
     st.textContent = '.tg-t{fill:var(--mut)}.tg-g{stroke:var(--bd);stroke-width:.6}.tg-ax{stroke:var(--mut);stroke-width:1}';
     document.head.appendChild(st);
   }
-
-  /* ---------- helpers ---------- */
   function fmt(n) { return Math.abs(n - Math.round(n)) < 1e-9 ? String(Math.round(n)) : n.toFixed(1); }
   function nums(courses, exSup) {
     var u = 0, q = 0;
@@ -41,7 +33,6 @@
     if (b > a) return 1;
     return i % 2;
   }
-  /* Give every semester a level (lv) and half (0 first, 1 second). */
   function tagAll() {
     var sems = (U && U.semesters) || [], cnt = [0, 0], ch = false;
     sems.forEach(function (s, i) {
@@ -71,8 +62,6 @@
     return out;
   }
   function closeBtn() { return '<button class="btn w-full mt-2" onclick="closeSheet()">Close</button>'; }
-
-  /* ---------- Attendance: home is a single button, the page holds the inputs ---------- */
   W.attBar = function () {
     return '<button type="button" class="rounded-3xl p-6 grad shadow-lg text-left w-full flex items-center justify-between" onclick="go(\'att\')"><span class="font-extrabold text-white text-lg">Mark attendance</span>' + ic('r', 'w-5 h-5 text-white') + '</button>';
   };
@@ -85,8 +74,6 @@
       '<button class="btn w-full py-3" onclick="markFromHome()">Mark</button></div>' +
       '<div class="card p-6 space-y-3"><div class="font-extrabold">My attendance</div><div id="att-hist" class="space-y-2 text-xs text-slate-500">Loading...</div></div></div>';
   };
-
-  /* ---------- Carryover Register: a button that opens the register ---------- */
   W.carryCard = function () {
     return '<button type="button" class="card p-6 text-left w-full flex items-center justify-between" onclick="carrySheet()"><span class="font-extrabold">Carryover Register</span>' + ic('r', 'w-5 h-5') + '</button>';
   };
@@ -111,7 +98,7 @@
         }).join('') + '</div>';
     }
     if (narrow.length) {
-      narrow.sort(function (a, c) { return a.c.score - c.c.score; });
+      narrow.sort(function (a, c) { return a.c.score - c.score; });
       b += '<div class="p-4 rounded-2xl space-y-1" style="background:var(--sub);border-left:4px solid #d97706"><div class="font-extrabold text-sm" style="color:#d97706">Narrow escapes (' + narrow.length + ')</div>' +
         '<p class="text-[11px] text-slate-500">40 is the lowest pass mark. One mark less and it becomes a carryover. Guard these.</p>' +
         narrow.map(function (x) {
@@ -122,8 +109,6 @@
     }
     fullScreen('Carryover Register', b + closeBtn());
   };
-
-  /* ---------- Notifications: lowest score per level and semester ---------- */
   W.notifSheet = function () {
     var rows = lowestRows();
     var b;
@@ -139,28 +124,58 @@
     }
     fullScreen('Academic insight', b + closeBtn());
   };
-
-  /* ---------- CGPA breakdown ---------- */
+  function headCgpa() {
+    var c = cum().g;
+    if (U && U.portalCGPA != null) return { v: +U.portalCGPA, src: 'portal', calc: c };
+    return { v: c, src: 'calc', calc: c };
+  }
+  function awaiting(s) {
+    var p = s.pending || [];
+    return p.length ? '<p class="text-[11px] font-bold" style="color:#d97706">Awaiting upload: ' + p.map(function (x) { return esc(x.code); }).join(', ') + '</p>' : '';
+  }
   W.cgpaBreakdown = function () {
     tagAll();
     var sems = U.semesters || [];
     if (!sems.length) { fullScreen('How your CGPA is built', '<p class="text-xs text-slate-500">No results yet.</p>' + closeBtn()); return; }
     var ru = 0, rq = 0, rows = '', anySup = false;
     sems.forEach(function (s) {
-      var a = nums(s.courses, false), c = nums(s.courses, true);
+      var a = nums(s.courses, false), c = nums(s.courses, true), np = (s.pending || []).length;
       (s.courses || []).forEach(function (x) { if (x.sup) anySup = true; });
       ru += c.u; rq += c.q;
-      rows += '<div class="p-3 rounded-xl space-y-2" style="background:var(--sub)"><div class="flex justify-between text-xs"><b>' + lvlLong(s) + '</b><span class="text-slate-500">' + a.u + ' units</span></div>' +
-        '<div class="grid grid-cols-3 gap-2 text-center text-xs"><div><div class="lbl">Points</div><b>' + fmt(a.q) + '</b></div><div><div class="lbl">GPA</div><b>' + a.g.toFixed(2) + '</b></div><div><div class="lbl">CGPA after</div><b>' + (ru ? (rq / ru).toFixed(2) : '-') + '</b></div></div></div>';
+      var pg = (s.portalGPA != null && Math.abs(s.portalGPA - a.g) > 0.005) ? '<p class="text-[11px] text-slate-500">Portal prints ' + (+s.portalGPA).toFixed(2) + ' for this semester until the rest are uploaded.</p>' : '';
+      rows += '<div class="p-3 rounded-xl space-y-2" style="background:var(--sub)"><div class="flex justify-between text-xs"><b>' + lvlLong(s) + '</b><span class="text-slate-500">' + a.u + ' units released</span></div>' +
+        '<div class="grid grid-cols-3 gap-2 text-center text-xs"><div><div class="lbl">Points</div><b>' + fmt(a.q) + '</b></div><div><div class="lbl">GPA</div><b>' + a.g.toFixed(2) + '</b></div><div><div class="lbl">Awaiting</div><b>' + np + '</b></div></div>' + awaiting(s) + pg + '</div>';
     });
-    var cg = ru ? rq / ru : 0;
-    var top = '<div class="grad rounded-3xl p-5 space-y-1"><div class="text-xs font-bold opacity-80">Cumulative GPA</div><div class="text-4xl font-extrabold">' + cg.toFixed(2) + '<span class="text-base opacity-75"> / 5.00</span></div><div class="text-xs opacity-90">' + fmt(rq) + ' total points / ' + ru + ' total units</div></div>';
-    var how = '<p class="text-[11px] text-slate-500">GPA = total points / total units, where each course earns grade point x units (A 5, B 4, C 3, D 2, E 1, F 0). CGPA is the same sum across every semester so far.' + (anySup ? ' A failed course you later retook is replaced by the retake.' : '') + '</p>';
-    var portal = (U.portalCGPA && Math.abs(U.portalCGPA - cg) > 0.005) ? '<p class="text-[11px] text-slate-500">Your portal prints ' + U.portalCGPA.toFixed(2) + '. It can differ while some results are unreleased.</p>' : '';
-    fullScreen('How your CGPA is built', top + '<div class="space-y-2">' + rows + '</div>' + how + portal + closeBtn());
+    var h = headCgpa(), cg = ru ? rq / ru : 0;
+    var sub = h.src === 'portal' ? 'As printed by your portal' : fmt(rq) + ' total points / ' + ru + ' total units';
+    var top = '<div class="grad rounded-3xl p-5 space-y-1"><div class="text-xs font-bold opacity-80">Cumulative GPA</div><div class="text-4xl font-extrabold">' + h.v.toFixed(2) + '<span class="text-base opacity-75"> / 5.00</span></div><div class="text-xs opacity-90">' + sub + '</div></div>';
+    var note = h.src === 'portal' && Math.abs(h.v - cg) > 0.005 ? '<p class="text-[11px] text-slate-500">Worked out from the released courses alone (' + fmt(rq) + ' points / ' + ru + ' units) it is ' + cg.toFixed(2) + '. Your portal figure is shown above and will move as the remaining results are uploaded.</p>' : '';
+    var how = '<p class="text-[11px] text-slate-500">GPA = total points / total units, where each course earns grade point x units (A 5, B 4, C 3, D 2, E 1, F 0).' + (anySup ? ' A failed course you later retook is replaced by the retake.' : '') + '</p>';
+    fullScreen('How your CGPA is built', top + '<div class="space-y-2">' + rows + '</div>' + how + note + closeBtn());
   };
-
-  /* ---------- Trajectory: course-by-course build-up toward 5.00 ---------- */
+  ACAD.rec = function () {
+    tagAll();
+    var h = headCgpa(), c = cum();
+    var blocks = (U.semesters || []).map(function (s) {
+      var x = nums(s.courses, false);
+      var got = (s.courses || []).map(function (k) {
+        return '<div class="flex justify-between text-xs"><span class="font-mono text-slate-500">' + esc(k.code) + (k.sup ? ' (retaken)' : '') + ' (' + k.unit + 'u)</span><b>Score: ' + k.score + ' (' + gr(k.score)[0] + ')</b></div>';
+      }).join('');
+      var wait = (s.pending || []).map(function (k) {
+        return '<div class="flex justify-between text-xs"><span class="font-mono text-slate-500">' + esc(k.code) + ' (' + k.unit + 'u)</span><b style="color:#d97706">Awaiting upload</b></div>';
+      }).join('');
+      return '<div class="rounded-2xl p-4 space-y-2" style="background:var(--sub)"><div class="flex justify-between text-sm font-extrabold"><span>' + lvlLong(s) + '</span><span>GPA ' + x.g.toFixed(2) + ' (' + x.u + 'u)</span></div>' + got + wait +
+        '<div class="flex gap-4 np pt-2 border-t border-slate-200/60 dark:border-slate-700/60"><button class="text-xs font-bold text-violet-600" onclick="editSem(' + s.id + ')">Edit</button><button class="text-xs font-bold text-rose-500" onclick="delSem(' + s.id + ')">Delete</button></div></div>';
+    }).join('') || '<p class="text-xs text-slate-400 text-center py-6">No semesters stored.</p>';
+    $('sub').innerHTML = '<div class="card p-6 space-y-4"><div class="flex justify-between items-center"><div class="font-extrabold">Academic Transcript</div><button class="btn2 text-xs np" onclick="window.print()">' + ic('print') + ' Print</button></div>' +
+      '<p class="text-xs text-slate-500">' + esc(U.name) + ' - ' + esc((U.profile || {}).uni) + ' - ' + esc((U.profile || {}).program) + '</p>' +
+      '<div class="rounded-2xl p-4 text-sm font-extrabold" style="background:var(--sub)">CGPA: ' + h.v.toFixed(2) + ' / 5.00 (' + c.u + ' units released)</div>' + blocks + '</div>';
+  };
+  var _acad65 = V.acad;
+  V.acad = function () {
+    var h = _acad65();
+    return h.replace(/Awaiting results/g, 'Awaiting upload').replace(/registered, scores not released yet\. They join your GPA automatically the next time you paste\./g, 'awaiting upload. They join your GPA automatically the next time you paste.');
+  };
   function stepGraph(cs, title) {
     var N = cs.length;
     if (!N) return '<div class="space-y-1"><div class="text-xs font-extrabold">' + title + '</div><div class="p-3 rounded-xl text-[11px] text-slate-500" style="background:var(--sub)">No results here yet.</div></div>';
@@ -207,41 +222,70 @@
     });
     return out;
   }
+  function curLevel() {
+    tagAll();
+    var p = U.profile || {}, lv = parseInt(p.level, 10) || 100;
+    var m = String(p.matric || '').match(/^(\d{2})\//);
+    if (m) {
+      var d = new Date(), entry = 2000 + parseInt(m[1], 10), start = d.getMonth() >= 8 ? d.getFullYear() : d.getFullYear() - 1, inf = 100 * (start - entry + 1);
+      if (inf > lv && inf <= 600) lv = inf;
+    }
+    (U.semesters || []).forEach(function (s) { if (s.lv > lv) lv = s.lv; });
+    return Math.min(600, lv);
+  }
   function trajInner() {
     tagAll();
-    var sems = U.semesters || [], lvs = [];
-    sems.forEach(function (s) { if (lvs.indexOf(s.lv) < 0) lvs.push(s.lv); });
-    lvs.sort(function (a, b) { return a - b; });
-    if (!lvs.length) return '<div class="font-extrabold">GPA Trajectory</div><div class="h-28 flex items-center justify-center text-xs text-slate-400 border border-dashed rounded-2xl" style="border-color:var(--bd)">Save a semester to see your trajectory</div>';
-    if (TS.lv == null || (TS.lv !== 'all' && lvs.indexOf(TS.lv) < 0)) TS.lv = lvs[lvs.length - 1];
+    var sems = U.semesters || [], cur = curLevel(), LV = [100, 200, 300, 400, 500, 600];
+    var has = function (l) { return sems.some(function (s) { return s.lv === l; }); };
+    if (TS.lv == null) {
+      var withData = LV.filter(has);
+      TS.lv = withData.length ? withData[withData.length - 1] : cur;
+    }
     var all = TS.lv === 'all';
-    var chips = lvs.map(function (l) {
-      return '<button type="button" class="' + (TS.lv === l ? 'btn' : 'btn2') + ' whitespace-nowrap" onclick="trajSet(' + l + ')">' + l + 'L</button>';
-    }).join('') + (lvs.length > 1 ? '<button type="button" class="' + (all ? 'btn' : 'btn2') + ' whitespace-nowrap" onclick="trajSet(\'all\')">All levels</button>' : '');
+    var chips = LV.map(function (l) {
+      var on = TS.lv === l, dim = l > cur && !has(l);
+      return '<button type="button" class="' + (on ? 'btn' : 'btn2') + ' whitespace-nowrap" style="' + (dim && !on ? 'opacity:.55' : '') + '" onclick="trajSet(' + l + ')">' + l + 'L</button>';
+    }).join('') + (sems.length ? '<button type="button" class="' + (all ? 'btn' : 'btn2') + ' whitespace-nowrap" onclick="trajSet(\'all\')">All levels</button>' : '');
+    var head = '<div class="flex gap-2 overflow-x-auto pb-1">' + chips + '</div>';
+    if (!all && !has(TS.lv)) {
+      var msg = TS.lv > cur
+        ? '<div class="p-5 rounded-2xl space-y-1" style="background:var(--sub)"><div class="font-extrabold">Level not yet reached</div><p class="text-xs text-slate-500">You are in ' + cur + ' Level. The ' + TS.lv + ' Level trajectory opens once you get there and upload those results.</p></div>'
+        : '<div class="p-5 rounded-2xl space-y-3" style="background:var(--sub)"><div class="font-extrabold">No ' + TS.lv + ' Level results yet</div><p class="text-xs text-slate-500">Upload your ' + TS.lv + ' Level results from your portal and this trajectory draws itself.</p><button class="btn w-full" onclick="aTab=\'calc\';editing=null;go(\'acad\')">Upload results</button></div>';
+      return head + msg;
+    }
     var list = all ? sems : sems.filter(function (s) { return s.lv === TS.lv; });
     var tag = all ? 'all levels' : TS.lv + ' Level';
     var pend = 0;
     list.forEach(function (s) { pend += (s.pending || []).length; });
-    var legend = '<div class="flex gap-3 text-[10px] text-slate-500 items-center">' + ['A', 'B', 'C', 'D', 'E', 'F'].map(function (x) { return '<span><b style="color:' + GC[x] + '">' + x + '</b></span>'; }).join('') + '<span>Dashed grey = all A. Rows are courses, across is GPA.</span></div>';
-    return '<div class="font-extrabold">GPA Trajectory</div><div class="flex gap-2 overflow-x-auto pb-1">' + chips + '</div>' +
+    var legend = '<div class="flex gap-3 text-[10px] text-slate-500 items-center flex-wrap">' + ['A', 'B', 'C', 'D', 'E', 'F'].map(function (x) { return '<span><b style="color:' + GC[x] + '">' + x + '</b></span>'; }).join('') + '<span>Dashed grey = all A. Rows are courses, across is GPA.</span></div>';
+    return head +
       stepGraph(coursesOf(list, 0, all), 'First semester - ' + tag) +
       stepGraph(coursesOf(list, 1, all), 'Second semester - ' + tag) +
       stepGraph(coursesOf(list, null, all), all ? 'CGPA - all semesters' : 'Whole session - ' + tag) +
-      legend + (pend ? '<p class="text-[11px] text-slate-500">' + pend + ' registered course' + (pend > 1 ? 's are' : ' is') + ' awaiting results and not plotted yet.</p>' : '');
+      legend + (pend ? '<p class="text-[11px] text-slate-500">' + pend + ' course' + (pend > 1 ? 's are' : ' is') + ' awaiting upload and not plotted yet.</p>' : '');
   }
   W.trajSet = function (v) {
     TS.lv = v;
     var c = $('traj-card');
     if (c) c.innerHTML = trajInner();
   };
-  function trajectoryCard() { return '<div class="card p-6 space-y-4" id="traj-card">' + trajInner() + '</div>'; }
-
-  /* ---------- Home: wire the cards by rewriting the markup (no timing, no text matching) ---------- */
+  V.traj = function () {
+    return '<div class="space-y-5"><div class="flex items-center gap-3"><button type="button" class="btn2 px-3" onclick="go(\'home\')">' + ic('l') + '</button><div class="font-extrabold text-lg">GPA Trajectory</div></div><div class="card p-6 space-y-4" id="traj-card">' + trajInner() + '</div></div>';
+  };
+  function trajectoryCard() {
+    return '<button type="button" class="card p-6 text-left w-full flex items-center justify-between" onclick="go(\'traj\')"><span class="font-extrabold">GPA Trajectory</span>' + ic('r', 'w-5 h-5') + '</button>';
+  }
   var _home64 = V.home;
   V.home = function () {
     var h = _home64();
     try {
       h = h.replace('<div class="grad rounded-3xl p-6 space-y-3 shadow-lg">', '<div class="grad rounded-3xl p-6 space-y-3 shadow-lg" style="cursor:pointer" onclick="cgpaBreakdown()">');
+      var pc = U.portalCGPA;
+      if (pc != null) {
+        var cs = cum().g.toFixed(2);
+        h = h.replace('<div class="text-4xl font-extrabold">' + cs + '<span class="text-base opacity-75"> / 5.00</span>', '<div class="text-4xl font-extrabold">' + (+pc).toFixed(2) + '<span class="text-base opacity-75"> / 5.00</span>');
+        h = h.replace(/(<div class="h-2 rounded-full bg-white" style="width:)[^"]*(")/, function (m, x, y) { return x + (pc / 5 * 100) + '%' + y; });
+      }
       h = h.replace('onclick="setTarget()"', 'onclick="event.stopPropagation();setTarget()"');
       h = h.replace('<div class="card p-6 flex items-center justify-between gap-4">', '<div class="card p-6 flex items-center justify-between gap-4" style="cursor:pointer" onclick="aTab=\'rec\';editing=null;go(\'acad\')">');
       h = h.replace('<div class="card p-6 space-y-2"><div class="font-extrabold">Notifications</div>', '<div class="card p-6 space-y-2" style="cursor:pointer" onclick="notifSheet()"><div class="font-extrabold">Notifications</div>');
@@ -253,12 +297,10 @@
       var a = h.indexOf('<div class="card p-6 space-y-4"><div class="font-extrabold">GPA Trajectory</div>');
       var b = h.indexOf('<div class="card p-6 space-y-3"><div class="font-extrabold">Quick Actions</div>');
       if (a > -1 && b > a) h = h.slice(0, a) + trajectoryCard() + h.slice(b);
-      else console.warn('v64: trajectory markers not found');
-    } catch (e) { console.error('v64 home patch', e); }
+      else console.warn('v65: trajectory markers not found');
+    } catch (e) { console.error('v65 home patch', e); }
     return h;
   };
-
-  /* ---------- Calculator: level + First/Second/Both, rows appear on "Add courses manually" ---------- */
   var _calc64 = ACAD.calc;
   ACAD.calc = function () {
     W._semHalf = null; W._pasted = false;
