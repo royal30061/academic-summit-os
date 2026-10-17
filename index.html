@@ -2508,6 +2508,88 @@ authUI=function(mode,msg){
  if(typeof onHomeShown==='function'){var prev=onHomeShown;onHomeShown=function(){prev.apply(this,arguments);setTimeout(syncMatric,800);};}
 })();
 </script>
+<script>
+function semOfCode(code){
+  const m=String(code||'').match(/\d+/g);
+  if(!m)return 1;
+  const last=m[m.length-1];
+  return (parseInt(last.charAt(last.length-1),10)%2===0)?2:1;
+}
+function normSems(){
+  const sems=U&&U.semesters?U.semesters:[];
+  if(!sems.length)return false;
+  const last=sems[sems.length-1];
+  const cs=last.courses||[];
+  if(!cs.length)return false;
+  const g1=cs.filter(function(c){return semOfCode(c.code)===1;});
+  const g2=cs.filter(function(c){return semOfCode(c.code)===2;});
+  const findSem=function(par){
+    for(let i=0;i<sems.length;i++){
+      if(sems[i]===last)continue;
+      const codes=(sems[i].courses||[]).map(function(c){return c.code;});
+      if(codes.length&&codes.every(function(c){return semOfCode(c)===par;}))return sems[i];
+    }
+    return null;
+  };
+  const mergeInto=function(t,group){
+    const have={};(t.courses||[]).forEach(function(c){have[c.code]=1;});
+    group.forEach(function(c){if(!have[c.code])t.courses.push(c);});
+  };
+  let changed=false;
+  if(g1.length&&g2.length){
+    last.courses=g1;changed=true;
+    const s2=findSem(2);
+    if(s2)mergeInto(s2,g2);else sems.push({courses:g2});
+  }else if(!g1.length&&g2.length){
+    const s2=findSem(2);
+    if(s2){mergeInto(s2,g2);sems.pop();changed=true;}
+  }else if(g1.length&&!g2.length){
+    const s1=findSem(1);
+    if(s1){mergeInto(s1,g1);sems.pop();changed=true;}
+  }
+  if(changed)save();
+  return changed;
+}
+const _save59=saveSem;
+saveSem=function(){
+  const r=_save59();
+  try{
+    if(normSems()){
+      if(typeof refreshCarry==='function')refreshCarry();
+      showToast('Sorted into Semester 1 and Semester 2');
+      setTimeout(function(){go('acad');},500);
+    }
+  }catch(e){}
+  return r;
+};
+const _start59=start;
+start=function(){
+  _start59();
+  try{
+    if(U&&U.role==='student'&&normSems()){
+      if(typeof refreshCarry==='function')refreshCarry();
+      setTimeout(function(){go('home');},400);
+      showToast('Results re-sorted into two semesters');
+    }
+  }catch(e){}
+};
+async function loadRoster(){
+  const {data,error}=await sb.from('attendance').select('*, profiles(matric,name)').eq('session_id',sid).order('marked_at',{ascending:true});
+  if(error)return showToast(error.message,'error');
+  rosterRows=data||[];
+  paintRoster();
+}
+function paintRoster(){
+  const body=$('roster-body');if(!body)return;
+  body.innerHTML=rosterRows.map(function(r,i){
+    const p=r.profiles||{};
+    const mat=p.matric||p.name||'—';
+    const course=r.course||(r.sessions&&r.sessions.course)||'';
+    const when=r.marked_at||r.created_at||'';
+    return '<tr><td class="p-3">'+(i+1)+'</td><td class="p-3 font-mono text-xs">'+esc(mat)+(p.matric?'':' ⚠️')+'</td><td class="p-3 text-xs">'+esc(course)+'</td><td class="p-3 text-xs">'+fmtD(when)+'</td><td class="p-3 text-xs">'+(r.method==='manual'?'M':'OTP')+'</td></tr>';
+  }).join('')||'<tr><td class="p-3 text-slate-400" colspan="5">No attendance recorded yet.</td></tr>';
+}
+</script>
 </body>
 </html>
 
