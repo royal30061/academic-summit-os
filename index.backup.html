@@ -1,0 +1,1666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script>
+if(window.addEventListener){
+  var dbg=function(m){if(document.getElementById('dbg'))return;var d=document.createElement('pre');d.id='dbg';d.style.cssText='position:fixed;z-index:99999;top:0;left:0;right:0;background:#7f1d1d;color:#fff;font:12px monospace;padding:10px;white-space:pre-wrap;margin:0';d.textContent='ERROR: '+m;document.documentElement.appendChild(d);};
+  window.addEventListener('error',function(e){dbg(e.message+' (line '+e.lineno+')');});
+  window.addEventListener('unhandledrejection',function(e){dbg(String((e.reason&&e.reason.message)||e.reason));});
+}
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Academic Summit - Campus Operating System</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cpath%20d%3D%22M2%2054%2024%2016l12%2020%206-9%2020%2027z%22%20fill%3D%22%2310b981%22%2F%3E%3Cpath%20d%3D%22M26%2054%2042%2027l20%2027z%22%20fill%3D%22%23047857%22%2F%3E%3Cpath%20d%3D%22M24%2016l6%2010-4-2-2%204-4-4-1.5%201.5z%22%20fill%3D%22%23ecfdf5%22%2F%3E%3C%2Fsvg%3E">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>if(window.tailwind)tailwind.config={darkMode:'class'};</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f4fb;--card:#fff;--sub:#f8fafc;--bd:#e5e7f0;--tx:#0f172a;--mut:#64748b;--sh:0 10px 30px -12px rgba(109,40,217,.15)}
+.dark{--bg:#070b1f;--card:#0f172a;--sub:#1e293b;--bd:#1e293b;--tx:#f8fafc;--mut:#94a3b8;--sh:0 10px 30px -12px rgba(0,0,0,.5)}
+body{background:var(--bg);color:var(--tx);font-family:'Plus Jakarta Sans',system-ui,sans-serif;min-height:100vh}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:1.25rem;box-shadow:var(--sh)}
+.grad{background:linear-gradient(135deg,#059669,#6366f1);color:#fff}
+.inp{width:100%;padding:.7rem .9rem;border-radius:.9rem;border:1px solid var(--bd);font-size:.85rem;background:var(--card);color:var(--tx)}
+.inp:focus{outline:none;border-color:#059669;box-shadow:0 0 0 3px rgba(124,58,237,.15)}
+.btn{background:linear-gradient(135deg,#059669,#6366f1);color:#fff;font-weight:700;font-size:.82rem;padding:.7rem 1.1rem;border-radius:.9rem;display:inline-flex;align-items:center;justify-content:center;gap:.45rem;cursor:pointer}
+.btn2{background:rgba(124,58,237,.1);color:#059669;font-weight:700;font-size:.82rem;padding:.6rem 1rem;border-radius:.9rem;display:inline-flex;align-items:center;justify-content:center;gap:.45rem;cursor:pointer}
+.dark .btn2{color:#c4b5fd}
+.lbl{font-size:.65rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.nav-on{background:linear-gradient(135deg,#059669,#6366f1)!important;color:#fff!important}
+.donut{border-radius:50%;display:grid;place-items:center}
+.donut>div{background:var(--card);border-radius:50%;display:grid;place-items:center}
+#toast-container{position:fixed;top:1rem;right:1rem;z-index:9999;display:flex;flex-direction:column;gap:.5rem;pointer-events:none}
+.toast{pointer-events:auto;animation:slideIn .3s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:#8b8bb0;border-radius:3px}
+#app.hidden~#tour-fab{display:none}
+@media print{aside,nav,header,.np,#toast-container{display:none!important}body{background:#fff!important;color:#000!important}.card{box-shadow:none!important;border:1px solid #ccc!important}}
+</style>
+<style id="silver">
+:root:not(.dark){--bg:#e6eaee;--card:#fafbfc;--sub:#eef1f4;--bd:#cdd4db;--tx:#0e1217;--mut:#56616b;--sh:0 1px 0 rgba(255,255,255,.95) inset,0 12px 26px -16px rgba(12,18,26,.45)}
+:root:not(.dark) body{background:linear-gradient(180deg,#d9dfe5 0%,#eef1f4 38%,#e2e7ec 100%) fixed}
+:root:not(.dark) .card{background:linear-gradient(180deg,#ffffff,#f0f3f6);border-color:#cdd4db}
+:root:not(.dark) .bg-slate-50{background-color:#e9edf1!important}
+:root:not(.dark) .inp{background:#ffffff;border-color:#c3ccd4;box-shadow:inset 0 1px 2px rgba(12,18,26,.07)}
+:root:not(.dark) .btn2{background:linear-gradient(180deg,#f8fafb,#dde3e8)!important;color:#1b2530!important;border:1px solid #c3ccd4;box-shadow:0 1px 0 rgba(255,255,255,.9) inset}
+:root:not(.dark) .btn2.\!text-rose-500{color:#e11d48!important}
+:root:not(.dark) .btn{box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 8px 16px -8px rgba(5,150,105,.6)}
+:root:not(.dark) #top{background:linear-gradient(180deg,#171c22,#06080b)!important;border-bottom:1px solid #2a323a!important;color:#eef2f6}
+:root:not(.dark) #top .text-slate-500,:root:not(.dark) #top .text-slate-400{color:#98a3af!important}
+:root:not(.dark) #top .text-sm.font-extrabold{background:linear-gradient(180deg,#ffffff 0%,#d3dae0 45%,#8f9aa6 52%,#eef2f5 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-size:1.05rem;letter-spacing:.01em}
+:root:not(.dark) #top button{border-color:#313a43!important}
+:root:not(.dark) #top button:first-child{background:#1c2229!important;color:#e6ebf0}
+:root:not(.dark) #side{background:linear-gradient(180deg,#12161b,#040506)!important}
+:root:not(.dark) #bnav{background:linear-gradient(180deg,#171c22,#06080b)!important;border-top:1px solid #2a323a!important}
+:root:not(.dark) #bnav .bn{color:#9ca7b2!important}
+:root:not(.dark) #bnav .bn[class*="text-violet"]{color:#34d399!important}
+</style>
+<style id="darkfix">
+html.dark{--bg:#02120c;--card:#07271d;--sub:#0b3527;--bd:#0d3f2e;--tx:#e7fff5;--mut:#8fb8a9;--sh:0 10px 30px -12px rgba(0,0,0,.6)}
+html.dark body{background:#02120c;color:#e7fff5}
+html.dark #main{color:#e7fff5}
+html.dark .card{background:#07271d;border-color:#0d3f2e}
+html.dark .donut>div{background:#07271d;color:#e7fff5}
+html.dark .inp{background:#0b3527;color:#e7fff5;border-color:#0d3f2e}
+html.dark #top{color:#e7fff5}
+html.dark #top button{color:#e7fff5}
+html.dark #top .text-sm.font-extrabold{background:none;color:#ffffff;-webkit-text-fill-color:#ffffff}
+</style>
+<style id="lecfix">body[data-role="lecturer"] #tour-fab{display:none!important}</style>
+</head>
+<body class="antialiased">
+<div id="toast-container"></div>
+<div id="auth"></div>
+<div id="app" class="hidden">
+<div class="lg:flex">
+<aside id="side" class="hidden lg:flex flex-col w-64 shrink-0 min-h-screen sticky top-0 p-5 text-white z-30" style="background:#0b1030"></aside>
+<div class="flex-1 min-w-0 flex flex-col min-h-screen">
+<header id="top" class="flex items-center justify-between px-4 md:px-6 py-4 border-b border-slate-200/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-900/50 backdrop-blur-md sticky top-0 z-20"></header>
+<main id="main" class="flex-1 p-4 md:p-6 pb-28 lg:pb-8 max-w-6xl mx-auto w-full"></main>
+</div>
+</div>
+<nav id="bnav" class="lg:hidden fixed bottom-0 inset-x-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 flex items-end justify-around px-1 z-40" style="padding-bottom:env(safe-area-inset-bottom,6px)"></nav>
+</div>
+<div id="sheet"></div>
+<script>
+// CONFIG — put your real keys here
+const SB_URL='https://okajzlkeaydskdvogdaw.supabase.co';
+const SB_KEY='sb_publishable_xqUBfEtWElgUkKAz65bueg_66AkIHtr';
+const RECOVERY=/type=recovery/.test(location.hash);
+const sb=supabase.createClient(SB_URL,SB_KEY);
+const LEC_LINK=location.hash==='#lecturer'||/[?&]lecturer=1/.test(location.search);
+// helpers
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const naira=n=>'₦'+Math.round(n||0).toLocaleString();
+const days=d=>Math.ceil((new Date(d)-new Date().setHours(0,0,0,0))/864e5);
+const fmtD=d=>new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+const iso=d=>d.toISOString().slice(0,10);
+const leftTxt=dt=>{if(!dt)return'';const ms=new Date(dt)-Date.now();if(ms<0)return'overdue';const m=Math.floor(ms/60000),h=Math.floor(m/60),d=Math.floor(h/24);return d?d+'d '+(h%24)+'h':h?h+'h '+(m%60)+'m':m+'m';};
+function MTN(c){return '<svg class="'+(c||'w-10 h-10')+'" viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M2 54 24 16l12 20 6-9 20 27z" fill="#10b981"/><path d="M26 54 42 27l20 27z" fill="#047857"/><path d="M24 16l6 10-4-2-2 4-4-4-1.5 1.5z" fill="#ecfdf5"/></svg>';}
+// SVG ICONS (no emojis)
+const IC={
+home:'<path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-7h-6v7H4a1 1 0 01-1-1z"/>',
+acad:'<path d="M12 3l10 5-10 5L2 8z"/><path d="M6 10v5c0 2 3 3 6 3s6-1 6-3v-5"/>',
+plan:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/>',
+fin:'<rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
+mat:'<path d="M4 19V5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/><path d="M8 7h7"/>',
+att:'<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2h11"/>',
+goal:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>',
+car:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/>',
+prof:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
+sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4 4l2 2m12 12l2 2M20 4l-2 2M6 18l-2 2"/>',
+moon:'<path d="M21 13A9 9 0 1111 3a7 7 0 0010 10"/>',
+l:'<path d="M15 6l-6 6 6 6"/>',r:'<path d="M9 6l6 6-6 6"/>',
+up:'<path d="M12 16V4m0 0l-4 4m4-4l4 4"/><path d="M4 20h16"/>',
+x:'<path d="M6 6l12 12M18 6L6 18"/>',
+calc:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6M9 12h.01M12 12h.01M15 12h.01M9 16h.01M12 16h.01M15 16h.01"/>',
+search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/>',
+clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
+print:'<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/>'
+};
+const ic=(n,c='w-4 h-4')=>'<svg class="'+c+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">'+IC[n]+'</svg>';
+// theme
+let isDark=localStorage.getItem('as_theme')==='dark';
+// state
+let DB={users:{}};
+try{DB=JSON.parse(localStorage.getItem('as_v8'))||DB;}catch(e){}
+let cloudReady=false,syncT=null;
+async function syncNow(){
+  clearTimeout(syncT);syncT=null;
+  if(!cloudReady||!uid||!U)return;
+  const{error}=await sb.from('user_data').upsert({id:uid,data:U,updated_at:new Date().toISOString()});
+  if(error)console.warn('sync failed',error.message);
+}
+const save=()=>{
+  try{if(U)U.updatedAt=Date.now();localStorage.setItem('as_v8',JSON.stringify(DB));}
+  catch(e){showToast('Failed to save','error');}
+  if(cloudReady){clearTimeout(syncT);syncT=setTimeout(syncNow,1500);}
+};
+if(document.addEventListener)document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')syncNow();});
+const newUser=(name,role='student')=>({name,role,profile:null,target:4.5,semesters:[],tasks:[],events:[],tx:[],fees:{total:0,paid:0,due:''},materials:[],attendance:[],goals:[],career:[]});
+let U=null,email='',uid='',view='home',aTab='calc',editing=null;
+let timerInterval=null,pollT=null,rosterRows=[];
+let calY=new Date().getFullYear(),calM=new Date().getMonth(),selDay=iso(new Date());
+// academic engine
+const gr=s=>{s=parseFloat(s);if(isNaN(s))return['-',0];return s>=70?['A',5]:s>=60?['B',4]:s>=50?['C',3]:s>=45?['D',2]:s>=40?['E',1]:['F',0];};
+const semS=s=>{let u=0,q=0;if(!s||!s.courses)return{u:0,q:0,g:0};s.courses.forEach(c=>{u+=+c.unit;q+=c.unit*gr(c.score)[1];});return{u,q,g:u?q/u:0};};
+const cum=()=>{let u=0,q=0;if(!U||!U.semesters)return{u:0,q:0,g:0};U.semesters.forEach(s=>{(s.courses||[]).forEach(c=>{if(c.sup)return;u+=+c.unit;q+=c.unit*gr(c.score)[1];});});return{u,q,g:u?q/u:0};};
+const detective=(g1,cg,u1,u2)=>{const need=(cg*(u1+u2)-g1*u1)/u2;return{need,ok:need>=0&&need<=5};};
+const requiredAvg=()=>{const c=cum(),tot=U?.profile?.totalUnits||120,R=tot-c.u;return R>0?(U.target*tot-c.q)/R:null;};
+// auth
+async function doSignup(){
+  const name=$('a-name').value.trim(),em=$('a-email').value.trim().toLowerCase(),pw=$('a-pass').value;
+  if(!name||!em||pw.length<6)return authUI('signup','Complete all fields (password 6+ characters).');
+  const{data,error}=await sb.auth.signUp({email:em,password:pw,options:{data:{name},emailRedirectTo:location.origin+location.pathname+(LEC_LINK?'?lecturer=1':'')}});
+  if(error)return authUI('signup',error.message);
+  if(!data.session)return authUI('login','Check your email to confirm, then log in.');
+  boot(data.user);
+}
+async function doLogin(){
+  const em=$('a-email').value.trim().toLowerCase(),pw=$('a-pass').value;
+  if(!em||!pw)return authUI('login','Enter email and password.');
+  const{data,error}=await sb.auth.signInWithPassword({email:em,password:pw});
+  if(error)return authUI('login',error.message);
+  sb.from('profiles').update({last_seen:new Date().toISOString()}).eq('id',data.user.id).then(()=>{});
+  boot(data.user);
+}
+function startSession(){sb.auth.getSession().then(({data})=>data.session?(RECOVERY?resetUI(data.session.user):boot(data.session.user)):authUI('login'));}
+if(document.addEventListener)document.addEventListener('DOMContentLoaded',startSession);else startSession();
+// shell
+const STUDENT_NAV=[['home','Dashboard','home'],['acad','Academics','acad'],['plan','Planner','plan'],['fin','Finance','fin'],['mat','Materials','mat'],['att','Attendance','att'],['goal','Goals','goal'],['car','Career & Portfolio','car'],['prof','Profile & Settings','prof']];
+const LECTURER_NAV=[['home','Attendance Hub','att'],['plan','Calendar','plan'],['roster','Student Rosters','prof'],['prof','Account Settings','prof']];
+function start(){
+  $('auth').innerHTML='';$('app').classList.remove('hidden');
+  const nav=U.role==='lecturer'?LECTURER_NAV:STUDENT_NAV;
+  $('side').innerHTML='<div class="flex items-center gap-3 mb-8 px-2"><div class="w-10 h-10 shrink-0">'+MTN('w-10 h-10')+'</div><div><div class="font-extrabold text-lg leading-tight">Academic</div><div class="text-xs text-violet-400 font-bold uppercase tracking-wider">'+(U.role==='lecturer'?'Lecturer Console':'Summit v13')+'</div></div></div><div class="space-y-1 flex-1 overflow-y-auto pr-1">'+nav.map(n=>'<button data-n="'+n[0]+'" onclick="go(\''+n[0]+'\')" class="nv w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:bg-violet-900/40 flex items-center gap-3">'+ic(n[2])+'<span>'+n[1]+'</span></button>').join('')+'</div><div class="mt-auto pt-4"><div class="rounded-2xl p-4 text-xs bg-violet-900/40 border border-violet-800/40 space-y-1"><div class="mb-2">'+MTN('w-12 h-12')+'</div><b class="text-white block text-sm">'+(U.role==='lecturer'?'Active Session':'Target CGPA: '+U.target.toFixed(2))+'</b><p class="text-violet-300/80">Higher Goals, Bigger Future.</p></div></div>';
+  const sh={home:'Home',acad:'Academics',plan:'Planner',fin:'Finance',roster:'Roster',prof:'Profile'};
+  $('bnav').innerHTML=nav.slice(0,2).concat([['+']]).concat(nav.slice(2,4)).map(n=>n[0]==='+'?'<button onclick="openSheet()" class="grad w-12 h-12 -mt-5 rounded-full shadow-lg flex items-center justify-center text-white text-xl font-bold">+</button>':'<button data-n="'+n[0]+'" onclick="go(\''+n[0]+'\')" class="bn flex-1 py-2 text-[10px] font-semibold text-slate-400 flex flex-col items-center gap-1">'+ic(n[2],'w-5 h-5')+ (sh[n[0]]||n[1])+'</button>').join('');
+  const ini=U.name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+  $('top').innerHTML='<div><div class="text-xs text-slate-500 font-semibold">'+new Date().toDateString()+'</div><div class="text-sm font-extrabold">Academic Summit</div></div><div class="flex items-center gap-3"><button onclick="toggleTheme()" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">'+ic(isDark?'sun':'moon')+'</button><button onclick="go(\'prof\')" class="flex items-center gap-2.5 pl-2 border-l border-slate-200 dark:border-slate-800"><span class="text-right text-xs hidden sm:block"><b class="block">'+esc(U.name)+'</b><span class="text-slate-400">'+(U.profile?.matric?esc(U.profile.matric):esc(U.profile?.program||(U.role==='lecturer'?'Lecturer':'Student')))+'</span></span><span class="grad w-9 h-9 rounded-full grid place-items-center text-xs font-bold">'+esc(ini)+'</span></button></div>';
+  go(view);
+  if(!localStorage.getItem('as_tour')&&!toured){toured=true;setTimeout(startTour,400);}
+}
+function go(v){
+  view=v;
+  document.querySelectorAll('.nv').forEach(b=>b.className='nv w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-3 '+(b.dataset.n===v?'nav-on':'text-slate-300 hover:bg-violet-900/40'));
+  document.querySelectorAll('.bn').forEach(b=>b.className='bn flex-1 py-2 text-[10px] font-semibold flex flex-col items-center gap-1 '+(b.dataset.n===v?'text-violet-600 dark:text-violet-400':'text-slate-400'));
+  $('main').innerHTML=U.role==='lecturer'?(LECTURER_VIEWS[v]||LECTURER_VIEWS.home)():(V[v]||V.home)();
+  if(U.role==='student'&&v==='acad')ACAD[aTab]();
+  if(U.role==='lecturer'&&v==='roster')loadRoster();
+  window.scrollTo(0,0);
+}
+function openSheet(){
+  const b=(t,f)=>'<button class="btn2 w-full text-left justify-start py-3" onclick="closeSheet();'+f+'">'+t+'</button>';
+  $('sheet').innerHTML='<div class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end" onclick="closeSheet()"><div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 space-y-3" onclick="event.stopPropagation()" style="padding-bottom:max(1.5rem,env(safe-area-inset-bottom))"><div class="lbl text-violet-600 dark:text-violet-400">Quick Actions</div>'+(U.role==='lecturer'?b('Generate Attendance OTP',"go('home')")+b('Export Roster',"go('roster')"):b(ic('calc')+' Calculate GPA',"aTab='calc';editing=null;go('acad')")+b(ic('up')+' Import Portal Results',"aTab='calc';editing=null;go('acad');setTimeout(()=>$('paste').classList.remove('hidden'),30)")+b(ic('plan')+' Add Task / Event',"go('plan')")+b(ic('fin')+' Log Expense',"go('fin')")+b(ic('mat')+' Materials',"go('mat')")+b(ic('goal')+' Goals',"go('goal')")+b(ic('car')+' Career',"go('car')")+b(ic('prof')+' Profile',"go('prof')"))+'</div></div>';
+}
+const closeSheet=()=>$('sheet').innerHTML='';
+let pendingMatric='';
+function askMatric(m){
+  pendingMatric=m;
+  var h='<div class="fixed inset-0 z-50 bg-black/50 flex items-end" onclick="closeSheet()">';
+  h+='<div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 space-y-3" onclick="event.stopPropagation()">';
+  h+='<div class="lbl text-violet-600 dark:text-violet-400">Matric number found</div>';
+  h+='<div class="text-sm font-extrabold font-mono">'+esc(m)+'</div>';
+  h+='<p class="text-xs text-slate-500">Link it to your account so lecturers can record your attendance?</p>';
+  h+='<button class="btn w-full" onclick="linkMatric()">Yes, link it</button>';
+  h+='<button class="btn2 w-full" onclick="closeSheet()">Not now</button>';
+  h+='</div></div>';
+  $('sheet').innerHTML=h;
+}
+function linkMatric(){
+  const m=pendingMatric;
+  U.profile.matric=m;save();
+  sb.from('profiles').update({matric:m}).eq('id',uid).then(function(){});
+  closeSheet();showToast('Matric number linked: '+m);
+}
+// graphics
+const donut=(p,c,size=76,inner=58,label='')=>'<div class="donut shrink-0" style="width:'+size+'px;height:'+size+'px;background:conic-gradient('+c+' '+p+'%,'+(isDark?'#334155':'#e2e8f0')+' 0)"><div style="width:'+inner+'px;height:'+inner+'px" class="text-xs font-extrabold">'+label+'</div></div>';
+function chart(){
+  const g=U.semesters.map(s=>semS(s).g),W=400,Hh=170,y=v=>Hh-20-(v/5)*(Hh-40),x=i=>g.length<2?W/2:30+i*(W-60)/(g.length-1);
+  const req=requiredAvg();
+  if(!g.length)return'<div class="h-36 flex items-center justify-center text-xs text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">Save a semester to visualize trajectory</div>';
+  return '<svg viewBox="0 0 '+W+' '+Hh+'" class="w-full"><line x1="0" x2="'+W+'" y1="'+y(U.target)+'" y2="'+y(U.target)+'" stroke="#059669" stroke-dasharray="5 4"/><polyline fill="none" stroke="#10b981" stroke-width="3" points="'+g.map((v,i)=>x(i)+','+y(v)).join(' ')+'"/>'+g.map((v,i)=>'<circle cx="'+x(i)+'" cy="'+y(v)+'" r="5" fill="#059669" stroke="#fff" stroke-width="2"/><text x="'+x(i)+'" y="'+(Hh-4)+'" font-size="9" font-weight="700" text-anchor="middle" fill="'+(isDark?'#94a3b8':'#64748b')+'">'+esc(U.semesters[i].name.slice(0,9))+'</text>').join('')+'</svg>';
+}
+// smart goals
+function goalStatus(g){
+  const m=g.title.match(/(\d\.\d{1,2})/);
+  if(!m)return g.done?['Done','emerald']:['Active','slate'];
+  const t=+m[1],c=cum().g;
+  if(c>=t){if(!g.done){g.done=true;save();}return['Achieved','emerald'];}
+  return[c>=t-0.5?'On track':'Behind','violet'];
+}
+const chip=(txt,col)=>'<span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-'+col+'-100 dark:bg-'+col+'-950 text-'+col+'-600 dark:text-'+col+'-300">'+txt+'</span>';
+// views
+const V={
+home(){
+  const c=cum(),tot=U.profile?.totalUnits||120,pct=Math.min(100,Math.round(c.u/tot*100));
+  const S=U.semesters,last=S.length?semS(S[S.length-1]):null,prev=S.length>1?semS(S[S.length-2]):null,req=requiredAvg();
+  const delta=last&&prev?last.g-prev.g:null;
+  const up=[...U.events.filter(e=>days(e.date)>=0).map(e=>({t:e.title,s:e.type+' • '+fmtD(e.date),d:days(e.date)})),...U.tasks.filter(t=>!t.done).map(t=>({t:t.t,s:'Task'+(t.end?' • '+leftTxt(t.end):''),d:t.end?days(t.end):null}))].sort((a,b)=>(a.d??999)-(b.d??999)).slice(0,4);
+  const notes=[];
+  U.events.filter(e=>days(e.date)>=0&&days(e.date)<=14).forEach(e=>notes.push(['plan','Exam reminder',e.title+' in '+days(e.date)+' day(s).']));
+  U.tasks.filter(t=>!t.done&&t.end&&(new Date(t.end)-Date.now())<864e5).forEach(t=>notes.push(['clock','Task due soon',t.t+' — '+leftTxt(t.end)+'.']));
+  if(U.fees.total-U.fees.paid>0&&U.fees.due)notes.push(['fin','Fee alert',naira(U.fees.total-U.fees.paid)+' due '+fmtD(U.fees.due)+'.']);
+  U.goals.forEach(g=>{const st=goalStatus(g);if(st[0]==='Achieved')notes.push(['goal','Milestone achieved',g.title]);});
+  if(last){const low=[...S[S.length-1].courses].sort((a,b)=>a.score-b.score)[0];if(low)notes.push(['acad','Academic insight','Lowest score last semester: '+esc(low.code)+' ('+low.score+').']);}
+  return '<div class="space-y-5"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"><div><h1 class="text-2xl font-extrabold">'+greet()+' '+esc(U.name.split(' ')[0])+'</h1><p class="text-xs text-slate-500">'+esc(U.profile?.program)+' • '+esc(U.profile?.level)+' Level'+(U.profile?.matric?' • '+esc(U.profile.matric):'')+'</p></div><button onclick="aTab=\'calc\';editing=null;go(\'acad\')" class="btn">'+ic('up')+' Import Portal Results</button></div>'+
+  '<div class="grid md:grid-cols-3 gap-4"><div class="grad rounded-3xl p-6 space-y-3 shadow-lg"><div class="text-xs font-bold uppercase tracking-wider opacity-80">Cumulative GPA</div><div class="flex items-end justify-between"><div class="text-4xl font-extrabold">'+c.g.toFixed(2)+'<span class="text-base opacity-75"> / 5.00</span></div><span class="text-[11px] bg-white/20 rounded-full px-3 py-1 font-bold cursor-pointer" onclick="setTarget()">Target '+U.target.toFixed(2)+'</span></div><div class="h-2 rounded-full bg-white/30"><div class="h-2 rounded-full bg-white" style="width:'+(c.g/5*100)+'%"></div></div>'+(delta!==null?'<div class="text-xs font-semibold">'+(delta>=0?'↑ +':'↓ ')+delta.toFixed(2)+' from previous term</div>':'')+'</div>'+
+  '<div class="card p-6 space-y-2"><div class="lbl">Last Semester GPA</div><div class="text-4xl font-extrabold">'+(last?last.g.toFixed(2):'—')+'<span class="text-base text-slate-400"> / 5.00</span></div><div class="text-xs text-slate-400">'+(last?S[S.length-1].courses.length+' courses • '+last.u+' units':'No semester recorded yet')+'</div></div>'+
+  '<div class="card p-6 flex items-center justify-between gap-4"><div class="space-y-1"><div class="lbl">Degree Progress</div><div class="text-3xl font-extrabold">'+c.u+'<span class="text-sm text-slate-400"> / '+tot+'</span></div><div class="text-xs text-slate-400">'+Math.max(0,tot-c.u)+' units remaining</div></div>'+donut(pct,'#10b981',76,58,pct+'%')+'</div></div>'+
+  '<div class="grid lg:grid-cols-3 gap-5"><div class="lg:col-span-2 space-y-5"><div class="card p-6 space-y-4"><div class="font-extrabold">GPA Trajectory</div><div class="grid sm:grid-cols-3 gap-4 items-center"><div class="sm:col-span-2">'+chart()+'</div><div class="text-xs space-y-3 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl"><div><div class="lbl">Current CGPA</div><b class="text-base">'+c.g.toFixed(2)+'</b></div><div><div class="lbl">Target</div><b class="text-base">'+U.target.toFixed(2)+'</b></div><div><div class="lbl">Required Avg</div><b class="text-base">'+(req===null?'—':req.toFixed(2))+'</b></div>'+(req>5?'<p class="text-[11px] text-rose-500 font-bold">Target unachievable in remaining units.</p>':'')+'</div></div></div>'+
+  '<div class="card p-6 space-y-3"><div class="font-extrabold">Quick Actions</div><div class="grid grid-cols-3 sm:grid-cols-6 gap-3 text-[11px] font-semibold text-center">'+[[ic('calc'),'GPA Calc',"aTab='calc';editing=null;go('acad')"],[ic('up'),'Import',"aTab='calc';go('acad')"],[ic('plan'),'Planner',"go('plan')"],[ic('fin'),'Finance',"go('fin')"],[ic('mat'),'Materials',"go('mat')"],[ic('goal'),'Goals',"go('goal')"]].map(q=>'<button onclick="'+q[2]+'" class="space-y-1.5"><div class="mx-auto w-12 h-12 rounded-2xl bg-violet-50 dark:bg-violet-950 text-violet-600 dark:text-violet-300 grid place-items-center">'+q[0]+'</div>'+q[1]+'</button>').join('')+'</div></div></div>'+
+  '<div class="space-y-5"><div class="card p-6 space-y-2"><div class="flex justify-between items-center"><div class="font-extrabold">Next Up</div><button onclick="go(\'plan\')" class="text-xs font-bold text-violet-600 dark:text-violet-400">View Planner</button></div>'+up.map(u=>'<div class="flex justify-between items-center text-xs p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40"><div><b class="block">'+esc(u.t)+'</b><span class="text-slate-400 text-[11px]">'+esc(u.s)+'</span></div>'+(u.d!==null?'<span class="bg-violet-100 dark:bg-violet-950 text-violet-600 dark:text-violet-300 font-extrabold px-2.5 py-1 rounded-full text-[10px]">'+(u.d===0?'Today':u.d+' d')+'</span>':'')+'</div>').join('')||'<p class="text-xs text-slate-400">Nothing scheduled.</p>'+'</div>'+
+  '<div class="card p-6 space-y-3"><div class="font-extrabold">Milestones</div>'+U.goals.slice(0,3).map(g=>{const st=goalStatus(g);return '<div class="flex justify-between items-center text-xs p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40"><span class="font-semibold">'+esc(g.title)+'</span>'+chip(st[0],st[1])+'</div>';}).join('')||'<p class="text-xs text-slate-400">Set goals to see them here.</p>'+'<button onclick="go(\'goal\')" class="btn2 w-full">Manage Goals</button></div>'+
+  '<div class="card p-6 space-y-2"><div class="font-extrabold">Notifications</div>'+notes.map(n=>'<div class="flex gap-3 text-xs"><span class="text-emerald-600 dark:text-emerald-400 mt-0.5" data-k="'+n[0]+'">'+ic(n[0],'w-5 h-5')+'</span><div><b>'+n[1]+'</b><div class="text-slate-500">'+esc(n[2])+'</div></div></div>').join('')||'<p class="text-xs text-slate-400">All clear.</p>'+'</div></div></div></div>';
+},
+acad(){
+  const t=[['calc','GPA Calculator'],['det','Result Detective'],['dec','Menu of Decimals'],['rec','My Record']];
+  return '<div class="space-y-5"><div class="flex gap-2 overflow-x-auto pb-1">'+t.map(x=>'<button onclick="aTab=\''+x[0]+'\';editing=null;go(\'acad\')" class="'+(aTab===x[0]?'btn':'btn2')+' whitespace-nowrap">'+x[1]+'</button>').join('')+'</div><div id="sub"></div></div>';
+},
+plan(){
+  const first=new Date(calY,calM,1);
+  const startDow=(first.getDay()+6)%7;
+  const dim=new Date(calY,calM+1,0).getDate();
+  const mName=first.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  const dayHas=ds=>U.events.some(e=>e.date===ds)||U.tasks.some(t=>(t.end||t.start||'').slice(0,10)===ds);
+  let cells='';
+  for(let i=0;i<startDow;i++)cells+='<div></div>';
+  for(let d=1;d<=dim;d++){
+    const ds=calY+'-'+String(calM+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    cells+='<button onclick="selDay=\''+ds+'\';go(\'plan\')" class="aspect-square rounded-xl flex flex-col items-center justify-center gap-1 text-xs font-semibold '+(ds===selDay?'grad text-white':'bg-slate-50 dark:bg-slate-800/40')+' '+(ds===iso(new Date())?'ring-2 ring-violet-400':'')+'">'+d+(dayHas(ds)?'<span class="w-1 h-1 rounded-full '+(ds===selDay?'bg-white':'bg-violet-500')+'"></span>':'')+'</button>';
+  }
+  const dEv=U.events.filter(e=>e.date===selDay);
+  const dTk=U.tasks.filter(t=>(t.end||t.start||'').slice(0,10)===selDay);
+  return '<div class="space-y-5"><div class="card p-5 space-y-3"><div class="flex justify-between items-center"><button class="btn2 px-2" onclick="calM--;if(calM<0){calM=11;calM=11;calY--;}go(\'plan\')">'+ic('l')+'</button><div class="font-extrabold">'+mName+'</div><button class="btn2 px-2" onclick="calM++;if(calM>11){calM=0;calY++;}go(\'plan\')">'+ic('r')+'</button></div><div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400">'+['M','T','W','T','F','S','S'].map(d=>'<div>'+d+'</div>').join('')+'</div><div class="grid grid-cols-7 gap-1">'+cells+'</div></div>'+
+  '<div class="grid md:grid-cols-2 gap-5"><div class="card p-5 space-y-3"><div class="font-extrabold">'+fmtD(selDay)+' — Schedule</div>'+dEv.map(e=>'<div class="text-xs p-3 rounded-xl bg-violet-50 dark:bg-violet-950/40"><b>'+esc(e.title)+'</b><div class="text-slate-500">'+esc(e.type)+'</div></div>').join('')+dTk.map(t=>'<div class="text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40"><b>'+esc(t.t)+'</b><div class="text-slate-500">'+(t.start?fmtD(t.start)+' '+(new Date(t.start).toTimeString().slice(0,5)):'')+(t.end?' → '+(new Date(t.end).toTimeString().slice(0,5)):'')+'</div></div>').join('')||'<p class="text-xs text-slate-400">Nothing this day.</p>'+
+  '<div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800"><div class="lbl">Add event on this day</div><div class="flex gap-2"><input id="e-t" class="inp" placeholder="Title"><select id="e-k" class="inp"><option>Exam</option><option>Test</option><option>Assignment</option><option>Lecture</option></select></div><button class="btn w-full" onclick="addEvent()">Schedule Event</button></div></div>'+
+  '<div class="card p-5 space-y-3"><div class="font-extrabold">Smart Tasks</div><div class="space-y-2"><input id="t-in" class="inp" placeholder="Task (e.g. Read CSC 200)"><div class="grid grid-cols-2 gap-2"><div><label class="lbl block mb-1">Start</label><input id="t-s" type="datetime-local" class="inp"></div><div><label class="lbl block mb-1">End</label><input id="t-e" type="datetime-local" class="inp"></div></div><button class="btn w-full" onclick="addTask()">Add Task</button></div><div class="space-y-2 pt-2">'+U.tasks.map((t,i)=>'<div class="flex items-center justify-between text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40"><label class="flex items-center gap-3"><input type="checkbox" '+(t.done?'checked':'')+' onchange="U.tasks['+i+'].done=!U.tasks['+i+'].done;save();go(\'plan\')" class="accent-violet-600"><span class="'+(t.done?'line-through text-slate-400':'font-semibold')+'">'+esc(t.t)+'</span></label><span class="flex items-center gap-2">'+(t.end?chip(leftTxt(t.end),(new Date(t.end)-Date.now())<0?'rose':'violet'):'')+'<button class="text-rose-500 font-bold" onclick="U.tasks.splice('+i+',1);save();go(\'plan\')">'+ic('x','w-3 h-3')+'</button></span></div>').join('')||'<p class="text-xs text-slate-400">No tasks yet.</p>'+'</div></div></div></div>';
+},
+fin(){
+  const inc=U.tx.filter(t=>t.type==='income').reduce((a,b)=>a+b.amt,0);
+  const exp=U.tx.filter(t=>t.type==='expense').reduce((a,b)=>a+b.amt,0);
+  const cats=['Food','Transport','Data & Internet','Books','Other'];
+  const cols=['#10b981','#6366f1','#3b82f6','#f59e0b','#ef4444'];
+  const by=cats.map(c=>U.tx.filter(t=>t.type==='expense'&&t.cat===c).reduce((a,b)=>a+b.amt,0));
+  let acc=0;const stops=exp?by.map((v,i)=>{const s=acc;acc+=v/exp*100;return cols[i]+' '+s+'% '+acc+'%';}).join(','):'#e5e7eb 0 100%';
+  const f=U.fees,fp=f.total?Math.min(100,f.paid/f.total*100):0;
+  return '<div class="space-y-5"><div class="grid md:grid-cols-3 gap-4"><div class="card p-6"><div class="lbl">Net Balance</div><div class="text-3xl font-extrabold mt-1">'+naira(inc-exp)+'</div></div><div class="card p-6"><div class="lbl text-emerald-600">Income</div><div class="text-3xl font-extrabold text-emerald-600 mt-1">'+naira(inc)+'</div></div><div class="card p-6"><div class="lbl text-rose-500">Expenses</div><div class="text-3xl font-extrabold text-rose-500 mt-1">'+naira(exp)+'</div></div></div>'+
+  '<div class="grid md:grid-cols-2 gap-5"><div class="card p-6 space-y-3"><div class="font-extrabold">Log Transaction</div><div class="grid grid-cols-2 gap-2"><select id="f-k" class="inp"><option value="expense">Expense (-)</option><option value="income">Income (+)</option></select><input id="f-a" type="number" class="inp" placeholder="Amount (₦)"></div><input id="f-d" class="inp" placeholder="Description"><select id="f-c" class="inp">'+cats.map(c=>'<option>'+c+'</option>').join('')+'</select><button class="btn w-full" onclick="addTx()">Record</button></div>'+
+  '<div class="card p-6 flex items-center gap-5"><div class="donut" style="width:110px;height:110px;background:conic-gradient('+stops+')"><div style="width:76px;height:76px"></div></div><div class="text-xs space-y-1">'+cats.map((c,i)=>'<div><span style="color:'+cols[i]+'">●</span> '+c+' '+(exp?Math.round(by[i]/exp*100):0)+'%</div>').join('')+'</div></div></div>'+
+  '<div class="card p-6 space-y-3"><div class="font-extrabold">School Fees</div><div class="grid grid-cols-3 gap-2"><input type="number" class="inp" placeholder="Total" value="'+(f.total||'')+'" onchange="U.fees.total=+this.value;save();go(\'fin\')"><input type="number" class="inp" placeholder="Paid" value="'+(f.paid||'')+'" onchange="U.fees.paid=+this.value;save();go(\'fin\')"><input type="date" class="inp" value="'+esc(f.due)+'" onchange="U.fees.due=this.value;save();go(\'fin\')"></div><div class="text-xs text-slate-500">'+naira(Math.max(0,f.total-f.paid))+' remaining'+(f.due?' • due '+fmtD(f.due):'')+'</div><div class="h-3 rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full bg-violet-600 rounded-full" style="width:'+fp+'%"></div></div></div>'+
+  '<div class="card p-6 space-y-2"><div class="font-extrabold">History</div>'+[...U.tx].reverse().map(t=>{const i=U.tx.indexOf(t);return '<div class="flex justify-between text-sm p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40"><span>'+esc(t.desc)+' <span class="text-xs text-slate-400">'+esc(t.cat||'')+' • '+fmtD(t.date)+'</span></span><span class="'+(t.type==='income'?'text-emerald-600':'text-rose-500')+' font-bold">'+(t.type==='income'?'+':'-')+naira(t.amt)+' <button class="text-slate-400 ml-2" onclick="U.tx.splice('+i+',1);save();go(\'fin\')">'+ic('x','w-3 h-3')+'</button></span></div>';}).join('')||'<p class="text-xs text-slate-400">No transactions yet.</p>'+'</div></div>';
+},
+mat(){
+  return '<div class="space-y-5"><div class="card p-6 space-y-3"><div class="font-extrabold">Course Materials & Past Questions</div><div class="grid sm:grid-cols-3 gap-3"><input id="m-c" class="inp" placeholder="Course Code (e.g. POS 108)"><input id="m-t" class="inp" placeholder="Title"><select id="m-k" class="inp"><option>Material</option><option>Past Question</option></select></div><div class="grid sm:grid-cols-2 gap-3"><div><label class="lbl block mb-1">Upload PDF / file</label><input id="m-f" type="file" accept=".pdf,.doc,.docx,.png,.jpg" class="inp"></div><div><label class="lbl block mb-1">…or paste a link</label><input id="m-l" class="inp" placeholder="https://..."></div></div><button class="btn" onclick="addMaterial()">'+ic('up')+' Save to Library</button></div>'+
+  '<div class="card p-6 space-y-4"><div class="font-extrabold">Library Storage</div><div class="grid sm:grid-cols-2 gap-4">'+U.materials.map((m,i)=>'<div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 space-y-2"><div class="flex justify-between items-start"><span class="px-2.5 py-1 rounded-lg bg-violet-100 dark:bg-violet-950 text-violet-600 dark:text-violet-300 text-[10px] font-extrabold uppercase">'+esc(m.code)+' • '+esc(m.kind||'Material')+'</span><button class="text-slate-400 text-xs font-bold" onclick="U.materials.splice('+i+',1);save();go(\'mat\')">Delete</button></div><h4 class="font-extrabold text-sm">'+esc(m.title)+'</h4><a href="'+esc(m.link)+'" target="_blank" class="inline-flex items-center gap-1.5 text-xs font-bold text-violet-600 dark:text-violet-400 hover:underline">Open Document</a></div>').join('')||'<p class="text-xs text-slate-400 col-span-2 py-6 text-center">No materials in library yet.</p>'+'</div></div></div>';
+},
+att(){
+  return '<div class="space-y-5"><div class="card p-6 space-y-3"><div class="font-extrabold">Classroom Attendance Log</div><p class="text-xs text-slate-500">Records from live OTP entries in class.</p><div class="space-y-2">'+U.attendance.map(a=>'<div class="flex items-center justify-between text-xs p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40"><div><b class="block text-sm">'+esc(a.code)+'</b><span class="text-slate-400">'+fmtD(a.date)+'</span></div><span class="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-300 font-extrabold text-[10px]">PRESENT</span></div>').join('')||'<p class="text-xs text-slate-400 py-6 text-center">No attendance recorded yet.</p>'+'</div></div>'+
+  '<div class="p-6 rounded-3xl bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800 space-y-3"><div class="font-extrabold text-sm text-violet-900 dark:text-violet-200">Fast Mark Attendance</div><div class="flex gap-2"><input id="att-fast-code" class="inp uppercase tracking-widest text-center font-bold text-lg" placeholder="ENTER 5-DIGIT CODE" maxlength="5"><button class="btn shrink-0" onclick="submitAttendanceFast()">Submit</button></div></div></div>';
+},
+goal(){
+  return '<div class="space-y-5"><div class="card p-6 space-y-3"><div class="font-extrabold">Academic Milestones</div><p class="text-xs text-slate-500">Tip: include a CGPA number (e.g. "Finish with 4.50") and the app will track it against your real results automatically.</p><div class="flex gap-2"><input id="g-t" class="inp" placeholder="e.g. 200 session, perform above 4.5 CGPA"><button class="btn shrink-0" onclick="addGoal()">Set Goal</button></div></div><div class="card p-6 space-y-2"><div class="font-extrabold">Active Milestones</div>'+U.goals.map((g,i)=>{const st=goalStatus(g);return '<div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40"><span class="text-xs font-bold">'+esc(g.title)+'</span><span class="flex items-center gap-2">'+chip(st[0],st[1])+'<button class="text-slate-400 font-bold text-xs" onclick="U.goals.splice('+i+',1);save();go(\'goal\')">'+ic('x','w-3 h-3')+'</button></span></div>';}).join('')||'<p class="text-xs text-slate-400 py-4 text-center">No milestones set.</p>'+'</div></div>';
+},
+car(){
+  return '<div class="space-y-5"><div class="card p-6 space-y-3"><div class="font-extrabold">Career Portfolio</div><input id="c-t" class="inp" placeholder="Achievement / Essay Title"><textarea id="c-d" class="inp text-xs" rows="3" placeholder="Brief summary of skills or publication..."></textarea><button class="btn w-full" onclick="addCareer()">Save to Portfolio</button></div><div class="card p-6 space-y-3"><div class="font-extrabold">Portfolio Records</div>'+U.career.map((c,i)=>'<div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 space-y-2"><div class="flex justify-between"><b class="text-sm">'+esc(c.title)+'</b><button class="text-slate-400 text-xs" onclick="U.career.splice('+i+',1);save();go(\'car\')">'+ic('x','w-3 h-3')+'</button></div><p class="text-xs text-slate-500">'+esc(c.desc)+'</p></div>').join('')||'<p class="text-xs text-slate-400 py-4 text-center">No portfolio items yet.</p>'+'</div></div>';
+},
+prof(){
+  const p=U.profile||{};
+  return '<div class="space-y-5"><div class="card p-6 space-y-4"><div class="font-extrabold">Profile & Settings</div><div class="grid sm:grid-cols-2 gap-3"><div><label class="lbl block mb-1">Full Name</label><input id="p-n" class="inp" value="'+esc(U.name)+'"></div><div><label class="lbl block mb-1">University</label><input id="p-u" class="inp" value="'+esc(p.uni)+'"></div><div><label class="lbl block mb-1">Program</label><input id="p-p" class="inp" value="'+esc(p.program)+'"></div><div><label class="lbl block mb-1">Level</label><select id="p-l" class="inp">'+[100,200,300,400,500,600].map(l=>'<option '+(l==p.level?'selected':'')+'>'+l+'</option>').join('')+'</select></div><div><label class="lbl block mb-1">Grad Units</label><input id="p-t" type="number" class="inp" value="'+(p.totalUnits||120)+'"></div><div><label class="lbl block mb-1">Target CGPA</label><input id="p-g" type="number" step="0.01" min="0" max="5" class="inp" value="'+U.target+'"></div><div class="sm:col-span-2"><label class="lbl block mb-1">Matric number</label><input id="p-m" class="inp font-mono uppercase font-bold" value="'+esc(p.matric||'')+'" placeholder="Paste portal results — we ask before saving"></div></div><button class="btn" onclick="saveProfile()">Save Changes</button><p class="text-xs text-slate-400 pt-2">'+esc(email)+'</p></div>'+
+  '<div class="card p-6 space-y-3"><div class="font-extrabold">Data Management</div><p class="text-xs text-slate-500">Export a JSON backup anytime.</p><button class="btn2" onclick="exportData()">Download Backup</button></div><button class="btn2 w-full !text-rose-500" onclick="logout()">Log Out</button></div>';
+}
+};
+// academics
+let rowN=0;
+const ACAD={
+calc(){
+  const e=editing!==null?U.semesters.find(s=>s.id===editing):null;
+  $('sub').innerHTML='<div class="card p-6 space-y-5"><div class="grid sm:grid-cols-2 gap-3"><div><div class="lbl">Current CGPA</div><input class="inp mt-1 font-mono font-bold" readonly value="'+cum().g.toFixed(2)+' / 5.00"></div><div><div class="lbl">Semester Title</div><input id="c-name" class="inp mt-1" value="'+esc(e?e.name:'Semester '+(U.semesters.length+1))+'"></div></div><button class="btn2 w-full justify-center" onclick="$(\'paste\').classList.toggle(\'hidden\')">'+ic('up')+' Import / Paste Portal Result Text</button><div id="paste" class="hidden space-y-2 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl"><textarea id="paste-a" rows="4" class="inp font-mono text-xs" placeholder="Paste full page text from portal..."></textarea><button class="btn w-full" onclick="parsePasteTrojan()">Parse & Auto-Fill Courses</button><p class="text-[11px] text-slate-400">Courses are parsed from your text. We\'ll ask before saving your matric number.</p></div><div class="flex justify-between items-center"><div class="lbl">Courses & Grades</div><button class="text-xs font-bold text-violet-600 dark:text-violet-400" onclick="addRow()">+ Add Row</button></div><div id="rows" class="space-y-2"></div><button class="btn w-full py-3" onclick="saveSem()">'+(e?'Update Semester':'Calculate & Save Semester')+'</button></div>';
+  rowN=0;
+  if(e)e.courses.forEach(c=>addRow(c.code,c.unit,c.score));else{addRow();addRow();addRow();}
+},
+det(){
+  $('sub').innerHTML='<div class="card p-6 space-y-4"><div class="font-extrabold">'+ic('search')+' Result Detective</div><p class="text-xs text-slate-500">Predicts your second semester GPA from your first GPA and the portal CGPA.</p><div class="grid sm:grid-cols-2 gap-3"><div><div class="lbl">1st Sem GPA</div><input id="d1" type="number" step="0.01" class="inp mt-1" placeholder="4.80"></div><div><div class="lbl">1st Sem Units</div><input id="du1" type="number" class="inp mt-1" value="20"></div><div><div class="lbl">Portal CGPA</div><input id="dc" type="number" step="0.01" class="inp mt-1" placeholder="4.65"></div><div><div class="lbl">2nd Sem Units</div><input id="du2" type="number" class="inp mt-1" value="20"></div></div><button class="btn w-full" onclick="runDet()">Detect Performance</button><div id="d-res"></div></div>';
+},
+rec(){
+  const c=cum();
+  $('sub').innerHTML='<div class="card p-6 space-y-4"><div class="flex justify-between items-center"><div class="font-extrabold">Academic Transcript</div><button class="btn2 text-xs np" onclick="window.print()">'+ic('print')+' Print</button></div><p class="text-xs text-slate-500">'+esc(U.name)+' • '+esc(U.profile?.uni)+' • '+esc(U.profile?.program)+'</p><div class="rounded-2xl bg-violet-50 dark:bg-violet-950/40 p-4 text-sm font-extrabold text-violet-900 dark:text-violet-200">CGPA: '+c.g.toFixed(2)+' / 5.00 ('+c.u+' units)</div>'+U.semesters.map(s=>{const x=semS(s);return '<div class="rounded-2xl bg-slate-50 dark:bg-slate-800/40 p-4 space-y-2"><div class="flex justify-between text-sm font-extrabold"><span>'+esc(s.name)+'</span><span class="text-violet-600 dark:text-violet-400">GPA '+x.g.toFixed(2)+' ('+x.u+'u)</span></div>'+s.courses.map(k=>'<div class="flex justify-between text-xs"><span class="font-mono text-slate-500">'+esc(k.code)+(k.sup?' ↺':'')+' ('+k.unit+'u)</span><b>Score: '+k.score+' ('+gr(k.score)[0]+')</b></div>').join('')+'<div class="flex gap-4 np pt-2 border-t border-slate-200/60 dark:border-slate-700/60"><button class="text-xs font-bold text-violet-600" onclick="editSem('+s.id+')">Edit</button><button class="text-xs font-bold text-rose-500" onclick="delSem('+s.id+')">Delete</button></div></div>';}).join('')||'<p class="text-xs text-slate-400 text-center py-6">No semesters stored.</p>'+'</div>';
+}
+};
+function addRow(code='',unit=3,score=''){
+  const id=++rowN,d=document.createElement('div');
+  d.id='r'+id;d.className='grid grid-cols-12 gap-2 items-center';
+  d.innerHTML='<input class="inp col-span-4 !py-2 uppercase font-mono font-bold c-code" placeholder="Code" value="'+esc(code)+'"><input type="number" class="inp col-span-2 !py-2 text-center c-unit" value="'+esc(unit)+'"><input type="number" class="inp col-span-4 !py-2 text-center c-score" placeholder="Score" value="'+esc(score)+'" oninput="this.closest(\'div\').querySelector(\'.c-g\').textContent=gr(this.value)[0]"><b class="col-span-1 text-center text-xs c-g">'+gr(score)[0]+'</b><button class="col-span-1 text-rose-500 font-bold" onclick="this.closest(\'div\').remove()">'+ic('x','w-3 h-3')+'</button>';
+  $('rows').appendChild(d);
+}
+function parsePasteTrojan(){
+  try{
+    const rawText=$('paste-a').value;
+    if(!rawText.trim())return showToast('Paste portal text first','error');
+    const lines=rawText.split('\n').map(l=>l.trim()).filter(Boolean);
+    const out=[];
+    const codeRe=/^((?:[A-Z]{2,4}-)?[A-Z]{2,4}\d{3}[A-Z]?)(?=\s|$)/;
+    const isUnit=v=>/^[1-6]$/.test(v);
+    const isGrade=v=>/^[A-F]$/.test(v);
+    const isScore=v=>/^\d{1,3}$/.test(v)&&+v<=100;
+    for(let i=0;i<lines.length;i++){
+      const m=lines[i].match(codeRe);
+      if(!m)continue;
+      const code=m[1].replace(/^[A-Z]{2,4}-/,'').toUpperCase();
+      let unit=3,score='';
+      if(isUnit(lines[i+1]||'')){
+        unit=+lines[i+1];
+        if(isScore(lines[i+3]||'')&&isGrade(lines[i+4]||''))score=lines[i+3];
+      }else{
+        const nums=(lines[i].slice(m[0].length).match(/\b\d{1,3}\b/g)||[]).map(Number);
+        const u=nums.find(n=>n>=1&&n<=6);
+        if(u)unit=u;
+        const s=nums.slice(nums.indexOf(u)+1).filter(n=>n<=100).pop();
+        if(s!==undefined)score=String(s);
+      }
+      out.push([code,unit,score]);
+    }
+    if(!out.length)return showToast('No course patterns found in text','error');
+    $('rows').innerHTML='';rowN=0;
+    out.forEach(o=>addRow(...o));
+    $('paste').classList.add('hidden');
+    showToast('Parsed '+out.length+' courses from portal text!');
+    const matricMatch=rawText.match(/\b(\d{2}\/[A-Z0-9]{2,8}\/[A-Z0-9]{2,8})\b/i)||rawText.match(/\b(20\d{2}\/?\d{6,7})\b/);
+    if(matricMatch){
+      const m=matricMatch[0].toUpperCase();
+      if(m!==U.profile.matric)askMatric(m);
+    }
+  }catch(e){showToast('Parse error: '+e.message,'error');}
+}
+function saveSem(){
+  const courses=[];
+  document.querySelectorAll('#rows > div').forEach(r=>{
+    const code=r.querySelector('.c-code').value.trim().toUpperCase();
+    const unit=parseFloat(r.querySelector('.c-unit').value);
+    const sc=r.querySelector('.c-score').value;
+    if(code&&unit>0&&sc!==''&&+sc>=0&&+sc<=100)courses.push({code,unit,score:+sc});
+  });
+  if(!courses.length)return showToast('Enter at least one valid course with score (0-100)','error');
+  const name=$('c-name').value.trim()||('Semester '+(U.semesters.length+1));
+  if(editing!==null){const s=U.semesters.find(x=>x.id===editing);s.name=name;s.courses=courses;editing=null;}
+  else U.semesters.push({id:Date.now(),name,courses});
+  save();
+  const x=semS({courses}),c=cum();
+  go('home');showToast('Saved! Semester GPA: '+x.g.toFixed(2)+' | New CGPA: '+c.g.toFixed(2));
+}
+function editSem(id){editing=id;aTab='calc';go('acad');}
+function delSem(id){if(!confirm('Delete this semester?'))return;U.semesters=U.semesters.filter(s=>s.id!==id);save();go('acad');}
+function runDet(){
+  const g1=parseFloat($('d1').value),cg=parseFloat($('dc').value);
+  const u1=parseFloat($('du1').value)||20,u2=parseFloat($('du2').value)||20;
+  if(isNaN(g1)||isNaN(cg))return showToast('Enter both GPA values','error');
+  const r=detective(g1,cg,u1,u2),q1=g1*u1,qt=cg*(u1+u2);
+  $('d-res').innerHTML='<div class="p-5 rounded-2xl bg-violet-500/10 border border-violet-500/30 text-center space-y-2 mt-3"><div class="text-xs font-extrabold text-violet-600 dark:text-violet-400 uppercase tracking-wider">Predicted 2nd Sem GPA</div><div class="text-4xl font-extrabold text-violet-600 dark:text-violet-400">'+r.need.toFixed(2)+'</div>'+detMsg(r.need)+'</div>'+(r.ok?'':'<p class="text-xs text-rose-500 font-bold mt-2 text-center">Out of 0–5 range. Check portal entries.</p>');
+}
+// lecturer
+const LECTURER_VIEWS={
+home(){
+  return '<div class="space-y-5"><div><h1 class="text-2xl font-extrabold">Lecturer Attendance Console</h1><p class="text-xs text-slate-500">Server-verified 90-second OTP engine</p></div><div class="card p-6 space-y-4"><div class="grid sm:grid-cols-2 gap-3"><div><label class="lbl block mb-1">Course</label><input id="lec-course" class="inp uppercase font-mono font-bold" value="POS 204"></div><div><label class="lbl block mb-1">Topic</label><input id="lec-topic" class="inp" placeholder="Class Session"></div></div><div class="text-center p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl space-y-3"><div class="lbl">Broadcast 5-Digit OTP</div><div id="otp-display" class="text-6xl font-extrabold tracking-widest font-mono text-violet-600 dark:text-violet-400">-----</div><div id="timer-display" class="text-xs font-bold text-slate-400">Tap below to broadcast</div></div><button class="btn w-full py-3 text-base" onclick="startAttendanceSession()">Generate 90-Second Code</button></div><div class="card p-6 space-y-3"><div class="flex justify-between items-center"><div class="font-extrabold">Live Submissions</div><span id="sub-count" class="text-xs font-extrabold text-violet-600 dark:text-violet-400">0 Present</span></div><div class="h-3 rounded-full bg-slate-200 dark:bg-slate-800"><div id="sub-bar" class="h-full bg-violet-500 w-0 transition-all"></div></div></div></div>';
+},
+roster(){
+  return '<div class="space-y-5"><div class="card p-6 space-y-4"><div class="flex justify-between items-center"><div class="font-extrabold">Student Attendance Rosters</div><button class="btn2 text-xs" onclick="exportRosterCSV()">Export CSV</button></div><div class="overflow-x-auto"><table class="w-full text-xs text-left"><thead><tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400"><th class="p-3 font-extrabold">Name</th><th class="p-3 font-extrabold">Matric</th><th class="p-3 font-extrabold">Course</th><th class="p-3 font-extrabold">Date</th></tr></thead><tbody id="roster-body" class="divide-y divide-slate-100 dark:divide-slate-800 font-mono"></tbody></table></div></div></div>';
+},
+prof(){
+  return '<div class="space-y-5"><div class="card p-6 space-y-3"><div class="font-extrabold">Lecturer Settings</div><div class="space-y-3"><div><label class="lbl block mb-1">Name</label><input class="inp" value="'+esc(U.name)+'"></div><div><label class="lbl block mb-1">Institution</label><input class="inp" value="'+esc(U.profile?.uni||'')+'"></div></div></div><button class="btn2 w-full !text-rose-500" onclick="logout()">Log Out Console</button></div>';
+}
+};
+async function startAttendanceSession(){
+  const{data,error}=await sb.rpc('start_session',{p_course:$('lec-course').value.trim()||'POS 204',p_topic:$('lec-topic').value.trim()});
+  if(error)return showToast(error.message,'error');
+  const s=data[0],end=new Date(s.s_expires).getTime();
+  clearInterval(timerInterval);clearInterval(pollT);
+  $('otp-display').innerText=s.s_code;
+  const tick=()=>{
+    if(!$('otp-display')){clearInterval(timerInterval);clearInterval(pollT);return;}
+    const left=Math.max(0,Math.round((end-Date.now())/1000));
+    $('timer-display').innerText=left?('Expires in '+left+'s'):'Session closed';
+    if(!left){$('otp-display').innerText='EXPIRED';clearInterval(timerInterval);}
+  };
+  const poll=async()=>{
+    const{count}=await sb.from('attendance').select('id',{count:'exact',head:true}).eq('session_id',s.s_id);
+    if($('sub-count'))$('sub-count').innerText=(count||0)+' Present';
+    if(Date.now()>end+5000)clearInterval(pollT);
+  };
+  tick();poll();
+  timerInterval=setInterval(tick,1000);pollT=setInterval(poll,3000);
+}
+async function submitAttendanceFast(){
+  const code=$('att-fast-code').value.trim();
+  if(!/^\d{5}$/.test(code))return showToast('Enter the 5-digit code','error');
+  const{data,error}=await sb.rpc('mark_attendance',{p_code:code});
+  if(error)return showToast(error.message,'error');
+  U.attendance.push({code:data,lecturer:'',date:new Date().toISOString()});
+  save();$('att-fast-code').value='';
+  showToast('Attendance marked for '+data);
+}
+async function loadRoster(){
+  const{data,error}=await sb.from('attendance').select('marked_at, sessions(course), profiles(name, matric)').order('marked_at',{ascending:false});
+  if(error)return showToast(error.message,'error');
+  rosterRows=data||[];
+  $('roster-body').innerHTML=rosterRows.map(r=>'<tr><td class="p-3">'+esc(r.profiles?.name)+'</td><td class="p-3">'+esc(r.profiles?.matric||'—')+'</td><td class="p-3">'+esc(r.sessions?.course)+'</td><td class="p-3">'+fmtD(r.marked_at)+'</td></tr>').join('')||'<tr><td class="p-3 text-slate-400" colspan="4">No attendance recorded yet.</td></tr>';
+}
+function exportRosterCSV(){
+  const cell=v=>{v=String(v??'');if(/^[=+\-@]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';};
+  const rows=[['Name','Matric','Course','Date'],...rosterRows.map(r=>[r.profiles?.name,r.profiles?.matric,r.sessions?.course,r.marked_at])];
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([rows.map(r=>r.map(cell).join(',')).join('\n')],{type:'text/csv'}));
+  a.download='attendance-roster.csv';a.click();
+}
+// actions
+function addTask(){
+  const v=$('t-in').value.trim();
+  if(!v)return showToast('Enter a task description','error');
+  U.tasks.push({t:v,done:false,start:$('t-s')?.value||'',end:$('t-e')?.value||''});
+  save();go('plan');showToast('Task added');
+}
+function addEvent(){
+  const t=$('e-t').value.trim();
+  if(!t)return showToast('Add a title','error');
+  U.events.push({title:t,type:$('e-k').value,date:selDay});
+  save();go('plan');showToast('Event scheduled for '+fmtD(selDay));
+}
+function addTx(){
+  const a=parseFloat($('f-a').value),d=$('f-d').value.trim();
+  if(!(a>0)||!d)return showToast('Enter amount and description','error');
+  U.tx.push({type:$('f-k').value,amt:a,desc:d,cat:$('f-c').value,date:Date.now()});
+  save();go('fin');showToast('Transaction logged');
+}
+async function addMaterial(){
+  const code=$('m-c').value.trim(),title=$('m-t').value.trim(),kind=$('m-k').value;
+  const file=$('m-f').files[0];
+  let link=$('m-l').value.trim();
+  if(!code||!title)return showToast('Add course code and title','error');
+  if(file){
+    showToast('Uploading '+file.name+'...');
+    const path=(uid||'web')+'/'+Date.now()+'_'+file.name.replace(/[^A-Za-z0-9._-]/g,'');
+    const{error}=await sb.storage.from('materials').upload(path,file);
+    if(error)return showToast(error.message,'error');
+    link=sb.storage.from('materials').getPublicUrl(path).data.publicUrl;
+  }
+  if(!link)return showToast('Choose a file or paste a link','error');
+  if(!/^https:\/\//i.test(link))return showToast('Link must start with https://','error');
+  U.materials.push({code,title,link,kind});
+  save();go('mat');showToast(kind+' saved to library');
+}
+function addGoal(){
+  const t=$('g-t').value.trim();
+  if(!t)return showToast('Enter milestone description','error');
+  U.goals.push({title:t,done:false});
+  save();go('goal');showToast('Goal created');
+}
+function addCareer(){
+  const title=$('c-t').value.trim(),desc=$('c-d').value.trim();
+  if(!title||!desc)return showToast('Enter title and description','error');
+  U.career.push({title,desc});
+  save();go('car');showToast('Portfolio item saved');
+}
+function saveProfile(){
+  const t=parseFloat($('p-g').value);
+  if(isNaN(t)||t<0||t>5)return showToast('Target CGPA must be 0–5','error');
+  U.name=$('p-n').value.trim()||U.name;U.target=t;
+  Object.assign(U.profile,{uni:$('p-u').value.trim(),program:$('p-p').value.trim(),level:$('p-l').value,totalUnits:parseFloat($('p-t').value)||120,matric:$('p-m').value.trim()});
+  save();start();go('prof');showToast('Profile updated');
+}
+function exportData(){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(U,null,2)],{type:'application/json'}));
+  a.download='academic-summit-backup.json';a.click();
+  showToast('Backup downloaded');
+}
+async function logout(){await syncNow();await sb.auth.signOut();location.reload();}
+  let toured=false;
+const TOUR=[
+['Dashboard','Your CGPA, degree progress and GPA trajectory live here. Notifications warn you about exams, fees and due tasks.'],
+['Academics','Calculate GPA, import portal results with one paste, and let the Result Detective predict a missing semester.'],
+['Planner','A Google-style calendar. Tasks have start and end times with live countdowns.'],
+['Finance','Track allowance, spending by category, and school-fees progress.'],
+['Materials','Save course materials and past questions — upload a PDF directly or paste a link.'],
+['Attendance','Enter the 5-digit code your lecturer broadcasts in class to mark yourself present.'],
+['Profile','Edit your profile, link your matric number, download a backup anytime.']
+];
+let tourI=0;
+function startTour(){tourI=0;tourStep();}
+function tourStep(){
+  if(tourI>=TOUR.length)return closeTour();
+  const s=TOUR[tourI];
+  var h='<div class="fixed inset-0 z-50 bg-black/60 flex items-end">';
+  h+='<div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 space-y-4">';
+  h+='<div class="lbl text-violet-600 dark:text-violet-400">Quick tour '+(tourI+1)+'/'+TOUR.length+'</div>';
+  h+='<div class="font-extrabold text-lg">'+s[0]+'</div>';
+  h+='<p class="text-sm text-slate-500 dark:text-slate-400">'+s[1]+'</p>';
+  h+='<div class="flex gap-1">'+TOUR.map(function(_,i){
+    return '<span class="h-1.5 flex-1 rounded-full '+(i<=tourI?'bg-violet-600':'bg-slate-200 dark:bg-slate-700')+'"></span>';
+  }).join('')+'</div>';
+  h+='<div class="flex gap-2"><button class="btn2 flex-1" onclick="closeTour()">Skip</button>';
+  h+='<button class="btn flex-1" onclick="tourI++;tourStep()">';
+  h+=(tourI===TOUR.length-1?'Finish':'Next')+'</button></div></div></div>';
+  $('sheet').innerHTML=h;
+}
+function closeTour(){$('sheet').innerHTML='';localStorage.setItem('as_tour','1');}
+setTimeout(function(){
+  var fb=document.createElement('button');
+  fb.className='fixed right-4 z-40 w-10 h-10 rounded-full grad text-white font-extrabold shadow-lg';
+  fb.style.bottom='calc(env(safe-area-inset-bottom,6px) + 76px)';
+  fb.id='tour-fab';fb.textContent='?';fb.onclick=startTour;
+  document.body.appendChild(fb);
+},800);
+// ===== SETTINGS SCREEN (v13 add-on) =====
+const SI={
+pencil:'<path d="M4 20l4-1L20 7l-3-3L5 16z"/>',
+bell:'<path d="M6 9a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 004 0"/>',
+head:'<path d="M4 13a8 8 0 0116 0"/><rect x="3" y="13" width="4" height="6" rx="2"/><rect x="17" y="13" width="4" height="6" rx="2"/>',
+shield:'<path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z"/>',
+help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 015 0c0 2-2.5 2-2.5 4"/><path d="M12 17h.01"/>',
+moon:'<path d="M21 13A9 9 0 1111 3a7 7 0 0010 10"/>'
+};
+const si=n=>'<svg class="w-4 h-4 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">'+SI[n]+'</svg>';
+// theme with System Preferred
+let themeMode=localStorage.getItem('as_theme_mode')||(isDark?'dark':'light');
+function applyTheme(){
+  let dark;
+  if(themeMode==='system')dark=matchMedia('(prefers-color-scheme: dark)').matches;
+  else dark=themeMode==='dark';
+  isDark=dark;
+  document.documentElement.classList.toggle('dark',dark);
+}
+function toggleTheme(){setThemeMode(isDark?'light':'dark');}
+function setThemeMode(m){
+  themeMode=m;localStorage.setItem('as_theme_mode',m);
+  applyTheme();if(U)start();
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(){
+  if(themeMode==='system'){applyTheme();if(U)start();}
+});
+applyTheme();
+// notification prefs actually filter dashboard alerts
+const _home0=V.home;
+V.home=function(){
+  const p=U.prefs||{};
+  const map={'plan':'exam','clock':'tasks','fin':'fees','goal':'goals'};
+  let html=_home0();
+  Object.keys(map).forEach(function(e){
+    if(p[map[e]]===false){
+      const re=new RegExp('<div class="flex gap-3 text-xs"><span class="[^"]*" data-k="'+e+'"[\\s\\S]*?</div></div></div>','g');
+      html=html.replace(re,'');
+    }
+  });
+  return html;
+};
+// the new Settings screen
+V.prof=function(){
+  const p=U.profile||{};
+  const ini=U.name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+  const row=(icon,label,fn)=>'<button onclick="'+fn+'" class="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 text-left"><span class="flex items-center gap-3 text-sm font-semibold">'+icon+label+'</span>'+ic('r')+'</button>';
+  return '<div class="space-y-5 max-w-2xl mx-auto">'+
+  '<div class="grad rounded-3xl p-6 text-center space-y-2 shadow-lg"><div class="w-16 h-16 mx-auto rounded-2xl bg-white text-violet-700 grid place-items-center text-xl font-extrabold">'+ini+'</div><div class="font-extrabold text-white text-lg">'+esc(U.name)+'</div><div class="text-xs text-white/80">'+esc(email)+'</div></div>'+
+  '<div class="card p-5 space-y-2"><div class="lbl">Account</div>'+
+  row(ic('prof'),'Personal Information','openInfoSheet()')+
+  row(si('pencil'),'Update Profile','openEditSheet()')+
+  row(si('bell'),'Notifications','openNotifSheet()')+
+  row(ic('up'),'Download Backup','exportData()')+'</div>'+
+  '<div class="card p-5 space-y-2"><div class="lbl">Appearance</div><div class="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40"><span class="flex items-center gap-3 text-sm font-semibold">'+si('moon')+'Theme</span><select onchange="setThemeMode(this.value)" class="inp text-xs" style="width:auto">'+['light','dark','system'].map(m=>'<option value="'+m+'"'+(themeMode===m?' selected':'')+'>'+(m==='system'?'System Preferred':(m==='dark'?'Dark':'Light'))+'</option>').join('')+'</select></div></div>'+
+  '<div class="card p-5 space-y-2"><div class="lbl">Other</div>'+
+  row(si('head'),'Support','openSupport()')+
+  row(si('shield'),'Privacy Policy','openPolicy()')+
+  row(si('help'),'FAQ','openFaq()')+'</div>'+
+  '<button class="w-full py-3.5 rounded-2xl font-bold text-sm bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-300" onclick="logout()">Logout</button></div>';
+};
+const sLine=(k,v)=>'<div class="flex justify-between text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40"><span class="text-slate-400">'+k+'</span><b>'+esc(v||'—')+'</b></div>';
+function sheetWrap(title,body){
+  return '<div class="fixed inset-0 z-50 bg-black/50 flex items-end" onclick="closeSheet()"><div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 space-y-3" onclick="event.stopPropagation()" style="padding-bottom:max(1.5rem,env(safe-area-inset-bottom))"><div class="lbl text-violet-600 dark:text-violet-400">'+title+'</div>'+body+'<button class="btn2 w-full" onclick="closeSheet()">Close</button></div></div>';
+}
+function openSupport(){
+  $('sheet').innerHTML=sheetWrap('Support',
+  '<p class="text-xs text-slate-500 dark:text-slate-400">Questions or issues? The team replies within 24 hours.</p>'+
+  '<a class="btn w-full" href="mailto:support@academicsummit.app">Email Support</a>'+
+  '<a class="btn2 w-full" target="_blank" href="https://wa.me/2348000000000">WhatsApp Community</a>');
+}
+// ===== SETTINGS v2 + SILVER/CYBER THEME =====
+SI.back='<path d="M19 12H5m7-7l-7 7 7 7"/>';
+SI.mega='<path d="M3 11l14-5v12L3 13z"/><path d="M7 13v4a2 2 0 002 2h1"/>';
+const PI={
+user:'<path d="M8 8a4 4 0 118 0 4 4 0 01-8 0"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
+id:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10h4M7 14h6"/><circle cx="16" cy="12" r="2"/>',
+dept:'<circle cx="6" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="12" r="2"/><path d="M8 7l8 4M8 17l8-4"/>',
+fac:'<path d="M3 21h18M6 21V8l6-4 6 4v13"/><path d="M10 21v-4h4v4"/>',
+lvl:'<path d="M4 19V5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/>',
+mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+phone:'<path d="M5 4h4l2 5-3 2a12 12 0 005 5l2-3 5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/>'
+};
+const pi=n=>'<svg class="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">'+PI[n]+'</svg>';
+(function(){var s=document.createElement('style');s.textContent=[
+':root{--bg:#eef2f5;--card:#fbfcfd;--sub:#f3f6f8;--bd:#dce4ea;--tx:#0b1520;--mut:#5c6b76;--sh:0 10px 30px -12px rgba(20,50,70,.16)}',
+'.dark{--bg:#02120c;--card:#07271d;--sub:#0b3527;--bd:#0d3f2e;--tx:#e7fff5;--mut:#8fb8a9;--sh:0 10px 30px -12px rgba(0,0,0,.6)}',
+'.dark .grad,.dark .btn{box-shadow:0 0 18px rgba(16,185,129,.35)}',
+'.grad,.btn{background:linear-gradient(135deg,#059669,#10b981 55%,#06b6d4)!important}',
+'.btn2{background:rgba(16,185,129,.12)!important;color:#047857!important}',
+'.dark .btn2{color:#6ee7b7!important}',
+'#side{background:#021812!important}',
+'div[style*="0b1030"]{background:#021812!important}',
+'[class*="text-violet"]{color:#047857!important}',
+'.dark [class*="text-violet"]{color:#34d399!important}',
+'#side [class*="text-violet"]{color:#6ee7b7!important}',
+'#auth [class*="text-violet"]{color:#a7f3d0!important}',
+'[class*="bg-violet"]{background-color:rgba(16,185,129,.12)!important}',
+'[class*="bg-violet-6"]{background-color:#059669!important}',
+'[class*="border-violet"]{border-color:rgba(16,185,129,.35)!important}',
+'[class*="ring-violet"]{--tw-ring-color:rgba(52,211,153,.6)!important}',
+'[class*="accent-violet"]{accent-color:#059669!important}',
+'.sw{width:46px;height:26px;border-radius:999px;background:#94a3b8;position:relative;transition:.2s;flex-shrink:0}',
+'.sw::after{content:"";position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s}',
+'input:checked+.sw{background:#10b981}',
+'input:checked+.sw::after{left:23px;background:#02120c}'
+].join('');document.head.appendChild(s);})();
+function showToast(msg,type){
+  const p=(U&&U.prefs)||{};
+  if(p.inapp===false)return;
+  type=type||'success';
+  const t=document.createElement('div');
+  const bg=type==='success'?'bg-emerald-600 text-white':type==='error'?'bg-rose-600 text-white':'bg-slate-800 text-white';
+  t.className='toast px-4 py-3 rounded-xl shadow-lg font-semibold text-xs '+bg;
+  t.innerHTML=esc(msg);
+  $('toast-container').appendChild(t);
+  setTimeout(function(){t.style.opacity='0';setTimeout(function(){t.remove();},200);},3000);
+}
+function fullScreen(title,body){
+  $('sheet').innerHTML='<div class="fixed inset-0 z-50 overflow-y-auto" style="background:var(--bg);color:var(--tx)">'+
+  '<div class="sticky top-0 z-10 flex items-center px-3 py-4 backdrop-blur-md" style="background:var(--bg)">'+
+  '<button onclick="closeSheet()" class="p-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">'+SI.back+'</svg></button>'+
+  '<div class="font-extrabold text-base flex-1 text-center pr-9">'+title+'</div></div>'+
+  '<div class="px-4 pb-24 space-y-4 max-w-2xl mx-auto">'+body+'</div></div>';
+}
+function openInfoSheet(){
+  const p=U.profile||{};
+  const row=function(icn,label,val){
+    return '<div class="space-y-1"><div class="lbl px-1">'+label+'</div>'+
+    '<div class="flex items-center gap-3 p-4 rounded-2xl border" style="background:var(--sub);border-color:var(--bd)">'+icn+
+    '<span class="text-sm font-semibold break-all">'+esc(val||'Not set')+'</span></div></div>';
+  };
+  fullScreen('Personal Information',
+  row(pi('user'),'Full Name',U.name)+
+  row(pi('id'),'Registration Number',p.matric)+
+  row(pi('dept'),'Department',p.program)+
+  row(pi('fac'),'Faculty',p.faculty)+
+  row(pi('lvl'),'Level',p.level)+
+  row(pi('mail'),'Email Address',email)+
+  row(pi('mail'),'Student Email Address',p.semail)+
+  '<button class="w-full py-3.5 rounded-2xl font-bold text-sm bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-300" onclick="deactivate()">Deactivate Account</button>');
+}
+function deactivate(){
+  if(!confirm('Deactivate on this device? Cloud data is erased only by support.'))return;
+  delete DB.users[email];save();logout();
+}
+function openEditSheet(){
+  const p=U.profile||{};
+  fullScreen('Update Profile',
+  '<div class="space-y-2"><div class="lbl px-1">Phone Number</div>'+
+  '<div class="flex items-center gap-3 p-4 rounded-2xl border" style="background:var(--sub);border-color:var(--bd)">'+pi('phone')+'<span class="text-sm font-semibold">'+esc(p.phone||'Not set')+'</span></div>'+
+  '<button class="btn w-full" onclick="changePhone()">Change phone number</button></div>'+
+  '<div class="space-y-3 card p-5">'+
+  '<input id="e-n" class="inp" value="'+esc(U.name)+'" placeholder="Full name">'+
+  '<input id="e-u" class="inp" value="'+esc(p.uni)+'" placeholder="University">'+
+  '<input id="e-p" class="inp" value="'+esc(p.program)+'" placeholder="Department">'+
+  '<input id="e-f" class="inp" value="'+esc(p.faculty||'')+'" placeholder="Faculty (e.g. Social Sciences)">'+
+  '<div class="grid grid-cols-2 gap-2"><select id="e-l" class="inp">'+[100,200,300,400,500,600].map(function(l){return '<option '+(l==p.level?'selected':'')+'>'+l+'</option>';}).join('')+'</select><input id="e-t" type="number" class="inp" value="'+(p.totalUnits||120)+'" placeholder="Grad units"></div>'+
+  '<input id="e-m" class="inp font-mono uppercase" value="'+esc(p.matric||'')+'" placeholder="Matric / Reg number">'+
+  '<input id="e-s" type="email" class="inp" value="'+esc(p.semail||'')+'" placeholder="Student email">'+
+  '<input id="e-g" type="number" step="0.01" min="0" max="5" class="inp" value="'+U.target+'" placeholder="Target CGPA">'+
+  '<button class="btn w-full" onclick="saveEditSheet()">Save Changes</button></div>');
+}
+function changePhone(){
+  const v=prompt('New phone number (e.g. +2348012345678):',U.profile.phone||'');
+  if(v){U.profile.phone=v.trim();save();openEditSheet();showToast('Phone updated');}
+}
+function saveEditSheet(){
+  const t=parseFloat($('e-g').value);
+  if(isNaN(t)||t<0||t>5)return showToast('Target CGPA must be 0-5','error');
+  U.name=$('e-n').value.trim()||U.name;U.target=t;
+  Object.assign(U.profile,{uni:$('e-u').value.trim(),program:$('e-p').value.trim(),faculty:$('e-f').value.trim(),level:$('e-l').value,totalUnits:parseFloat($('e-t').value)||120,matric:$('e-m').value.trim(),semail:$('e-s').value.trim()});
+  save();closeSheet();start();showToast('Profile updated');
+}
+function pSet(k,v){U.prefs=U.prefs||{};U.prefs[k]=v;save();}
+function openNotifSheet(){
+  const p=U.prefs=Object.assign({inapp:true,emailch:true,mkt:false,exam:true,tasks:true,fees:true,goals:true},U.prefs);
+  const sw=function(icn,label,k){
+    return '<label class="flex items-center justify-between p-4 rounded-2xl border cursor-pointer" style="background:var(--sub);border-color:var(--bd)">'+
+    '<span class="flex items-center gap-3 text-sm font-semibold">'+icn+label+'</span>'+
+    '<input type="checkbox" class="hidden" '+(p[k]?'checked':'')+' onchange="pSet(\''+k+'\',this.checked)"><span class="sw"></span></label>';
+  };
+  fullScreen('Notifications',
+  '<div class="space-y-3"><div class="lbl px-1">Channels</div>'+
+  sw(si('bell'),'In-app Notifications','inapp')+
+  sw(pi('mail'),'Email Notifications','emailch')+
+  sw(si('mega'),'Marketing Emails','mkt')+
+  '<div class="lbl px-1 pt-2">Smart Alerts</div>'+
+  sw(ic('plan'),'Exam & Test Reminders','exam')+
+  sw(ic('clock'),'Task Due Alerts','tasks')+
+  sw(ic('fin'),'Fee Alerts','fees')+
+  sw(ic('goal'),'Milestone Updates','goals')+'</div>');
+}
+const FAQ=[
+['What is Academic Summit?','Your campus operating system: results, GPA analytics, planner, finance, materials and attendance in one place.'],
+['Who can use it?','Students of any institution, plus lecturers who are securely promoted by the admin for attendance sessions.'],
+['How is my GPA calculated?','Each score becomes a grade point (A=5 to F=0). GPA = total (units × points) ÷ total units. CGPA spans all semesters.'],
+['How do I import my results?','Academics → Import Results, then paste your portal page text. Courses, units and scores are detected automatically.'],
+['How does attendance work?','Your lecturer broadcasts a 5-digit code that expires in 90 seconds. Enter it on your dashboard to mark yourself present.'],
+['Is my data safe?','Yes. Records live in your private account, your matric is saved only after you approve it, and you can export or erase everything anytime.'],
+['How do lecturers get access?','Lecturers sign up normally and are promoted by the administrator. The lecturer link rejects student accounts.'],
+['How do I back up my data?','Profile & Settings → Download Backup gives you a JSON copy of everything.']
+];
+let faqOpen=-1;
+function faqT(i){faqOpen=(faqOpen===i?-1:i);openFaq();}
+function openFaq(){
+  const items=FAQ.map(function(f,i){
+    return '<div class="border-b" style="border-color:var(--bd)">'+
+    '<button class="w-full flex items-center justify-between gap-3 py-5 text-left" onclick="faqT('+i+')">'+
+    '<span class="text-sm font-semibold">'+f[0]+'</span>'+
+    '<span class="w-7 h-7 shrink-0 rounded-full border grid place-items-center text-emerald-600 dark:text-emerald-400" style="border-color:var(--bd)">'+(faqOpen===i?'−':'+')+'</span></button>'+
+    (faqOpen===i?'<p class="text-xs pb-5 -mt-1 leading-relaxed" style="color:var(--mut)">'+f[1]+'</p>':'')+'</div>';
+  }).join('');
+  fullScreen('FAQ',items+
+  '<div class="rounded-3xl p-6 text-center space-y-3 grad shadow-lg mt-6">'+
+  '<div class="flex justify-center -space-x-2">'+['M','T','S'].map(function(x){return '<div class="w-9 h-9 rounded-full bg-white text-emerald-700 grid place-items-center text-xs font-extrabold border-2 border-emerald-500">'+x+'</div>';}).join('')+'</div>'+
+  '<div class="font-extrabold text-white">Still have questions?</div>'+
+  '<p class="text-xs text-white/80">Can\'t find what you need? Chat with our friendly team.</p>'+
+  '<a class="block w-full py-3 rounded-2xl font-bold text-sm bg-white text-emerald-700" href="mailto:support@academicsummit.app">Get in touch</a></div>');
+}
+function openPolicy(){
+  const sec=function(t,b){return '<div class="space-y-1"><div class="font-extrabold text-sm">'+t+'</div><p class="text-xs leading-relaxed" style="color:var(--mut)">'+b+'</p></div>';};
+  fullScreen('Privacy Policy',
+  sec('1. What we store','Account email and name; your academic profile (university, department, faculty, level, and your matric number only after you approve it); semesters, tasks, events, finance logs, goals and files you upload.')+
+  sec('2. Where it lives','On your device for offline use, and in your private cloud account. Uploaded library files are visible to signed-in users so classmates can learn.')+
+  sec('3. Who sees what','Lecturers see only the name and matric of students who attended their own class. Nobody can see your finance data or results.')+
+  sec('4. What we never do','We do not sell data, show ads, or read your records for marketing. Marketing emails only if you opt in.')+
+  sec('5. Your controls','Export a JSON backup anytime, edit or unlink your matric in Settings, and deactivate your account from Personal Information.')+
+  sec('6. Cookies & storage','Local storage is used only to keep you logged in and remember your theme. No tracking cookies.')+
+  sec('7. Contact','Questions? support@academicsummit.app')+
+  '<p class="text-[10px] pt-2" style="color:var(--mut)">Last updated: October 2026</p>');
+  }
+  // ===== GROWTH: WELCOME + WHOLE-SCHOOL ONBOARDING =====
+const SEED={
+'Arts':['English Language','History','Philosophy','Theatre Arts','French','Arabic Studies'],
+'Education':['Adult Education','Educational Management','Human Kinetics','Early Childhood Education'],
+'Engineering':['Civil Engineering','Electrical Engineering','Mechanical Engineering','Chemical Engineering'],
+'Environmental Sciences':['Architecture','Building Technology','Estate Management','Quantity Surveying','Urban & Regional Planning'],
+'Law':['Common Law','Civil Law','Criminal Law'],
+'Management Sciences':['Accounting','Banking & Finance','Business Administration','Marketing','Actuarial Science'],
+'Sciences':['Biochemistry','Biology','Chemistry','Computer Science','Mathematics','Microbiology','Physics','Statistics'],
+'Social Sciences':['Political Science','Economics','Mass Communication','Psychology','Sociology','Geography','International Relations'],
+'Agriculture':['Animal Science','Crop Science','Agricultural Economics','Soil Science'],
+'Health Sciences':['Medicine & Surgery','Nursing Science','Pharmacy','Medical Laboratory Science','Public Health']
+};
+const normDept=s=>String(s||'').trim().replace(/\s+/g,' ').replace(/[.,]$/,'').split(' ').map(w=>w?w[0].toUpperCase()+w.slice(1).toLowerCase():w).join(' ');
+function authUI(mode,msg){
+  msg=msg||'';
+  if(mode==='login'&&!localStorage.getItem('as_welcomed')&&!LEC_LINK)mode='welcome';
+  if(mode==='welcome'){
+    $('auth').innerHTML='<div class="min-h-screen flex flex-col px-6 pt-10" style="background:#021812;padding-bottom:max(1.5rem,env(safe-area-inset-bottom))"><div class="flex-1 flex flex-col justify-center max-w-md w-full mx-auto space-y-4">'+MTN('w-20 h-20')+'<h1 class="text-4xl font-extrabold text-white leading-tight">Welcome to Academic Summit</h1><p class="text-base" style="color:#a7f3d0">Your one companion for your academic journey.</p></div><div class="max-w-md w-full mx-auto flex justify-end"><button class="btn px-8 py-3" onclick="localStorage.setItem(\'as_welcomed\',\'1\');authUI(\'login\')">Continue</button></div></div>';
+    $('app').classList.add('hidden');return;
+  }
+  const f={
+    login:'<div class="space-y-3"><div><label class="lbl mb-1 block">Email</label><input id="a-email" type="email" class="inp" placeholder="user@uni.edu.ng"></div><div><label class="lbl mb-1 block">Password</label><input id="a-pass" type="password" class="inp" placeholder="••••••••"></div><button class="btn w-full py-3 mt-2" onclick="doLogin()">Enter Campus Portal</button><button class="text-xs text-slate-500 w-full hover:underline pt-3" onclick="forgotUI()">Forgot password?</button><button class="text-xs text-slate-500 w-full hover:underline pt-2" onclick="authUI(\'signup\')">New here? Create account</button></div>',
+    signup:'<div class="space-y-3"><div><label class="lbl mb-1 block">Full Name</label><input id="a-name" class="inp" placeholder="Your full name"></div><div><label class="lbl mb-1 block">Email</label><input id="a-email" type="email" class="inp"></div><div><label class="lbl mb-1 block">Password</label><input id="a-pass" type="password" class="inp" placeholder="6+ characters"></div><button class="btn w-full py-3 mt-2" onclick="doSignup()">Create Account</button><button class="text-xs text-slate-500 w-full hover:underline pt-2" onclick="authUI(\'login\')">Have an account? Log in</button></div>'
+  }[mode];
+  $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-5" style="background:#021812"><div class="card p-8 w-full max-w-md space-y-5 dark:bg-slate-900 shadow-2xl"><div class="text-center space-y-2"><div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold uppercase tracking-wider">Academic Summit</div><h1 class="text-2xl font-extrabold">'+(LEC_LINK?'Lecturer Console':'Student Operating System')+'</h1></div>'+f+(msg?'<p class="text-xs text-rose-500 text-center font-semibold bg-rose-500/10 py-2 rounded-lg">'+esc(msg)+'</p>':'')+'</div></div>';
+  $('app').classList.add('hidden');
+  
+}
+function authOnboard(){
+  $('app').classList.add('hidden');
+  $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-5" style="background:#021812"><div class="card p-8 w-full max-w-md space-y-4 dark:bg-slate-900"><div class="text-center"><h1 class="text-2xl font-extrabold">Set Up Your Summit </h1><p class="text-xs text-slate-500">For every faculty, every department.</p></div><div class="space-y-3">'+
+  '<div><label class="lbl mb-1 block">University</label><input id="o-uni" class="inp" value="University of Abuja"></div>'+
+  '<div><label class="lbl mb-1 block">Faculty</label><select id="o-fac" class="inp" onchange="facChanged()">'+Object.keys(SEED).map(k=>'<option>'+k+'</option>').join('')+'</select></div>'+
+  '<div><label class="lbl mb-1 block">Department</label><select id="o-dep" class="inp" onchange="document.getElementById(\'o-dep-wrap\').classList.toggle(\'hidden\',this.value!==\'__other\')"></select></div>'+
+  '<div id="o-dep-wrap" class="hidden"><input id="o-dep-new" class="inp" placeholder="Type your department"></div>'+
+  '<div class="grid grid-cols-2 gap-2"><div><label class="lbl mb-1 block">Level</label><select id="o-level" class="inp">'+[100,200,300,400,500,600].map(l=>'<option '+(l==100?'selected':'')+'>'+l+'</option>').join('')+'</select></div><div><label class="lbl mb-1 block">Grad Units</label><input id="o-units" type="number" class="inp" placeholder="120"></div></div>'+
+  '<button class="btn w-full py-3" onclick="doOnboard()">Initialize My Summit</button></div></div></div>';
+  facChanged();
+}
+async function facChanged(){
+  const f=$('o-fac').value;
+  let extra=[];
+  try{const{data}=await sb.from('departments').select('name').eq('faculty',f).order('uses',{ascending:false});extra=(data||[]).map(d=>d.name);}catch(e){}
+  const all=[...new Set([...(SEED[f]||[]),...extra])];
+  $('o-dep').innerHTML=all.map(d=>'<option>'+esc(d)+'</option>').join('')+'<option value="__other">Other (type your own)</option>';
+  $('o-dep-wrap').classList.add('hidden');
+}
+async function doOnboard(){
+  const fac=$('o-fac').value;
+  let dep=$('o-dep').value;
+  if(dep==='__other')dep=normDept($('o-dep-new').value);
+  if(!dep)return showToast('Choose or type your department','error');
+  dep=normDept(dep);
+  U.profile={uni:$('o-uni').value.trim()||'University of Abuja',level:$('o-level').value,program:dep,faculty:fac,totalUnits:parseFloat($('o-units').value)||120,matric:'',phone:'',semail:''};
+  save();
+  bumpDept(fac,dep);
+  sb.from('profiles').update({faculty:fac, program:dep, level:$('o-level').value, uni:U.profile.uni}).eq('id',uid).then(()=>{});
+  start();
+}
+async function bumpDept(fac,dep){
+  const{data}=await sb.from('departments').select('id,uses').eq('faculty',fac).ilike('name',dep).maybeSingle();
+  if(data){sb.from('departments').update({uses:(data.uses||1)+1}).eq('id',data.id).then(()=>{});}
+  else{sb.from('departments').insert({faculty:fac,name:dep}).then(()=>{});}
+  }
+</script>
+<script>
+async function boot(user){
+  uid=user.id;email=user.email;
+  const{data:p}=await sb.from('profiles').select('role').eq('id',uid).maybeSingle();
+  const role=p?.role||'student';
+  if(LEC_LINK&&role!=='lecturer'){return pinGate(user);}
+  U=DB.users[email]||(DB.users[email]=newUser(user.user_metadata?.name||email,role));
+  cloudReady=false;
+  try{
+    const{data:row,error:ce}=await sb.from('user_data').select('data').eq('id',uid).maybeSingle();
+    if(ce)throw ce;
+    if(row&&row.data&&(row.data.updatedAt||0)>(U.updatedAt||0)){DB.users[email]=row.data;U=row.data;}
+    cloudReady=true;
+  }catch(e){showToast('Cloud sync unavailable - working offline','error');}
+  U.role=role;
+  ['materials','attendance','goals','career','tasks','events','tx','semesters'].forEach(k=>{if(!U[k])U[k]=[];});
+  if(!U.fees)U.fees={total:0,paid:0,due:''};
+  save();
+  if(!U.profile&&role==='lecturer'){U.profile={uni:'',level:'',program:'',faculty:'',totalUnits:0,matric:'',phone:'',semail:''};save();}
+  if(!U.profile){$('auth').classList.remove('hidden');$('app').classList.add('hidden');return authOnboard();}
+  $('auth').classList.add('hidden');$('app').classList.remove('hidden');
+  start();
+}
+</script>
+<script>
+let resetUser=null;
+function authCard(title,sub,body,msg,bad){
+  $('app').classList.add('hidden');
+  $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-5" style="background:#021812"><div class="card p-8 w-full max-w-md space-y-4 dark:bg-slate-900"><div class="text-center space-y-2"><h1 class="text-2xl font-extrabold">'+title+'</h1><p class="text-xs text-slate-500">'+sub+'</p></div>'+body+(msg?'<p class="text-xs text-center font-semibold py-2 px-3 rounded-lg '+(bad?'text-rose-500 bg-rose-500/10':'text-emerald-600 bg-emerald-500/10')+'">'+esc(msg)+'</p>':'')+'</div></div>';
+}
+function forgotUI(msg,bad){
+  authCard('Reset Password','Enter your account email and we will send you a reset link.',
+  '<div class="space-y-3"><input id="f-email" type="email" class="inp" placeholder="Email address"><button class="btn w-full py-3" onclick="doForgot()">Send Reset Link</button><button class="text-xs text-slate-500 w-full hover:underline" onclick="authUI(\'login\')">Back to login</button></div>',msg,bad);
+}
+async function doForgot(){
+  const em=$('f-email').value.trim().toLowerCase();
+  if(!em)return forgotUI('Enter your email.',true);
+  const{error}=await sb.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname});
+  if(error)return forgotUI(error.message,true);
+  forgotUI('If that email has an account, a reset link is on its way. Check your inbox and spam folder.',false);
+}
+function resetUI(user,msg,bad){
+  resetUser=user||resetUser;
+  authCard('Set New Password','Choose a new password for your account.',
+  '<div class="space-y-3"><input id="r-pass" type="password" class="inp" placeholder="New password (6+ characters)"><input id="r-pass2" type="password" class="inp" placeholder="Confirm new password"><button class="btn w-full py-3" onclick="doReset()">Save Password</button></div>',msg,bad);
+}
+async function doReset(){
+  const a=$('r-pass').value,b=$('r-pass2').value;
+  if(a.length<6)return resetUI(null,'Password must be 6+ characters.',true);
+  if(a!==b)return resetUI(null,'Passwords do not match.',true);
+  const{error}=await sb.auth.updateUser({password:a});
+  if(error)return resetUI(null,error.message,true);
+  history.replaceState(null,'',location.pathname);
+  boot(resetUser);
+}
+</script>
+<script>
+function detMsg(n){
+  const g=Math.round(n*100)/100;
+  if(!(g>=0&&g<=5))return '';
+  const t=[
+    [4.5,'First Class range','Elite performance. Outstanding work: you are operating at the top of the class. Protect this standing and keep the discipline that got you here.'],
+    [3.5,'Second Class Upper range','Excellent work. You are in strong territory, and a couple of sharper semesters put First Class within reach. Keep pushing.'],
+    [2.4,'Second Class Lower range','Solid effort, and you can do more. Tighten your weakest courses and next semester can move you up a class.'],
+    [1.5,'Third Class range','You tried and you put in work. Now it is time to go harder next semester. Start your reading early and begin with your lowest-scoring courses.'],
+    [1.0,'Pass range','Warning: this is not over. You still have semesters left to boost this. Set a clear target, protect your attendance and start your academic comeback now.'],
+    [0,'Below Pass','Warning: this is serious, but it is recoverable. Meet your course adviser this week, build a recovery plan and make the next semester your comeback.']
+  ];
+  const x=t.find(function(r){return g>=r[0];});
+  const col=g>=3.5?'emerald':g>=1.5?'amber':'rose';
+  return '<div class="mt-3 space-y-1"><span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-'+col+'-100 dark:bg-'+col+'-950 text-'+col+'-600 dark:text-'+col+'-300">'+x[1]+'</span><p class="text-xs leading-relaxed pt-2" style="color:var(--mut)">'+x[2]+'</p></div>';
+}
+</script>
+<script>
+function parseReg(t){
+  const L=String(t).split('\n').map(function(x){return x.trim();}).filter(Boolean);
+  const out=[[],[]];let sem=0;
+  const full=/^(?:\d{1,2} )?((?:UA-)?[A-Z]{2,4}\d{3}[A-Z]?) .*?\b([1-6]) ([CE])$/i;
+  const lone=/^(?:\d{1,2} )?((?:UA-)?[A-Z]{2,4}\d{3}[A-Z]?)$/i;
+  const add=function(code,u,st){
+    const c=code.toUpperCase().replace(/^UA-/,'');
+    if(!out[sem].some(function(r){return r.code===c;}))out[sem].push({code:c,unit:+u,st:st.toUpperCase()});
+  };
+  for(let i=0;i<L.length;i++){
+    const ln=L[i].replace(/\s+/g,' ');
+    if(/^total/i.test(ln)){if(out[sem].length&&sem<1)sem=1;continue;}
+    let m=ln.match(full);
+    if(m){add(m[1],m[2],m[3]);continue;}
+    m=ln.match(lone);
+    if(m){
+      for(let k=1;k<=4;k++){
+        if(/^[1-6]$/.test(L[i+k]||'')&&/^[CE]$/i.test(L[i+k+1]||'')){add(m[1],L[i+k],L[i+k+1]);i+=k+1;break;}
+      }
+    }
+  }
+  return out;
+}
+function decCalc(D){
+  const a=D[0].reduce(function(x,r){return x+r.unit;},0),b=D[1].reduce(function(x,r){return x+r.unit;},0);
+  return{u:[a,b],den:(a&&b)?a+b:2*(a||b)};
+}
+ACAD.dec=function(){
+  const D=U.dec=U.dec||[[],[]],K=decCalc(D);
+  const G=[['A',5],['B',4],['C',3],['D',2],['E',1],['F',0]];
+  const fx=function(v){return v.toFixed(3);};
+  const tbl=function(si,name){
+    const R=D[si];
+    if(!R.length)return '<div class="text-xs text-slate-400 p-4 rounded-2xl border border-dashed text-center" style="border-color:var(--bd)">No courses added for '+name+' yet.</div>';
+    const head='<tr><th class="p-2 font-sans font-extrabold">Course</th>'+G.map(function(g){return '<th class="p-2 text-center font-extrabold">'+g[0]+'</th>';}).join('')+'<th></th></tr>';
+    const rows=R.map(function(r,i){
+      return '<tr class="border-t" style="border-color:var(--bd)"><td class="p-2 font-sans"><b class="font-mono">'+esc(r.code)+'</b><div class="text-[10px] text-slate-400">'+r.unit+'u '+(r.st==='E'?'Elective':'Compulsory')+'</div></td>'+G.map(function(g){return '<td class="p-2 text-center '+(g[0]==='A'?'font-extrabold text-emerald-600 dark:text-emerald-400':'')+'">'+fx(K.den?g[1]*r.unit/K.den:0)+'</td>';}).join('')+'<td class="p-2"><button class="text-slate-400" onclick="decDel('+si+','+i+')">'+ic('x','w-3 h-3')+'</button></td></tr>';
+    }).join('');
+    const tot='<tr class="border-t-2 font-extrabold" style="border-color:var(--bd)"><td class="p-2 font-sans">Total</td>'+G.map(function(g){return '<td class="p-2 text-center">'+fx(K.den?g[1]*K.u[si]/K.den:0)+'</td>';}).join('')+'<td></td></tr>';
+    return '<div class="space-y-2"><div class="flex justify-between text-xs"><b>'+name+'</b><span class="text-slate-400">'+K.u[si]+' units</span></div><div class="overflow-x-auto"><table class="w-full text-[11px] text-left font-mono"><thead class="text-slate-400">'+head+'</thead><tbody>'+rows+tot+'</tbody></table></div></div>';
+  };
+  const note=(K.u[0]&&K.u[1])?'Both semesters added. If you score A in every course, the two semesters add up to 5.000.':(K.u[0]||K.u[1])?'One semester added. A semester is worth half of the session, so an all-A semester adds up to 2.500. Add your other semester to complete it.':'Paste your course registration above to begin.';
+  $('sub').innerHTML='<div class="space-y-5"><div class="card p-6 space-y-4"><div><div class="font-extrabold">Menu of Decimals</div><p class="text-xs text-slate-500 mt-1">See exactly what every grade is worth in each of your courses. Each number is how much that grade adds to your CGPA.</p></div><textarea id="d-paste" rows="4" class="inp font-mono text-xs" placeholder="Paste your course registration page text here..."></textarea><div class="flex gap-2 items-center"><select id="d-tgt" class="inp" style="width:auto"><option value="1">If one semester: First</option><option value="2">If one semester: Second</option></select><button class="btn flex-1" onclick="decParse()">Read Registration</button></div><div class="grid grid-cols-12 gap-2 pt-3 border-t" style="border-color:var(--bd)"><input id="d-code" class="inp col-span-5 uppercase font-mono" placeholder="Code"><input id="d-unit" type="number" class="inp col-span-3" placeholder="Units"><select id="d-s" class="inp col-span-4"><option value="1">1st Sem</option><option value="2">2nd Sem</option></select></div><button class="btn2 w-full" onclick="decAdd()">Add Course Manually</button></div><div class="card p-6 space-y-5">'+tbl(0,'First Semester')+tbl(1,'Second Semester')+'<p class="text-xs text-slate-500">'+note+'</p>'+((D[0].length||D[1].length)?'<button class="text-xs font-bold text-rose-500" onclick="decClear()">Clear all courses</button>':'')+'</div></div>';
+};
+function decParse(){
+  const t=$('d-paste').value;
+  if(!t.trim())return showToast('Paste your course registration first','error');
+  const r=parseReg(t);
+  if(!r[0].length&&!r[1].length)return showToast('No courses found in that text','error');
+  U.dec=U.dec||[[],[]];
+  if(r[0].length&&r[1].length)U.dec=r;
+  else U.dec[$('d-tgt').value==='2'?1:0]=r[0].length?r[0]:r[1];
+  save();go('acad');showToast('Registration loaded: '+(U.dec[0].length+U.dec[1].length)+' courses');
+}
+function decAdd(){
+  const code=$('d-code').value.trim().toUpperCase().replace(/^UA-/,'').replace(/\s/g,''),unit=parseFloat($('d-unit').value),si=$('d-s').value==='2'?1:0;
+  if(!/^[A-Z]{2,4}\d{3}[A-Z]?$/.test(code)||!(unit>0&&unit<=6))return showToast('Enter a course code and units (1-6)','error');
+  U.dec=U.dec||[[],[]];U.dec[si].push({code:code,unit:unit,st:'C'});
+  save();go('acad');
+}
+function decDel(si,i){U.dec[si].splice(i,1);save();go('acad');}
+function decClear(){if(!confirm('Clear all courses from this tab?'))return;U.dec=[[],[]];save();go('acad');}
+</script>
+<style>
+:root{--bg:#e8edf2;--card:#f8fbfd;--sub:#eef2f7;--bd:#cfd8e3;--tx:#0a1220;--mut:#5a6b7d;--sh:0 12px 32px -14px rgba(8,40,60,.25)}
+body{background:radial-gradient(900px 320px at 85% -10%,rgba(16,185,129,.12),transparent),linear-gradient(180deg,#dde6ee 0%,#eef3f8 45%,#f7fbfd 100%)}
+.card{background:rgba(255,255,255,.85);backdrop-filter:blur(10px);border:1px solid rgba(140,175,195,.35)}
+#top{background:rgba(230,238,244,.9)!important}
+.inp{background:rgba(255,255,255,.75)}
+.btn,.grad{box-shadow:0 8px 20px -8px rgba(16,185,129,.5)}
+.dark body{background:#02120c}
+.dark .card{background:#07271d;backdrop-filter:none;border-color:#0d3f2e}
+.dark #top{background:rgba(7,39,29,.9)!important}
+.dark .inp{background:#0b3527}
+</style>
+<script>
+const greet=()=>{const h=new Date().getHours();return h<12?'Good morning':h<17?'Good afternoon':h<21?'Good evening':'Good night';};
+function startTour(){tourI=0;localStorage.setItem('as_tour','1');tourStep();}
+</script>
+<script>
+let pinUser=null;
+function pinGate(user,msg){
+  pinUser=user||pinUser;
+  $('app').classList.add('hidden');
+  $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-5" style="background:#021812"><div class="card p-8 w-full max-w-md space-y-4"><h1 class="text-2xl font-extrabold text-center">Lecturer Access</h1><p class="text-xs text-slate-500 text-center">Enter the access PIN issued to you.</p><input id="l-pin" class="inp text-center font-mono font-bold uppercase" placeholder="ACCESS PIN" maxlength="12"><button class="btn w-full py-3" onclick="redeemPin()">Verify and Continue</button><button class="text-xs text-slate-500 w-full" onclick="logout()">Log out</button>'+(msg?'<p class="text-xs text-rose-500 text-center font-semibold">'+esc(msg)+'</p>':'')+'</div></div>';
+}
+async function redeemPin(){
+  const pin=$('l-pin').value.trim();
+  if(pin.length<4)return pinGate(null,'Enter your access PIN.');
+  const{error}=await sb.rpc('redeem_lecturer_pin',{p_pin:pin});
+  if(error)return pinGate(null,error.message);
+  boot(pinUser);
+}
+</script>
+
+<script>
+function showRecover(e){
+  const msg=String((e&&e.message)||e||'unknown error');
+  $('app').classList.add('hidden');
+  $('auth').innerHTML='<div class="min-h-screen grid place-items-center p-5" style="background:#021812"><div class="card p-8 w-full max-w-md space-y-4"><h1 class="text-xl font-extrabold text-center">Something went wrong loading your data</h1><p class="text-xs text-slate-500 text-center break-words">'+esc(msg)+'</p><button class="btn w-full py-3" onclick="location.reload()">Reload</button><button class="btn2 w-full" onclick="resetLocal()">Reset local data and reload</button><p class="text-[11px] text-slate-400 text-center">Resetting clears this device only. Your account data stays in the cloud.</p></div></div>';
+}
+function resetLocal(){
+  try{['as_v8','as_theme','as_theme_mode','as_tour','as_welcomed'].forEach(function(k){localStorage.removeItem(k);});}catch(e){}
+  location.reload();
+}
+(function(){
+  const orig=boot;
+  boot=async function(user){
+    try{return await orig(user);}catch(e){console.error(e);showRecover(e);}
+  };
+})();
+</script>
+<script>
+const semPrint=s=>(s.name||'')+'|'+(s.courses||[]).map(c=>c.code+':'+c.unit+':'+c.score).sort().join(',');
+function dedupeSems(){
+  const seen={},keep=[];
+  (U.semesters||[]).forEach(s=>{const k=semPrint(s);if(!seen[k]){seen[k]=1;keep.push(s);}});
+  const removed=(U.semesters||[]).length-keep.length;
+  U.semesters=keep;return removed;
+}
+function saveSem(){
+  const courses=[];
+  document.querySelectorAll('#rows > div').forEach(r=>{
+    const code=r.querySelector('.c-code').value.trim().toUpperCase();
+    const unit=parseFloat(r.querySelector('.c-unit').value);
+    const sc=r.querySelector('.c-score').value;
+    if(code&&unit>0&&sc!==''&&+sc>=0&&+sc<=100&&!courses.some(c=>c.code===code))courses.push({code,unit,score:+sc});
+  });
+  if(!courses.length)return showToast('Enter at least one valid course with score (0-100)','error');
+  const name=$('c-name').value.trim()||('Semester '+(U.semesters.length+1));
+  if(editing!==null){
+    const s=U.semesters.find(x=>x.id===editing);
+    s.name=name;s.courses=courses;editing=null;
+  }else{
+    const print=semPrint({name,courses});
+    const exact=U.semesters.find(s=>semPrint(s)===print);
+    if(exact)return showToast('Already recorded - duplicate blocked','error');
+    const sameName=U.semesters.find(s=>(s.name||'')===name);
+    if(sameName){
+      if(!confirm(name+' exists with different results. Replace it?'))return;
+      sameName.courses=courses;
+    }else U.semesters.push({id:Date.now(),name,courses});
+  }
+  save();
+  const x=semS({courses}),c=cum();
+  go('home');showToast('Saved! Semester GPA: '+x.g.toFixed(2)+' | New CGPA: '+c.g.toFixed(2));
+}
+var _dd=setInterval(function(){
+  if(U&&U.semesters){clearInterval(_dd);var n=dedupeSems();if(n){save();showToast('Cleaned '+n+' duplicate semester(s)');}}
+},2000);
+</script>
+<script>
+(function(){
+  const st0=startTour;
+  startTour=function(){if(U&&U.role==='lecturer')return;st0();};
+  const s0=start;
+  start=function(){s0();try{document.body.dataset.role=(U&&U.role)||'student';}catch(e){}};
+  LECTURER_VIEWS.plan=function(){return V.plan();};
+  LECTURER_VIEWS.prof=function(){
+    const p=U.profile||{};
+    return '<div class="space-y-5 max-w-2xl"><div class="card p-6 space-y-3"><div class="font-extrabold">Lecturer Settings</div><div class="space-y-3"><div><label class="lbl block mb-1">Full Name</label><input id="lp-n" class="inp" value="'+esc(U.name)+'"></div><div><label class="lbl block mb-1">Institution</label><input id="lp-u" class="inp" value="'+esc(p.uni||'')+'"></div><div><label class="lbl block mb-1">Department</label><input id="lp-d" class="inp" value="'+esc(p.program||'')+'"></div><div><label class="lbl block mb-1">Email</label><input class="inp" value="'+esc(email)+'" readonly></div></div><button class="btn" onclick="saveLecProfile()">Save Changes</button></div><button class="btn2 w-full !text-rose-500" onclick="logout()">Log Out Console</button></div>';
+  };
+})();
+function saveLecProfile(){
+  U.name=$('lp-n').value.trim()||U.name;
+  U.profile=U.profile||{};
+  U.profile.uni=$('lp-u').value.trim();U.profile.program=$('lp-d').value.trim();
+  save();
+  sb.from('profiles').update({name:U.name,uni:U.profile.uni,program:U.profile.program}).eq('id',uid).then(function(){});
+  start();go('prof');showToast('Profile updated');
+}
+</script>
+<script>
+function scanCarryovers(){
+  const all=[];
+  U.semesters.forEach(function(s,si){(s.courses||[]).forEach(function(c,ci){all.push({si:si,ci:ci,code:c.code,score:c.score,unit:c.unit});});});
+  U.semesters.forEach(function(s){(s.courses||[]).forEach(function(c){delete c.sup;});});
+  const by={};
+  all.forEach(function(a){(by[a.code]=by[a.code]||[]).push(a);});
+  const owed=[];
+  Object.keys(by).forEach(function(code){
+    const list=by[code];
+    list.forEach(function(a){
+      if(gr(a.score)[1]!==0)return;
+      const later=list.find(function(b){return b.si>a.si&&gr(b.score)[1]>0;});
+      if(later){U.semesters[a.si].courses[a.ci].sup=true;}
+      else owed.push({code:code,unit:a.unit,score:a.score,sem:U.semesters[a.si].name});
+    });
+  });
+  return owed;
+}
+function refreshCarry(){if(!U||!U.semesters)return;U.carry=scanCarryovers();save();}
+var _cr=setInterval(function(){if(U&&U.semesters){clearInterval(_cr);refreshCarry();}},2500);
+function carryCard(){
+  const owed=(U&&U.carry)||[];
+  const log=(U&&U.cgpaLog)||[];
+  const last=log.length?log[log.length-1]:null;
+  var h='<div class="card p-5 space-y-2 mt-5">';
+  h+='<div class="lbl">Carryover Register</div>';
+  if(!owed.length){h+='<p class="text-xs text-slate-500">No outstanding carryovers. Clean sheet.</p>';}
+  else{h+=owed.map(function(o){return '<div class="flex justify-between text-xs p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30"><b>'+esc(o.code)+' ('+o.unit+'u)</b><span>failed '+esc(o.score)+' in '+esc(o.sem)+'</span></div>';}).join('');
+    h+='<p class="text-[11px] text-slate-400">Retake these, then paste the new result — the retake replaces the F in your CGPA automatically (↺).</p>';}
+  if(last){h+='<p class="text-[11px] text-slate-400">Live CGPA '+last.g.toFixed(2)+(last.d?(' ('+(last.d>=0?'+':'')+last.d.toFixed(2)+' this wave)'):'')+'. As more results drop, paste again — it shifts in real time.</p>';}
+  return h+'</div>';
+}
+const _homeC=V.home;
+V.home=function(){return _homeC()+carryCard();};
+function saveSem(){
+  const courses=[];
+  document.querySelectorAll('#rows > div').forEach(function(r){
+    const code=r.querySelector('.c-code').value.trim().toUpperCase();
+    const unit=parseFloat(r.querySelector('.c-unit').value);
+    const sc=r.querySelector('.c-score').value;
+    if(code&&unit>=1&&unit<=6&&sc!==''&&+sc>=0&&+sc<=100&&!courses.some(function(c){return c.code===c.code&&false;}))courses.push({code:code,unit:unit,score:+sc});
+  });
+  if(!courses.length)return showToast('Enter at least one valid course with score (0-100)','error');
+  const name=$('c-name').value.trim()||('Semester '+(U.semesters.length+1));
+  if(editing!==null){
+    const s=U.semesters.find(function(x){return x.id===editing;});
+    s.name=name;s.courses=courses;editing=null;
+    save();refreshCarry();
+    const x=semS(s),c=cum();
+    go('home');showToast('Updated! GPA '+x.g.toFixed(2)+' | CGPA '+c.g.toFixed(2));
+    return;
+  }
+  const print=semPrint({name:name,courses:courses});
+  const exact=U.semesters.find(function(s){return semPrint(s)===print;});
+  if(exact)return showToast('Already recorded - duplicate blocked','error');
+  const codes=courses.map(function(c){return c.code;});
+  const match=U.semesters.find(function(s){
+    const sc=(s.courses||[]).map(function(c){return c.code;});
+    const hit=codes.filter(function(c){return sc.indexOf(c)>-1;}).length;
+    return codes.length&&hit/codes.length>=0.6;
+  });
+  if(match){
+    const before=cum().g;
+    let upd=0,add=0;
+    courses.forEach(function(c){
+      const ex=match.courses.find(function(x){return x.code===c.code;});
+      if(ex){if(ex.score!==c.score||ex.unit!==c.unit){ex.score=c.score;ex.unit=c.unit;upd++;}}
+      else{match.courses.push(c);add++;}
+    });
+    save();refreshCarry();
+    const after=cum().g;
+    U.cgpaLog=U.cgpaLog||[];
+    U.cgpaLog.push({t:Date.now(),g:after,d:after-before});
+    save();
+    if(window.posthog)posthog.capture('semester_merged',{updated:upd,added:add});
+    go('home');
+    showToast('Merged: '+upd+' updated, '+add+' added. CGPA '+after.toFixed(2)+' ('+(after-before>=0?'+':'')+(after-before).toFixed(2)+')');
+    return;
+  }
+  const sameName=U.semesters.find(function(s){return (s.name||'')===name;});
+  if(sameName){
+    if(!confirm(name+' exists with different results. Replace it?'))return;
+    sameName.courses=courses;
+  }else U.semesters.push({id:Date.now(),name:name,courses:courses});
+  save();refreshCarry();
+  const x=semS({courses:courses}),c=cum();
+  go('home');showToast('Saved! Semester GPA: '+x.g.toFixed(2)+' | New CGPA: '+c.g.toFixed(2));
+}
+</script>
+<script>
+function setTarget(){
+  const v=prompt('New target CGPA (0.00 - 5.00):',U.target.toFixed(2));
+  if(v===null)return;
+  const t=parseFloat(v);
+  if(isNaN(t)||t<0||t>5)return showToast('Target must be between 0 and 5','error');
+  U.target=t;save();start();showToast('Target updated to '+t.toFixed(2));
+}
+function attBar(){
+  var h='<div class="mt-5 rounded-3xl p-5 space-y-3 grad shadow-lg">';
+  h+='<div class="flex items-center justify-between"><div class="font-extrabold text-white">Class Attendance</div><span class="text-[10px] bg-white/20 rounded-full px-2.5 py-1 font-bold text-white">LIVE</span></div>';
+  h+='<p class="text-xs text-white/80">In class now? Enter your course code and the lecturer\'s 5-digit pin.</p>';
+  h+='<div class="grid grid-cols-3 gap-2">';
+  h+='<input id="ha-course" class="inp !bg-white/15 !text-white placeholder-white/50 uppercase font-mono font-bold" placeholder="POS 204">';
+  h+='<input id="ha-pin" class="inp !bg-white/15 !text-white placeholder-white/50 font-mono font-bold tracking-widest" placeholder="PIN" maxlength="5" inputmode="numeric">';
+  h+='<button style="background:#fff;color:#047857" class="btn" onclick="markFromHome()">Mark</button>';
+  h+='</div></div>';
+  return h;
+}
+async function markFromHome(){
+  const pin=$('ha-pin').value.trim();
+  const course=$('ha-course').value.trim().toUpperCase().replace(/\s+/g,'');
+  if(!/^\d{5}$/.test(pin))return showToast('Enter the 5-digit pin','error');
+  const{data,error}=await sb.rpc('mark_attendance',{p_code:pin});
+  if(error)return showToast(error.message,'error');
+  const got=String(data||'').toUpperCase().replace(/\s+/g,'');
+  U.attendance.push({code:data,lecturer:'',date:new Date().toISOString()});
+  save();
+  $('ha-pin').value='';
+  if(course&&got&&course!==got)showToast('Marked present for '+data+' (not '+course+')');
+  else showToast('Attendance marked for '+data);
+  if(window.posthog)posthog.capture('attendance_submitted',{source:'home'});
+}
+const _homeA=V.home;
+V.home=function(){return _homeA()+attBar();};
+</script>
+<script>
+let pTab='month';
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const dow=ds=>(new Date(ds+'T00:00:00').getDay()+6)%7;
+const addDays=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n);return iso(d);};
+const weekStart=ds=>addDays(ds,-dow(ds));
+const ttLive=ds=>!U.ttEnd||ds<=U.ttEnd;
+function addTT(){
+  const code=$('tt-c').value.trim().toUpperCase();
+  if(!code)return showToast('Enter course code','error');
+  U.timetable=U.timetable||[];
+  U.timetable.push({day:+$('tt-d').value,code:code,venue:$('tt-v').value.trim(),start:$('tt-s').value||'08:00',end:$('tt-e').value||'10:00'});
+  save();go('plan');showToast('Class slot added - repeats weekly');
+}
+function addExam(){
+  const code=$('x-c').value.trim().toUpperCase(),date=$('x-d').value;
+  if(!code||!date)return showToast('Course and date required','error');
+  U.exams=U.exams||[];
+  U.exams.push({code:code,date:date,time:$('x-t').value||'',venue:$('x-v').value.trim()});
+  save();go('plan');showToast('Exam scheduled');
+}
+function planMonth(){
+  const first=new Date(calY,calM,1);
+  const startDow=(first.getDay()+6)%7;
+  const dim=new Date(calY,calM+1,0).getDate();
+  const mName=first.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  const dayHas=ds=>U.events.some(e=>e.date===ds)||U.tasks.some(t=>(t.end||t.start||'').slice(0,10)===ds)||(U.timetable||[]).some(t=>t.day===dow(ds)&&ttLive(ds));
+  let cells='';
+  for(let i=0;i<startDow;i++)cells+='<div></div>';
+  for(let d=1;d<=dim;d++){
+    const ds=calY+'-'+String(calM+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    cells+='<button onclick="selDay=\''+ds+'\';go(\'plan\')" class="aspect-square rounded-xl flex flex-col items-center justify-center gap-1 text-xs font-semibold '+(ds===selDay?'grad text-white':'bg-slate-50 dark:bg-slate-800/40')+' '+(ds===iso(new Date())?'ring-2 ring-emerald-400':'')+'">'+d+(dayHas(ds)?'<span class="w-1 h-1 rounded-full '+(ds===selDay?'bg-white':'bg-emerald-500')+'"></span>':'')+'</button>';
+  }
+  const dEv=U.events.filter(e=>e.date===selDay);
+  const dTk=U.tasks.filter(t=>(t.end||t.start||'').slice(0,10)===selDay);
+  const dTt=(U.timetable||[]).filter(t=>t.day===dow(selDay)&&ttLive(selDay));
+  var h='<div class="card p-5 space-y-3"><div class="flex justify-between items-center"><button class="btn2 px-2" onclick="calM--;if(calM<0){calM=11;calY--;}go(\'plan\')">'+ic('l')+'</button><div class="font-extrabold">'+mName+'</div><button class="btn2 px-2" onclick="calM++;if(calM>11){calM=0;calY++;}go(\'plan\')">'+ic('r')+'</button></div><div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400">'+['M','T','W','T','F','S','S'].map(d=>'<div>'+d+'</div>').join('')+'</div><div class="grid grid-cols-7 gap-1">'+cells+'</div></div>';
+  h+='<div class="card p-5 space-y-3"><div class="font-extrabold">'+fmtD(selDay)+' — Schedule</div>';
+  h+=(dTt.map(t=>'<div class="text-xs p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40"><b>'+esc(t.code)+'</b><div class="text-slate-500">Class • '+t.start+'–'+t.end+' • '+esc(t.venue||'TBA')+'</div></div>').join('')+dEv.map(e=>'<div class="text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40"><b>'+esc(e.title)+'</b><div class="text-slate-500">'+esc(e.type)+'</div></div>').join('')+dTk.map(t=>'<div class="text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40"><b>'+esc(t.t)+'</b><div class="text-slate-500">Task</div></div>').join(''))||'<p class="text-xs text-slate-400">Nothing this day.</p>';
+  h+='<div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800"><div class="lbl">Add event on this day</div><div class="flex gap-2"><input id="e-t" class="inp" placeholder="Title"><select id="e-k" class="inp"><option>Exam</option><option>Test</option><option>Assignment</option><option>Lecture</option></select></div><button class="btn w-full" onclick="addEvent()">Schedule Event</button></div></div>';
+  return h;
+}
+function planWeek(){
+  const ws=weekStart(selDay);
+  var h='<div class="card p-5 space-y-3"><div class="font-extrabold">Weekly Class Timetable</div><p class="text-[11px] text-slate-400">Lock it once — it repeats every week until exam week begins.</p>';
+  h+='<div class="space-y-2">'+DAYS.map(function(d,i){
+    const ds=addDays(ws,i);
+    const items=(U.timetable||[]).filter(t=>t.day===i&&ttLive(ds)).sort((a,b)=>a.start<b.start?-1:1);
+    const evs=U.events.filter(e=>e.date===ds);
+    return '<div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 space-y-1"><div class="flex justify-between text-xs font-extrabold"><span>'+d+'</span><span class="text-slate-400">'+fmtD(ds)+'</span></div>'+((items.length||evs.length)?items.map(t=>'<div class="text-xs flex justify-between"><b>'+esc(t.code)+'</b><span>'+t.start+'–'+t.end+' • '+esc(t.venue||'TBA')+'</span></div>').join('')+evs.map(e=>'<div class="text-xs flex justify-between"><b>'+esc(e.title)+'</b><span>'+esc(e.type)+'</span></div>').join(''):'<div class="text-[11px] text-slate-400">Free day</div>')+'</div>';
+  }).join('')+'</div>';
+  h+='<div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800"><div class="lbl">Add class slot</div><div class="grid grid-cols-2 gap-2"><select id="tt-d" class="inp">'+DAYS.map(function(d,i){return '<option value="'+i+'">'+d+'</option>';}).join('')+'</select><input id="tt-c" class="inp uppercase font-mono" placeholder="Course code"></div><div class="grid grid-cols-3 gap-2"><input id="tt-v" class="inp" placeholder="Venue"><input id="tt-s" type="time" class="inp"><input id="tt-e" type="time" class="inp"></div><button class="btn w-full" onclick="addTT()">Add to timetable</button><div class="lbl pt-2">Repeat until (exam week starts)</div><input type="date" class="inp" value="'+esc(U.ttEnd||'')+'" onchange="U.ttEnd=this.value;save();go(\'plan\')"></div>';
+  h+='<div class="space-y-1 pt-2">'+(U.timetable||[]).map(function(t,i){return '<div class="flex justify-between text-xs p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40"><span>'+DAYS[t.day]+' • <b>'+esc(t.code)+'</b> '+t.start+'–'+t.end+' '+esc(t.venue||'')+'</span><button class="text-rose-500 font-bold" onclick="U.timetable.splice('+i+',1);save();go(\'plan\')">'+ic('x','w-3 h-3')+'</button></div>';}).join('')+'</div></div>';
+  return h;
+}
+function planExams(){
+  var h='<div class="card p-5 space-y-3"><div class="font-extrabold">Exam Timetable</div>';
+  const ex=(U.exams||[]).slice().sort((a,b)=>a.date<b.date?-1:1);
+  h+=(ex.map(function(e,i){const d=days(e.date);return '<div class="flex justify-between items-center text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40"><div><b class="block">'+esc(e.code)+'</b><span class="text-slate-400">'+fmtD(e.date)+' • '+esc(e.time||'')+' • '+esc(e.venue||'')+'</span></div><span class="flex items-center gap-2">'+chip(d<0?'done':d+'d',d<0?'slate':d<=7?'rose':'violet')+'<button class="text-rose-500 font-bold" onclick="U.exams.splice('+i+',1);save();go(\'plan\')">'+ic('x','w-3 h-3')+'</button></span></div>';}).join(''))||'<p class="text-xs text-slate-400">No exams scheduled yet.</p>';
+  h+='<div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800"><div class="lbl">Add exam</div><div class="grid grid-cols-2 gap-2"><input id="x-c" class="inp uppercase font-mono" placeholder="Course code"><input id="x-d" type="date" class="inp"></div><div class="grid grid-cols-2 gap-2"><input id="x-t" type="time" class="inp"><input id="x-v" class="inp" placeholder="Venue"></div><button class="btn w-full" onclick="addExam()">Add exam</button></div></div>';
+  return h;
+}
+function planTasks(){
+  var h='<div class="card p-5 space-y-3"><div class="font-extrabold">Smart Tasks</div><div class="space-y-2"><input id="t-in" class="inp" placeholder="Task (e.g. Read CSC 200)"><div class="grid grid-cols-2 gap-2"><div><label class="lbl block mb-1">Start</label><input id="t-s" type="datetime-local" class="inp"></div><div><label class="lbl block mb-1">End</label><input id="t-e" type="datetime-local" class="inp"></div></div><button class="btn w-full" onclick="addTask()">Add Task</button></div><div class="space-y-2 pt-2">'+U.tasks.map(function(t,i){return '<div class="flex items-center justify-between text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40"><label class="flex items-center gap-3"><input type="checkbox" '+(t.done?'checked':'')+' onchange="U.tasks['+i+'].done=!U.tasks['+i+'].done;save();go(\'plan\')" class="accent-emerald-600"><span class="'+(t.done?'line-through text-slate-400':'font-semibold')+'">'+esc(t.t)+'</span></label><span class="flex items-center gap-2">'+(t.end?chip(leftTxt(t.end),(new Date(t.end)-Date.now())<0?'rose':'violet'):'')+'<button class="text-rose-500 font-bold" onclick="U.tasks.splice('+i+',1);save();go(\'plan\')">'+ic('x','w-3 h-3')+'</button></span></div>';}).join('')||'<p class="text-xs text-slate-400">No tasks yet.</p>'+'</div></div>';
+  return h;
+}
+V.plan=function(){
+  const tabs=[['month','Calendar'],['week','Timetable'],['exams','Exam Timetable']];
+  var h='<div class="space-y-5"><div class="flex gap-2 overflow-x-auto pb-1">'+tabs.map(function(t){return '<button onclick="pTab=\''+t[0]+'\';go(\'plan\')" class="'+(pTab===t[0]?'btn':'btn2')+' whitespace-nowrap">'+t[1]+'</button>';}).join('')+'</div>';
+  if(pTab==='month')h+=planMonth();
+  if(pTab==='week')h+=planWeek();
+  if(pTab==='exams')h+=planExams();
+  h+=planTasks()+'</div>';
+  return h;
+};
+</script>
+<script>
+let deferredPrompt=null;
+const isStandalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault();deferredPrompt=e;
+  document.querySelectorAll('.install-btn').forEach(function(b){b.style.display='';});
+});
+function installApp(){
+  if(isStandalone)return showToast('Already installed','error');
+  if(!deferredPrompt){
+    const ios=/iphone|ipad/i.test(navigator.userAgent);
+    showToast(ios?'iPhone: Share, then Add to Home Screen':'Browser menu, then Add to Home screen','error');
+    return;
+  }
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(function(){deferredPrompt=null;});
+}
+(function(){
+  const l=document.createElement('link');l.rel='manifest';l.href='manifest.webmanifest';document.head.appendChild(l);
+  const m=document.createElement('meta');m.name='theme-color';m.content='#059669';document.head.appendChild(m);
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+  const _authP=authUI;
+  authUI=function(mode,msg){
+    const r=_authP(mode,msg);
+    if(!isStandalone&&mode==='welcome'){
+      const box=document.querySelector('#auth .space-y-6');
+      if(box){const b=document.createElement('button');b.className='btn w-full install-btn';b.style.display='none';b.onclick=installApp;b.textContent='Download the App';box.appendChild(b);if(deferredPrompt)b.style.display='';}
+    }
+    return r;
+  };
+  const _profP=V.prof;
+  V.prof=function(){
+    return _profP()+'<div class="card p-5 space-y-2 mt-5"><div class="lbl">App</div><button class="btn w-full" onclick="installApp()">Download Academic Summit App</button><p class="text-[11px] text-slate-400">Installs to home screen, works offline, opens full-screen.</p></div>';
+  };
+})();
+</script>
+<script>
+const LOGO='<svg viewBox="0 0 64 64" style="width:22px;height:22px;display:inline-block;vertical-align:-4px"><path d="M8 52 L28 18 L38 34 L46 22 L56 52 Z" fill="url(#lgA)"/><defs><linearGradient id="lgA" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#34d399"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs><path d="M32 6 l6 8 h-4 v6 h-4 v-6 h-4 z" fill="#a7f3d0"/></svg>';
+const LOGO_L='<svg viewBox="0 0 64 64" style="width:22px;height:22px;display:inline-block;vertical-align:-4px"><path d="M8 52 L28 18 L38 34 L46 22 L56 52 Z" fill="url(#lgB)"/><defs><linearGradient id="lgB" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#34d399"/></linearGradient></defs><circle cx="46" cy="14" r="6" fill="#fbbf24"/></svg>';
+let splashDone=false;
+const TAGS=['Academic success, within reach.','Your summit starts here.','Every grade. One climb.','Climb smart. Rise fast.'];
+let tagI=0;
+const tagT=setInterval(function(){tagI=(tagI+1)%TAGS.length;const el=document.getElementById('splash-tag');if(el)el.textContent=TAGS[tagI];},1100);
+const barT=setInterval(function(){const b=document.getElementById('splash-bar');if(b){const w=parseInt(b.style.width)||0;if(w<70)b.style.width=(w+16)+'%';}},280);
+function hideSplash(){
+  if(splashDone)return;splashDone=true;
+  const b=document.getElementById('splash-bar');if(b)b.style.width='100%';
+  setTimeout(function(){clearInterval(tagT);clearInterval(barT);const s=document.getElementById('splash');if(s){s.style.transition='opacity .35s';s.style.opacity='0';setTimeout(function(){s.remove();},400);}},350);
+}
+setTimeout(hideSplash,4000);
+const _bootS=boot;boot=async function(u){hideSplash();return _bootS(u);};
+const _authS=authUI;authUI=function(m,g){hideSplash();return _authS(m,g);};
+</script>
+<script>
+if(!document.getElementById('splash')){
+  var sp=[];
+  sp.push('<div id="splash" style="position:fixed;inset:0;z-index:99999;background:#02120c;');
+  sp.push('display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px">');
+  sp.push('<svg viewBox="0 0 512 512" style="width:84px;height:84px"><rect width="512" height="512" rx="112" fill="#07271d"/>');
+  sp.push('<path d="M80 384 L224 140 L300 268 L352 192 L432 384 Z" fill="#10b981"/>');
+  sp.push('<path d="M256 64 l40 52 h-26 v40 h-28 v-40 h-26 z" fill="#6ee7b7"/></svg>');
+  sp.push('<div style="color:#e7fff5;font-weight:800;font-size:18px">Academic Summit</div>');
+  sp.push('<div id="splash-tag" style="color:#8fb8a9;font-size:12px">Academic success, within reach.</div>');
+  sp.push('<div style="width:130px;height:3px;border-radius:2px;background:#0d3f2e;overflow:hidden">');
+  sp.push('<div id="splash-bar" style="width:0%;height:100%;background:linear-gradient(90deg,#059669,#06b6d4);transition:width .3s"></div></div></div>');
+  document.body.insertAdjacentHTML('afterbegin',sp.join(''));
+}
+</script>
+<script>
+(function(){
+  var old=document.getElementById('splash');
+  if(old)old.remove();
+  var sp=[];
+  sp.push('<div id="splash" style="position:fixed;inset:0;z-index:99999;background:#02120c;');
+  sp.push('display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:0 32px;text-align:center">');
+  sp.push('<svg viewBox="0 0 512 512" style="width:88px;height:88px"><rect width="512" height="512" rx="112" fill="#07271d"/>');
+  sp.push('<path d="M80 384 L224 140 L300 268 L352 192 L432 384 Z" fill="#10b981"/>');
+  sp.push('<path d="M256 64 l40 52 h-26 v40 h-28 v-40 h-26 z" fill="#6ee7b7"/></svg>');
+  sp.push('<div style="color:#e7fff5;font-weight:800;font-size:19px;letter-spacing:.01em">Academic Summit</div>');
+  sp.push('<div style="color:#8fb8a9;font-size:11.5px;line-height:1.5;max-width:270px">Results, GPA intelligence, planner, finance & attendance - your whole campus in one place.</div>');
+  sp.push('<div style="width:160px;height:3px;border-radius:2px;background:#0d3f2e;overflow:hidden;margin-top:6px">');
+  sp.push('<div id="splash-bar" style="width:0%;height:100%;background:linear-gradient(90deg,#059669,#06b6d4);transition:width .25s"></div></div>');
+  sp.push('<div id="splash-tag" style="color:#6ee7b7;font-size:11px;font-weight:600">Academic success, within reach.</div></div>');
+  document.body.insertAdjacentHTML('afterbegin',sp.join(''));
+  var pct=0;
+  var fill=setInterval(function(){
+    if(splashDone){clearInterval(fill);return;}
+    var b=document.getElementById('splash-bar');
+    if(!b){clearInterval(fill);return;}
+    if(pct<90){pct+=(90-pct)*0.07+0.5;b.style.width=Math.min(90,pct).toFixed(1)+'%';}
+  },120);
+  window.addEventListener('load',function(){if(pct<92)pct=92;});
+})();
+</script>
+<script>
+function runDet(){
+  const g1=parseFloat($('d1').value),cg=parseFloat($('dc').value);
+  const u1=parseFloat($('du1').value)||20,u2=parseFloat($('du2').value)||20;
+  if(isNaN(g1)||isNaN(cg))return showToast('Enter both GPA values','error');
+  const q1=g1*u1,ut=u1+u2,qt=cg*ut,gap=qt-q1,need=gap/u2;
+  const step=(n,b,col)=>'<div class="p-4 rounded-2xl space-y-1" style="background:var(--sub);border-left:3px solid '+col+'"><div class="lbl" style="color:'+col+'">'+n+'</div><p class="text-xs leading-relaxed">'+b+'</p></div>';
+  var h='<div class="space-y-3">';
+  h+=step('Step 1 - Your starting point','Before these new results you had <b>'+u1+'</b> units at a CGPA of <b>'+g1.toFixed(2)+'</b> - that is <b>'+q1.toFixed(2)+'</b> grade points already banked. That number is real work. It counts.','#10b981');
+  h+=step('Step 2 - Where you are aiming','Your portal (or your target) reads <b>'+cg.toFixed(2)+'</b> across <b>'+ut+'</b> units. To hold that average you need <b>'+qt.toFixed(2)+'</b> grade points in total.','#06b6d4');
+  h+=step('Step 3 - The exact gap','The distance is <b>'+gap.toFixed(2)+'</b> grade points, to be earned in your <b>'+u2+'</b> pending units - an average of <b>'+need.toFixed(2)+'</b> in those courses.','#f59e0b');
+  const G=[['A',5],['B',4],['C',3],['D',2],['E',1]];
+  const combos=G.map(g=>({g:g[0],v:g[1],d:Math.abs(g[1]-need)})).sort((a,b)=>a.d-b.d).slice(0,3);
+  h+='<div class="p-4 rounded-2xl space-y-2" style="background:var(--sub)"><div class="lbl">What it looks like in grades (closest first)</div>'+combos.map(c=>'<div class="flex justify-between text-xs"><span>Every pending course at <b>'+c.g+'</b></span><b>'+c.v.toFixed(2)+'</b></div>').join('')+'</div>';
+  if(need>=0&&need<=5){
+    h+='<div class="p-4 rounded-2xl text-xs leading-relaxed" style="background:rgba(16,185,129,.12)"><b>We see you.</b> '+q1.toFixed(0)+' points got you here - that is effort, not luck. A '+need.toFixed(2)+' average across your next '+u2+' units keeps the dream alive, and the grade picture above shows it is within reach. One course at a time.</div>';
+  }else if(need>5){
+    h+='<div class="p-4 rounded-2xl text-xs leading-relaxed" style="background:rgba(244,63,94,.12)"><b>Honest, not harsh:</b> '+need.toFixed(2)+' sits above the 5.0 ceiling, so this exact target cannot be reached in '+u2+' units alone - and that is arithmetic, not a verdict on you. Widen the units (more semesters lie ahead) or let the target breathe. Your climb is still real.</div>';
+  }else{
+    h+='<div class="p-4 rounded-2xl text-xs leading-relaxed" style="background:rgba(16,185,129,.12)"><b>Good news:</b> your banked points already cover this target - the pending units only need to stay above '+Math.max(0,need).toFixed(2)+'. You are defending strong ground, not chasing a mirage.</div>';
+  }
+  h+='</div>';
+  $('d-res').innerHTML=h;
+}
+</script>
+<script>
+// Only force lecturer mode if the app is actually installed as the lecturer PWA
+// OR if the user manually visits #lecturer (but don't trap them forever)
+if(location.hash==='#lecturer'){
+  localStorage.setItem('as_lec_session','1'); // Session-only flag
+}
+const isLecSession=localStorage.getItem('as_lec_session')==='1';
+if(isLecSession&&!location.hash){
+  // Only redirect if we're in the same session (tab not closed)
+  // Once they close the tab, the trap resets
+  location.hash='#lecturer';
+}
+// Clear the session flag when they explicitly go to student mode
+if(location.hash===''||location.hash==='#'){
+  localStorage.removeItem('as_lec_session');
+}
+</script>
+[your code here]
+<script>
+(function(){var s=document.createElement('style');s.textContent='@keyframes rwPulse{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.55)}50%{box-shadow:0 0 0 12px rgba(16,185,129,0)}}.rw-pulse{animation:rwPulse 1.4s infinite;border-color:#10b981!important}';document.head.appendChild(s);})();
+const _bootRW=boot;
+boot=async function(u){localStorage.setItem('as_tour','1');return _bootRW(u);};
+function rwShow(step){
+  const S={1:['Bring your results home','In about two minutes we will import your real results from your portal and light up your dashboard - CGPA, trajectory, carryovers, everything.'],
+           2:['Copy your results','Open your university portal in another tab or on another phone. Open your results page, select all the text, copy it, and come back here.']};
+  const s=S[step];
+  var h='<div class="fixed inset-0 z-50 bg-black/60 flex items-end" onclick="rwSkip()"><div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 space-y-4" onclick="event.stopPropagation()">';
+  h+='<div class="lbl text-emerald-600 dark:text-emerald-400">Step '+step+' of 2</div>';
+  h+='<div class="font-extrabold text-lg">'+s[0]+'</div>';
+  h+='<p class="text-sm text-slate-500 dark:text-slate-400">'+s[1]+'</p>';
+  h+='<div class="flex gap-1">'+[1,2].map(i=>'<span class="h-1.5 flex-1 rounded-full '+(i<=step?'bg-emerald-500':'bg-slate-200 dark:bg-slate-700')+'"></span>').join('')+'</div>';
+  if(step===1){h+='<div class="flex gap-2"><button class="btn2 flex-1" onclick="rwSkip()">Maybe later</button><button class="btn flex-1" onclick="rwShow(2)">Start now</button></div>';}
+  else{h+='<div class="flex gap-2"><button class="btn2 flex-1" onclick="rwShow(1)">Back</button><button class="btn flex-1" onclick="rwHandoff()">I have copied it</button></div>';}
+  h+='</div></div>';
+  $('sheet').innerHTML=h;
+}
+function rwSkip(){closeSheet();}
+function rwHandoff(){
+  closeSheet();
+  aTab='calc';editing=null;go('acad');
+  setTimeout(function(){
+    var p=$('paste');if(p)p.classList.remove('hidden');
+    var b=$('paste-a');if(b)b.classList.add('rw-pulse');
+    rwBubble();
+  },300);
+}
+function rwBubble(){
+  if($('rw-bubble'))return;
+  var b=document.createElement('div');b.id='rw-bubble';
+  b.className='fixed left-4 right-4 z-40 p-4 rounded-2xl text-xs font-semibold shadow-lg';
+  b.style.cssText='bottom:calc(env(safe-area-inset-bottom,6px) + 84px);background:#059669;color:#fff';
+  b.innerHTML='Paste your copied results in the glowing box, then tap <b>Parse & Auto-Fill</b>, then <b>Calculate & Save</b>. <span onclick="this.parentNode.remove()" style="float:right;cursor:pointer">✕</span>';
+  document.body.appendChild(b);
+}
+function rwDone(){
+  localStorage.setItem('as_rw','1');
+  var b=$('rw-bubble');if(b)b.remove();
+  var x=$('paste-a');if(x)x.classList.remove('rw-pulse');
+  showToast('First result in - your summit has begun');
+}
+const _rwSave=saveSem;
+saveSem=function(){
+  const before=(U.semesters||[]).length;
+  const r=_rwSave();
+  if((U.semesters||[]).length>before)rwDone();
+  return r;
+};
+const _homeRW=V.home;
+V.home=function(){
+  const html=_homeRW();
+  setTimeout(function(){
+    if(U&&U.role==='student'&&(U.semesters||[]).length===0&&!localStorage.getItem('as_rw')&&!window._rwShown){window._rwShown=1;rwShow(1);}
+    if(U&&U.role==='lecturer'&&!localStorage.getItem('as_lec_tour')&&!window._ltShown){window._ltShown=1;lecTour();}
+  },600);
+  return html;
+};
+let ltI=0;
+const LT=[['Broadcast the code','When class starts, tap Generate. A 5-digit code appears and lives for 90 seconds - call it out or project it.'],
+['Watch them land','The Live Submissions bar fills in real time as students mark present. No paper, no calling names.'],
+['Missed the window?','Re-issue sends a fresh code to the SAME class list, so latecomers join without creating duplicates.'],
+['Roster & export','The Roster tab lists matric numbers, numbered and in order. Export the CSV for your records.']];
+function lecTour(){ltI=0;ltStep();}
+function ltStep(){
+  if(ltI>=LT.length){localStorage.setItem('as_lec_tour','1');closeSheet();return;}
+  const s=LT[ltI];
+  var h='<div class="fixed inset-0 z-50 bg-black/60 flex items-end"><div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 space-y-4">';
+  h+='<div class="lbl text-emerald-600 dark:text-emerald-400">Lecturer tour '+(ltI+1)+'/'+LT.length+'</div>';
+  h+='<div class="font-extrabold text-lg">'+s[0]+'</div>';
+  h+='<p class="text-sm text-slate-500 dark:text-slate-400">'+s[1]+'</p>';
+  h+='<div class="flex gap-1">'+LT.map((_,i)=>'<span class="h-1.5 flex-1 rounded-full '+(i<=ltI?'bg-emerald-500':'bg-slate-200 dark:bg-slate-700')+'"></span>').join('')+'</div>';
+  h+='<div class="flex gap-2"><button class="btn2 flex-1" onclick="localStorage.setItem(\'as_lec_tour\',\'1\');closeSheet()">Skip</button><button class="btn flex-1" onclick="ltI++;ltStep()">'+(ltI===LT.length-1?'Finish':'Next')+'</button></div></div></div>';
+  $('sheet').innerHTML=h;
+}
+</script>
+<script>
+function matchSlot(){
+  const L=U.lec||{};if(!L.sched)return null;
+  const d=new Date();const day=(d.getDay()+6)%7;
+  const hh=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  return L.sched.find(s=>s.day===day&&hh>=s.start&&hh<=s.end)||null;
+}
+function skipLec(){window._lecSkip=1;go('home');}
+function lecSetup(){
+  const L=U.lec||{};
+  fullScreen('Teaching Profile',
+  '<div class="space-y-3 card p-5">'+
+  '<div class="lbl">Your courses (one per line: CODE | level | dept)</div>'+
+  '<textarea id="lc-c" class="inp font-mono text-xs" rows="4" placeholder="POS 204 | 200 | Political Science">'+(L.courses||[]).map(c=>c.code+' | '+c.level+' | '+c.dept).join('\n')+'</textarea>'+
+  '<div class="lbl">Weekly slots (one per line: Mon 08:00-10:00 CODE)</div>'+
+  '<textarea id="lc-s" class="inp font-mono text-xs" rows="4" placeholder="Mon 08:00-10:00 POS 204">'+(L.sched||[]).map(s=>['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][s.day]+' '+s.start+'-'+s.end+' '+s.code).join('\n')+'</textarea>'+
+  '<button class="btn w-full" onclick="saveLecSetup()">Save & continue</button></div>');
+}
+function saveLecSetup(){
+  const cs=$('lc-c').value.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const p=l.split('|').map(x=>x.trim());return{code:(p[0]||'').toUpperCase(),level:p[1]||'',dept:p[2]||''};}).filter(c=>c.code);
+  const sc=$('lc-s').value.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const m=l.match(/^(\w{3})\s+(\d{2}:\d{2})-(\d{2}:\d{2})\s+(.+)$/i);if(!m)return null;const day=['mon','tue','wed','thu','fri','sat','sun'].indexOf(m[1].toLowerCase());return day<0?null:{day:day,start:m[2],end:m[3],code:m[4].toUpperCase()};}).filter(Boolean);
+  U.lec=U.lec||{};U.lec.courses=cs;U.lec.sched=sc;U.lec.setupDone=true;save();closeSheet();go('home');showToast('Teaching profile saved');
+}
+LECTURER_VIEWS.home=function(){
+  const L=U.lec||{};const slot=matchSlot();
+  var h='<div class="space-y-5">';
+  if(!L.setupDone&&!window._lecSkip){
+    h+='<div class="card p-5 space-y-2"><div class="font-extrabold text-sm">Set up your teaching profile</div><p class="text-xs text-slate-500">Add your courses and weekly slots once - the console then fills course & level for you at class time.</p><div class="flex gap-2"><button class="btn flex-1" onclick="lecSetup()">Set up (2 min)</button><button class="btn2" onclick="skipLec()">Skip for now</button></div></div>';
+  }
+  h+='<div><h1 class="text-2xl font-extrabold">Lecturer Attendance Console</h1><p class="text-xs text-slate-500">Server-verified 90-second OTP engine</p></div>';
+  h+='<div class="card p-6 space-y-4"><div class="grid sm:grid-cols-2 gap-3">';
+  h+='<div><label class="lbl block mb-1">Course</label>'+((L.courses&&L.courses.length)?'<select id="lec-course" class="inp uppercase font-mono font-bold">'+L.courses.map(c=>'<option'+(slot&&slot.code===c.code?' selected':'')+'>'+esc(c.code)+'</option>').join('')+'</select>':'<input id="lec-course" class="inp uppercase font-mono font-bold" value="'+(slot?esc(slot.code):'POS 204')+'">')+'</div>';
+  h+='<div><label class="lbl block mb-1">Level</label><input id="lec-level" class="inp" value="'+esc(slot?( (L.courses||[]).find(c=>c.code===slot.code)||{}).level||'':'')+'" placeholder="e.g. 200"></div>';
+  h+='<div class="sm:col-span-2"><label class="lbl block mb-1">Topic</label><input id="lec-topic" class="inp" placeholder="Class Session"></div></div>';
+  h+='<div class="text-center p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl space-y-3"><div class="lbl">Broadcast 5-Digit OTP</div><div id="otp-display" class="text-6xl font-extrabold tracking-widest font-mono text-emerald-600 dark:text-emerald-400">-----</div><div id="timer-display" class="text-xs font-bold text-slate-400">Tap below to broadcast</div></div>';
+  h+='<button class="btn w-full py-3 text-base" onclick="startAttendanceSession()">Generate 90-Second Code</button>';
+  h+='<div id="live-panel" class="hidden space-y-2"><button class="btn2 w-full" onclick="reissueCode()">Re-issue code (same class list)</button><div class="flex gap-2"><input id="man-matric" class="inp font-mono uppercase" placeholder="Matric to add manually"><button class="btn shrink-0" onclick="manualAdd()">Add</button></div></div></div>';
+  h+='<div class="card p-6 space-y-3"><div class="flex justify-between items-center"><div class="font-extrabold">Live Submissions</div><span id="sub-count" class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">0 Present</span></div><div class="h-3 rounded-full bg-slate-200 dark:bg-slate-800"><div id="sub-bar" class="h-full bg-emerald-500 w-0 transition-all"></div></div></div></div>';
+  return h;
+};
+function startTick(end){
+  clearInterval(window._tick);
+  const tick=()=>{if(!$('otp-display')){clearInterval(window._tick);return;}
+    const left=Math.max(0,Math.round((end-Date.now())/1000));
+    $('timer-display').innerText=left?('Expires in '+left+'s'):'Session closed';
+    if(!left){$('otp-display').innerText='EXPIRED';clearInterval(window._tick);}};
+  tick();window._tick=setInterval(tick,1000);
+}
+function startPoll(sid){
+  clearInterval(window._poll);
+  const poll=async()=>{const{count}=await sb.from('attendance').select('id',{count:'exact',head:true}).eq('session_id',sid);
+    if($('sub-count'))$('sub-count').innerText=(count||0)+' Present';};
+  poll();window._poll=setInterval(poll,3000);
+}
+async function startAttendanceSession(){
+  const course=$('lec-course').value.trim()||'POS 204';
+  const topic=$('lec-topic').value.trim();
+  const{data,error}=await sb.rpc('start_session',{p_course:course,p_topic:topic});
+  if(error)return showToast(error.message,'error');
+  const s=data[0];window._curSession=s.s_id;
+  $('otp-display').innerText=s.s_code;
+  $('live-panel').classList.remove('hidden');
+  startTick(new Date(s.s_expires).getTime());startPoll(s.s_id);
+}
+async function reissueCode(){
+  if(!window._curSession)return showToast('Generate a session first','error');
+  const{data,error}=await sb.rpc('reissue_session',{p_session_id:window._curSession});
+  if(error)return showToast(error.message,'error');
+  const s=data[0];
+  $('otp-display').innerText=s.s_code;
+  $('live-panel').classList.remove('hidden');
+  startTick(new Date(s.s_expires).getTime());
+  showToast('New code broadcast - SAME class list');
+}
+async function manualAdd(){
+  const m=$('man-matric').value.trim();
+  if(!m)return showToast('Enter matric','error');
+  if(!window._curSession)return showToast('Generate a session first','error');
+  const{data,error}=await sb.rpc('add_manual',{p_session_id:window._curSession,p_matric:m});
+  if(error)return showToast(error.message,'error');
+  $('man-matric').value='';showToast('Added manually (M) for '+data);
+  startPoll(window._curSession);
+}
+LECTURER_VIEWS.roster=function(){
+  return '<div class="space-y-5"><div class="card p-6 space-y-4"><div class="flex justify-between items-center"><div class="font-extrabold">Student Attendance Rosters</div><button class="btn2 text-xs" onclick="exportRosterCSV()">Export CSV</button></div><div class="overflow-x-auto"><table class="w-full text-xs text-left"><thead><tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400"><th class="p-3">#</th><th class="p-3">Matric</th><th class="p-3">Course</th><th class="p-3">Date</th><th class="p-3">Via</th></tr></thead><tbody id="roster-body" class="divide-y divide-slate-100 dark:divide-slate-800 font-mono"></tbody></table></div></div></div>';
+};
+async function loadRoster(){
+  const{data,error}=await sb.from('attendance').select('marked_at, method, sessions(course), profiles(matric)').order('marked_at',{ascending:true});
+  if(error)return showToast(error.message,'error');
+  rosterRows=data||[];
+  $('roster-body').innerHTML=rosterRows.map((r,i)=>'<tr><td class="p-3">'+(i+1)+'</td><td class="p-3">'+esc(r.profiles?.matric||'—')+'</td><td class="p-3">'+esc(r.sessions?.course)+'</td><td class="p-3">'+fmtD(r.marked_at)+'</td><td class="p-3">'+(r.method==='manual'?'M':'OTP')+'</td></tr>').join('')||'<tr><td class="p-3 text-slate-400" colspan="5">No attendance recorded yet.</td></tr>';
+}
+function exportRosterCSV(){
+  const cell=v=>{v=String(v??'');if(/^[=+\-@]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';};
+  const rows=[['No','Matric','Course','Date','Method'],...rosterRows.map((r,i)=>[i+1,r.profiles?.matric,r.sessions?.course,r.marked_at,r.method||'otp'])];
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([rows.map(r=>r.map(cell).join(',')).join('\n')],{type:'text/csv'}));
+  a.download='attendance-roster.csv';a.click();
+}
+</script>
+<script>
+// Only force lecturer mode if the app is actually installed as the lecturer PWA
+// OR if the user manually visits #lecturer (but don't trap them forever)
+if(location.hash==='#lecturer'){
+  localStorage.setItem('as_lec_session','1'); // Session-only flag
+}
+const isLecSess2=localStorage.getItem('as_lec_session')==='1';
+if(isLecSess2&&!location.hash){
+  // Only redirect if we're in the same session (tab not closed)
+  // Once they close the tab, the trap resets
+  location.hash='#lecturer';
+}
+// Clear the session flag when they explicitly go to student mode
+if(location.hash===''||location.hash==='#'){
+  localStorage.removeItem('as_lec_session');
+}
+</script>
+<script>
+function parsePasteTrojan(){
+  const raw=$('paste-a').value||'';
+  const merged=raw.replace(/([A-Z]{2,4})[ \t]+(\d{3}[A-Z]?)\b/g,'$1$2');
+  const tokens=merged.split(/[\s,;|]+/).map(t=>t.trim()).filter(Boolean);
+  const codeRe=/^[A-Z]{2,4}(?:-[A-Z]{2,6})?\d{3}[A-Z]?$/;
+  const out=[];const seen={};
+  for(let i=0;i<tokens.length;i++){
+    const tk=tokens[i];
+    if(!codeRe.test(tk))continue;
+    let unit=null,score=null;
+    for(let j=i+1;j<Math.min(tokens.length,i+18);j++){
+      const t=tokens[j];
+      if(codeRe.test(t))break;
+      if(unit===null&&/^\d{1,2}$/.test(t)){const n=+t;if(n>=1&&n<=12){unit=n;}continue;}
+      if(unit!==null&&score===null&&/^\d{1,3}(\.\d+)?$/.test(t)){const s=+t;if(s>=0&&s<=100){score=s;break;}}
+    }
+    if(unit===null||score===null||seen[tk])continue;
+    seen[tk]=1;out.push({code:tk,unit:unit,score:score});
+  }
+  if(!out.length)return showToast('No course pattern found - paste the full results page, or add courses manually below','error');
+  $('rows').innerHTML='';
+  out.forEach(function(c){
+    addRow();
+    const rs=document.querySelectorAll('#rows > div');
+    const r=rs[rs.length-1];
+    r.querySelector('.c-code').value=c.code;
+    r.querySelector('.c-unit').value=c.unit;
+    r.querySelector('.c-score').value=c.score;
+  });
+  showToast(out.length+' courses parsed - review & save','success');
+}
+</script>
+<script src="patch.js?v=1"></script>
+</body>
+</html>
