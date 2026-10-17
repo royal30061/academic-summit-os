@@ -2931,6 +2931,150 @@ go=function(v){var r=_go62(v);setTimeout(patchSemDisplays,160);return r;};
 const _start62=start;
 start=function(){_start62();try{deduceMissing();}catch(e){}setTimeout(patchSemDisplays,200);};
 </script>
+<script>
+function fixAttHero(){
+  document.querySelectorAll('.card').forEach(function(c){
+    var b=c.querySelector('button');
+    if(b&&/In class now\? Mark attendance/.test(c.textContent||'')){
+      b.innerHTML='<div class="font-extrabold text-white text-base">🎓 Mark attendance</div>';
+    }
+  });
+}
+V.att=function(){
+  var h='<div class="space-y-5"><div class="card p-6 space-y-2"><div class="font-extrabold text-lg">Mark attendance</div><p class="text-xs text-slate-500">1. Enter your course code. 2. Enter the 5-digit code your lecturer calls out. 3. Tap Mark. Done - you are in.</p></div>';
+  h+=window._attCardHTML||'<div class="card p-6 text-xs text-slate-500">Visit Home once to load the code box, then return here.</div>';
+  h+='<div class="card p-6 space-y-3"><div class="font-extrabold">My attendance</div><div id="att-hist" class="space-y-2 text-xs text-slate-500">Loading...</div></div></div>';
+  setTimeout(attHistory,80);
+  return h;
+};
+function semStatsAll(){
+  var u=0,q=0;
+  (U.semesters||[]).forEach(function(s){var st=semStats62(s);u+=st.uRel;q+=st.q;});
+  return {u:u,q:q,g:u?q/u:0};
+}
+function cgpaBreakdown(){
+  var rows=(U.semesters||[]).map(function(s,i){
+    var st=semStats62(s);
+    return '<div class="flex justify-between py-2 border-b border-slate-200/40 text-xs"><span>Semester '+(i+1)+'</span><span>'+st.uRel+'u • '+st.q+' pts • GPA '+st.rel.toFixed(2)+'</span></div>';
+  }).join('');
+  var tot=semStatsAll();
+  fullScreen('How your CGPA is built','<div class="space-y-3">'+rows+
+   '<div class="p-3 rounded-xl" style="background:var(--sub)"><p class="text-xs">Total quality points '+tot.q+' ÷ total units '+tot.u+' = <b>'+tot.g.toFixed(2)+' / 5.00</b></p></div>'+
+   (U.portalCGPA?'<p class="text-[11px] text-slate-500">Your portal prints '+U.portalCGPA.toFixed(2)+' - it counts unreleased courses as zero until they drop.</p>':'')+
+   '<button class="btn w-full" onclick="closeSheet()">Got it</button></div>');
+}
+function lowestList(){
+  var rows=[];
+  (U.semesters||[]).forEach(function(s,i){
+    var cs=(s.courses||[]).filter(function(c){return c.score!=null;});
+    if(!cs.length)return;
+    var low=cs.reduce(function(a,b){return b.score<a.score?b:a;});
+    rows.push({lv:100+Math.floor(i/2)*100,sm:i%2===0?'First':'Second',low:low});
+  });
+  return rows;
+}
+function notifSheet(){
+  var rows=lowestList();
+  var body=rows.length?rows.map(function(r){return '<div class="flex justify-between py-2 text-xs border-b border-slate-200/40"><span>'+r.lv+' Level '+r.sm+' Semester</span><b>'+r.low.code+' • '+r.low.score+'</b></div>';}).join(''):'<p class="text-xs text-slate-500">No results yet.</p>';
+  fullScreen('Academic insight',body+'<button class="btn w-full mt-3" onclick="closeSheet()">Close</button>');
+}
+function carrySheet(){
+  var carries=[],narrow=[];
+  (U.semesters||[]).forEach(function(s,i){
+    (s.courses||[]).forEach(function(c){
+      var tag={lv:100+Math.floor(i/2)*100,sm:i%2===0?'First':'Second',c:c};
+      if(c.score<40)carries.push(tag);
+      else if(c.score<45)narrow.push(tag);
+    });
+  });
+  var body='';
+  if(!carries.length){
+    body+='<div class="p-4 rounded-xl text-center space-y-1" style="background:var(--sub)"><div class="text-3xl">🏆</div><div class="font-extrabold text-sm">No carryovers yet - you are killing it.</div><p class="text-[11px] text-slate-500">Keep up the good work.</p></div>';
+  }else{
+    body+='<div class="lbl" style="color:#e11d48">Carryovers</div>'+carries.map(function(x){return '<div class="flex justify-between py-2 text-xs border-b border-slate-200/40"><span>'+x.lv+'L '+x.sm+' - '+x.c.code+'</span><b style="color:#e11d48">'+x.c.score+'</b></div>';}).join('');
+  }
+  if(narrow.length){
+    body+='<div class="lbl pt-3" style="color:#d97706">Narrow escapes - the 40s. Guard these.</div>'+narrow.map(function(x){return '<div class="flex justify-between py-2 text-xs border-b border-slate-200/40"><span>'+x.lv+'L '+x.sm+' - '+x.c.code+'</span><b style="color:#d97706">'+x.c.score+' (E)</b></div>';}).join('');
+  }
+  fullScreen('Carryover Register',body+'<button class="btn w-full mt-3" onclick="closeSheet()">Close</button>');
+}
+function makeHomeCardsClickable(){
+  document.querySelectorAll('.card').forEach(function(c){
+    var t=c.textContent||'';
+    if(/CUMULATIVE GPA/.test(t)&&!c.getAttribute('data-hk1')){c.setAttribute('data-hk1','1');c.style.cursor='pointer';c.onclick=cgpaBreakdown;}
+    if(/DEGREE PROGRESS/.test(t)&&!c.getAttribute('data-hk2')){c.setAttribute('data-hk2','1');c.style.cursor='pointer';c.onclick=function(){go('acad');};}
+    if(/CARRYOVER REGISTER/.test(t)&&!c.getAttribute('data-hk3')){c.setAttribute('data-hk3','1');c.style.cursor='pointer';c.onclick=carrySheet;}
+    if(/Academic insight|Lowest score/i.test(t)&&!c.getAttribute('data-hk4')){
+      c.setAttribute('data-hk4','1');c.style.cursor='pointer';c.onclick=notifSheet;
+      var rows=lowestList();
+      if(rows.length){
+        var r=rows[rows.length-1];
+        var p=Array.from(c.querySelectorAll('p,div')).find(function(x){return /Lowest score/i.test(x.textContent||'');});
+        if(p)p.textContent=r.lv+'L '+r.sm+' semester - lowest: '+r.low.code+' ('+r.low.score+'). Tap for all.';
+      }
+    }
+  });
+}
+function fixSemTitle(){
+  var lab=Array.from(document.querySelectorAll('*')).find(function(el){return el.children.length===0&&(el.textContent||'').trim()==='SEMESTER TITLE';});
+  if(!lab)return;
+  var inp=lab.nextElementSibling;
+  if(!inp||inp.tagName!=='INPUT'||inp.getAttribute('data-swapped'))return;
+  inp.setAttribute('data-swapped','1');inp.style.display='none';
+  var wrap=document.createElement('div');
+  wrap.className='grid grid-cols-2 gap-2 mt-1';
+  var lv=parseInt((U.profile||{}).level||100,10);
+  wrap.innerHTML='<select id="sem-lv" class="inp">'+[100,200,300,400,500,600].map(function(l){return '<option'+(l===lv?' selected':'')+'>'+l+'</option>';}).join('')+'</select><select id="sem-half" class="inp"><option>First Semester</option><option>Second Semester</option><option>Full Session</option></select>';
+  lab.parentNode.insertBefore(wrap,inp);
+  var upd=function(){inp.value=$('sem-lv').value+' Level - '+$('sem-half').value;};
+  wrap.querySelectorAll('select').forEach(function(s){s.addEventListener('change',upd);});
+  upd();
+}
+function pruneEmptyRows(){
+  document.querySelectorAll('#rows > div').forEach(function(r){
+    var code=((r.querySelector('.c-code')||{}).value||'').trim();
+    var sc=((r.querySelector('.c-score')||{}).value||'').trim();
+    if(!code&&!sc)r.remove();
+  });
+}
+function seriesFor(kind){
+  var u=0,q=0,out=[];
+  (U.semesters||[]).forEach(function(s,i){
+    var st=semStats62(s);
+    u+=st.uRel;q+=st.q;
+    out.push({lv:100+Math.floor(i/2)*100,half:i%2,g:st.rel,cg:u?q/u:0});
+  });
+  if(kind==='first')return out.filter(function(p){return p.half===0;});
+  if(kind==='second')return out.filter(function(p){return p.half===1;});
+  return out;
+}
+function svgGraph(pts,title,key){
+  var W=320,H=110,P=16;
+  if(!pts.length)return '<div class="space-y-1"><div class="text-xs font-extrabold">'+title+'</div><div class="p-3 rounded-xl text-[11px] text-slate-500" style="background:var(--sub)">No data yet - it draws itself as semesters land.</div></div>';
+  var xs=function(i){return P+i*((W-2*P)/Math.max(pts.length-1,1));};
+  var ys=function(g){return H-P-(g/5)*(H-2*P);};
+  var line=pts.map(function(p,i){return xs(i).toFixed(1)+','+ys(p[key]).toFixed(1);}).join(' ');
+  var grid=[0,1,2,3,4,5].map(function(g){return '<line x1="'+P+'" y1="'+ys(g)+'" x2="'+(W-P)+'" y2="'+ys(g)+'" stroke="#334155" stroke-width="0.5" stroke-dasharray="3 3"/><text x="3" y="'+(ys(g)+3)+'" font-size="8" fill="#64748b">'+g+'</text>';}).join('');
+  var dots=pts.map(function(p,i){return '<circle cx="'+xs(i).toFixed(1)+'" cy="'+ys(p[key]).toFixed(1)+'" r="3.5" fill="#10b981"/><text x="'+xs(i).toFixed(1)+'" y="'+(ys(p[key])-7).toFixed(1)+'" font-size="9" text-anchor="middle" fill="#94a3b8">'+p[key].toFixed(2)+'</text><text x="'+xs(i).toFixed(1)+'" y="'+(H-3)+'" font-size="9" text-anchor="middle" fill="#64748b">'+p.lv+'</text>';}).join('');
+  return '<div class="space-y-1"><div class="text-xs font-extrabold">'+title+'</div><svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;background:rgba(255,255,255,.03);border-radius:12px"><line x1="'+P+'" y1="'+ys(5)+'" x2="'+(W-P)+'" y2="'+ys(5)+'" stroke="#10b981" stroke-width="1" stroke-dasharray="4 3"/>'+grid+'<polyline points="'+line+'" fill="none" stroke="#10b981" stroke-width="2"/>'+dots+'</svg></div>';
+}
+function fixTrajectory(){
+  var card=Array.from(document.querySelectorAll('.card')).find(function(c){return /GPA Trajectory/.test(c.textContent||'')&&!c.getAttribute('data-graphed');});
+  if(!card)return;
+  card.setAttribute('data-graphed','1');
+  card.innerHTML='<div class="space-y-4"><div class="font-extrabold">GPA Trajectory</div>'+svgGraph(seriesFor('first'),'First semesters - 100L to 400L','g')+svgGraph(seriesFor('second'),'Second semesters - 100L to 400L','g')+svgGraph(seriesFor('total'),'Cumulative - the whole climb','cg')+'<p class="text-[10px] text-slate-500">Green dashed line is the 5.00 ceiling. Every dip in your results shows as a fall in the line.</p></div>';
+}
+function homeExtras(){try{fixAttHero();makeHomeCardsClickable();fixTrajectory();}catch(e){}}
+function acadExtras(){try{fixSemTitle();pruneEmptyRows();}catch(e){}}
+const _go63=go;
+go=function(v){
+  var r=_go63(v);
+  setTimeout(function(){homeExtras();acadExtras();if(typeof patchSemDisplays==='function')patchSemDisplays();},180);
+  return r;
+};
+const _start63=start;
+start=function(){_start63();setTimeout(function(){homeExtras();acadExtras();},250);};
+</script>
 </body>
 </html>
 
