@@ -3,6 +3,9 @@
    Load order:  academics.js -> patch.js (trimmed) -> upload-fix.js            */
 (function () {
   'use strict';
+var MODULE_NAME = 'ACADEMICS';
+try {
+
   var W = window;
   var GC = { A: '#10b981', B: '#3b82f6', C: '#f59e0b', D: '#fb923c', E: '#f43f5e', F: '#b91c1c' };
   var NARROW_MAX = 44;               // E band 40-44; exactly 40 gets the loudest warning
@@ -361,4 +364,12 @@
     showToast('Saved. ' + msg.join(', ') + ' | CGPA ' + cum().g.toFixed(2));
     try { rwDone(); } catch (e) {}
   };
+} catch (err) {
+  console.error('[CIRCUIT BREAKER] ' + MODULE_NAME + ' failed to load:', err);
+  try {
+    (window._featureFailures = window._featureFailures || {})[MODULE_NAME] = { time: Date.now(), message: (err && err.message) || String(err) };
+    if (window._cbNotify) window._cbNotify(MODULE_NAME);
+  } catch (e) {}
+  if (MODULE_NAME === 'CORE' || MODULE_NAME === 'AUTH') throw err;
+}
 })();

@@ -4,6 +4,9 @@
    Load order: academics.js -> ocr.js -> reps.js                              */
 (function () {
   'use strict';
+var MODULE_NAME = 'REPS';
+try {
+
   var W = window;
   var REASONS = { no_phone: 'No phone', network: 'Network problem', battery: 'Battery dead', other: 'Other' };
   var STATUS_COL = { approved: '#10b981', rejected: '#e11d48', pending: '#d97706' };
@@ -222,4 +225,12 @@
     startBase.apply(this, arguments);
     try { touchSeen(); repInit(); } catch (e) {}
   };
+} catch (err) {
+  console.error('[CIRCUIT BREAKER] ' + MODULE_NAME + ' failed to load:', err);
+  try {
+    (window._featureFailures = window._featureFailures || {})[MODULE_NAME] = { time: Date.now(), message: (err && err.message) || String(err) };
+    if (window._cbNotify) window._cbNotify(MODULE_NAME);
+  } catch (e) {}
+  if (MODULE_NAME === 'CORE' || MODULE_NAME === 'AUTH') throw err;
+}
 })();

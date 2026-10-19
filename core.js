@@ -7,6 +7,9 @@
    reconcileProfile, sanitizeSems, gateCard, showInstantDetective, parsePasteTrojan chain. */
 (function () {
   'use strict';
+var MODULE_NAME = 'CORE';
+try {
+
   var W = window;
 
   /* ---------- install buttons: hide once the app is installed (no timers) ---------- */
@@ -23,7 +26,9 @@
   /* ---------- go ---------- */
   var gateCool = false;
   W.go = function (v) {
-    var lec = U.role === 'lecturer', noResults = !lec && U.role === 'student' && !(U.semesters || []).length;
+var lec = U.role === 'lecturer';
+var lvl = parseInt((U.profile || {}).level, 10) || 100;
+var noResults = !lec && U.role === 'student' && !(U.semesters || []).length && lvl >= 200;
     if (noResults) {                                    // before the first result only Academics and Profile open
       if (v !== 'acad' && v !== 'prof') {
         aTab = 'calc'; v = 'acad';
@@ -154,4 +159,12 @@
     showToast(msg());
     try { rwDone(); } catch (e) {}
   };
+} catch (err) {
+  console.error('[CIRCUIT BREAKER] ' + MODULE_NAME + ' failed to load:', err);
+  try {
+    (window._featureFailures = window._featureFailures || {})[MODULE_NAME] = { time: Date.now(), message: (err && err.message) || String(err) };
+    if (window._cbNotify) window._cbNotify(MODULE_NAME);
+  } catch (e) {}
+  if (MODULE_NAME === 'CORE' || MODULE_NAME === 'AUTH') throw err;
+}
 })();

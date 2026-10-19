@@ -3,6 +3,9 @@
    Load order: academics.js -> ocr.js -> patch.js (v68 reps only)            */
 (function () {
   'use strict';
+var MODULE_NAME = 'OCR';
+try {
+
   var W = window;
 
   /* ---------- onboarding: hide "Grad Units" (doOnboard still reads it, empty = 120) ---------- */
@@ -209,4 +212,12 @@
     calcBase.apply(this, arguments);
     try { mount(); } catch (e) { console.error('ocr mount', e); }
   };
+} catch (err) {
+  console.error('[CIRCUIT BREAKER] ' + MODULE_NAME + ' failed to load:', err);
+  try {
+    (window._featureFailures = window._featureFailures || {})[MODULE_NAME] = { time: Date.now(), message: (err && err.message) || String(err) };
+    if (window._cbNotify) window._cbNotify(MODULE_NAME);
+  } catch (e) {}
+  if (MODULE_NAME === 'CORE' || MODULE_NAME === 'AUTH') throw err;
+}
 })();
