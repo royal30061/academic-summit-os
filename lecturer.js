@@ -5,9 +5,6 @@
    Load order: academics.js -> ocr.js -> reps.js -> lecturer.js -> auth.js     */
 (function () {
   'use strict';
-var MODULE_NAME = 'LECTURER';
-try {
-
   var W = window;
   var LEVELS = [100, 200, 300, 400, 500, 600];
   var INSTITUTIONS = ['University of Abuja', 'University of Lagos', 'University of Ibadan', 'Ahmadu Bello University', 'Obafemi Awolowo University',
@@ -162,12 +159,4 @@ try {
       '<div class="card p-5 space-y-2"><div class="lbl">App</div><button class="btn w-full" onclick="installApp()">Download Lecturer App</button><p class="text-[11px] text-slate-400">Installs to home screen, works offline, opens full-screen.</p></div>' +
       '<button class="btn2 w-full !text-rose-500" onclick="deleteLecAccount()">Delete Account</button><button class="btn2 w-full !text-rose-500" onclick="logout()">Log Out Console</button></div>';
   };
-} catch (err) {
-  console.error('[CIRCUIT BREAKER] ' + MODULE_NAME + ' failed to load:', err);
-  try {
-    (window._featureFailures = window._featureFailures || {})[MODULE_NAME] = { time: Date.now(), message: (err && err.message) || String(err) };
-    if (window._cbNotify) window._cbNotify(MODULE_NAME);
-  } catch (e) {}
-  if (MODULE_NAME === 'CORE' || MODULE_NAME === 'AUTH') throw err;
-}
 })();

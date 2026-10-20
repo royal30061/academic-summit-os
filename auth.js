@@ -5,9 +5,6 @@
    Load order: academics.js -> ocr.js -> reps.js -> auth.js                    */
 (function () {
   'use strict';
-var MODULE_NAME = 'AUTH';
-try {
-
   var W = window;
   var last = { login: '', signup: '', forgot: '' };      // remembered for the "resend" buttons
   var LA = { e: '', n: '' };                             // lecturer registration state
@@ -175,12 +172,4 @@ try {
     if (u.error) return say(u.error.message);
     showToast('Password changed'); after();
   };
-} catch (err) {
-  console.error('[CIRCUIT BREAKER] ' + MODULE_NAME + ' failed to load:', err);
-  try {
-    (window._featureFailures = window._featureFailures || {})[MODULE_NAME] = { time: Date.now(), message: (err && err.message) || String(err) };
-    if (window._cbNotify) window._cbNotify(MODULE_NAME);
-  } catch (e) {}
-  if (MODULE_NAME === 'CORE' || MODULE_NAME === 'AUTH') throw err;
-}
 })();

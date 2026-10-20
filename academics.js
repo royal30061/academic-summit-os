@@ -3,9 +3,6 @@
    Load order:  academics.js -> patch.js (trimmed) -> upload-fix.js            */
 (function () {
   'use strict';
-var MODULE_NAME = 'ACADEMICS';
-try {
-
   var W = window;
   var GC = { A: '#10b981', B: '#3b82f6', C: '#f59e0b', D: '#fb923c', E: '#f43f5e', F: '#b91c1c' };
   var NARROW_MAX = 44;               // E band 40-44; exactly 40 gets the loudest warning
@@ -69,6 +66,7 @@ try {
     var h = typeof headGpa === 'function' ? headGpa(s) : { v: x.g, src: 'released' };
     var reg = x.u + (s.pending || []).reduce(function (a, c) { return a + (+c.unit || 0); }, 0);
     var note = h.src === 'released' ? '' : '<p class="text-[11px] text-slate-500">' + (h.src === 'portal' ? 'Portal GPA. ' : 'Deduced from your portal CGPA. ') + 'Released courses only: ' + x.g.toFixed(2) + '.</p>';
+if (s.check === 'mismatch') note += '<p class="text-[11px] font-bold" style="color:#d97706">The portal GPA' + (s.portalGPAUnverified != null ? ' (' + (+s.portalGPAUnverified).toFixed(2) + ')' : '') + ' does not match the courses saved here, so it is not used. A course may be missing: upload this semester again and only the missing ones are added.</p>';
     return { t: 'GPA ' + h.v.toFixed(2) + ' (' + reg + 'u)', note: note };
   }
   function headCgpa() {
@@ -176,7 +174,7 @@ try {
     }).join('') || '<p class="text-xs text-slate-400 text-center py-6">No semesters stored.</p>';
     $('sub').innerHTML = '<div class="card p-6 space-y-4"><div class="flex justify-between items-center"><div class="font-extrabold">Academic Transcript</div><button class="btn2 text-xs np" onclick="window.print()">' + ic('print') + ' Print</button></div>' +
       '<p class="text-xs text-slate-500">' + esc(U.name) + ' - ' + esc(p.uni) + ' - ' + esc(p.program) + '</p>' +
-      '<div class="rounded-2xl p-4 text-sm font-extrabold" style="background:var(--sub)">CGPA: ' + h.v.toFixed(2) + ' / 5.00 (' + c.u + ' units released)</div>' + blocks + '</div>';
+      '<div class="rounded-2xl p-4 text-sm font-extrabold" style="background:var(--sub)">CGPA: ' + h.v.toFixed(2) + ' / 5.00 (' + c.u + ' units released)</div>' + (typeof undoCount === 'function' && undoCount() ? '<button class="btn2 w-full np" onclick="undoImport()">Undo last import</button>' : '') + blocks + '</div>';
   };
   var acadBase = V.acad;
   V.acad = function () {   // pending courses now show inside their semester, so drop the old standalone card
@@ -364,12 +362,4 @@ try {
     showToast('Saved. ' + msg.join(', ') + ' | CGPA ' + cum().g.toFixed(2));
     try { rwDone(); } catch (e) {}
   };
-} catch (err) {
-  console.error('[CIRCUIT BREAKER] ' + MODULE_NAME + ' failed to load:', err);
-  try {
-    (window._featureFailures = window._featureFailures || {})[MODULE_NAME] = { time: Date.now(), message: (err && err.message) || String(err) };
-    if (window._cbNotify) window._cbNotify(MODULE_NAME);
-  } catch (e) {}
-  if (MODULE_NAME === 'CORE' || MODULE_NAME === 'AUTH') throw err;
-}
 })();

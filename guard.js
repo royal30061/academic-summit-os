@@ -1,4 +1,4 @@
-/* Academic Summit - guard.js: load FIRST, before every module */
+/* Academic Summit - guard.js: load FIRST */
 (function () {
 'use strict';
 window._featureFailures = window._featureFailures || {};

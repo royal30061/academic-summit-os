@@ -7,9 +7,6 @@
    reconcileProfile, sanitizeSems, gateCard, showInstantDetective, parsePasteTrojan chain. */
 (function () {
   'use strict';
-var MODULE_NAME = 'CORE';
-try {
-
   var W = window;
 
   /* ---------- install buttons: hide once the app is installed (no timers) ---------- */
@@ -26,9 +23,7 @@ try {
   /* ---------- go ---------- */
   var gateCool = false;
   W.go = function (v) {
-var lec = U.role === 'lecturer';
-var lvl = parseInt((U.profile || {}).level, 10) || 100;
-var noResults = !lec && U.role === 'student' && !(U.semesters || []).length && lvl >= 200;
+    var lec = U.role === 'lecturer', noResults = false;   // first-run setup now lives on the home screen (home.js)
     if (noResults) {                                    // before the first result only Academics and Profile open
       if (v !== 'acad' && v !== 'prof') {
         aTab = 'calc'; v = 'acad';
@@ -81,9 +76,23 @@ var noResults = !lec && U.role === 'student' && !(U.semesters || []).length && l
     return out;
   }
   /* The portal prints "2025/2026 First Semester" headers: split one big paste into the right semesters. */
-  function splitByPortal(raw, lenBefore) {
+  function mergeInto(t, g) {
+var have = {}, added = 0, conflict = 0, pend = {};
+t.courses = t.courses || []; t.pending = t.pending || [];
+t.courses.forEach(function (c) { have[c.code] = c; });
+g.courses.forEach(function (c) {
+var o = have[c.code];
+if (!o) { t.courses.push(c); have[c.code] = c; added++; }
+else if (o.score !== c.score) conflict++;
+});
+t.pending.concat(g.pending || []).forEach(function (p) { if (!have[p.code]) pend[p.code] = p; });
+t.pending = Object.keys(pend).map(function (k) { return pend[k]; });
+return { added: added, conflict: conflict };
+}
+function splitByPortal(raw, lenBefore) {
     var built = buildSemesters(raw, W._parsedRows || []);
-    if (!built || !built.length) return;
+    var stats = { added: 0, conflict: 0 };
+if (!built || !built.length) return stats;
     var blob = U.semesters.length > lenBefore ? U.semesters[lenBefore] : null, used = [], n = 0;
     built.forEach(function (g) {
       if (!g.courses.length && !g.pending.length) return;
@@ -92,7 +101,7 @@ var noResults = !lec && U.role === 'student' && !(U.semesters || []).length && l
         var hit = g.courses.filter(function (c) { return codes.indexOf(c.code) > -1; }).length;
         return codes.length && hit > 0 && hit / codes.length >= 0.5;
       })[0];
-      if (target) { target.courses = g.courses.slice(); target.pending = g.pending.slice(); used.push(target); }
+      if (target) { var mr = mergeInto(target, g); stats.added += mr.added; stats.conflict += mr.conflict; used.push(target); }
       else {                                              // a fresh object: the old clone copied id, level and GPA fields from another semester
         var e = { id: Date.now() + (n++), name: g.name === 'first' ? 'First Semester' : g.name === 'second' ? 'Second Semester' : 'Third Semester', courses: g.courses.slice(), pending: g.pending.slice() };
         U.semesters.push(e); used.push(e);
@@ -105,7 +114,7 @@ var noResults = !lec && U.role === 'student' && !(U.semesters || []).length && l
     var courses = readRows();
     if (!courses.length) return showToast('Enter at least one valid course with score (0-100)', 'error');
     var name = (($('c-name') || {}).value || '').trim() || ('Semester ' + (U.semesters.length + 1));
-    var lenBefore = U.semesters.length, raw = editing === null ? (W._lastRaw || '') : '', msg;
+    var lenBefore = U.semesters.length, raw = editing === null ? (W._lastRaw || '') : '', msg, snap = null, extra = '';
 
     if (editing !== null) {
       var cur = U.semesters.filter(function (x) { return x.id === editing; })[0];
@@ -114,6 +123,7 @@ var noResults = !lec && U.role === 'student' && !(U.semesters || []).length && l
       msg = function () { return 'Updated! GPA ' + semS(cur).g.toFixed(2) + ' | CGPA ' + cum().g.toFixed(2); };
     } else {
       if (U.semesters.some(function (s) { return semPrint(s) === semPrint({ name: name, courses: courses }); })) return showToast('Already recorded - duplicate blocked', 'error');
+   snap = JSON.parse(JSON.stringify({ semesters: U.semesters, portalCGPA: U.portalCGPA }));
       var codes = courses.map(function (c) { return c.code; });
       var match = U.semesters.filter(function (s) {
         var sc = (s.courses || []).map(function (c) { return c.code; });
@@ -123,8 +133,8 @@ var noResults = !lec && U.role === 'student' && !(U.semesters || []).length && l
         var g0 = cum().g, upd = 0, add = 0;
         courses.forEach(function (c) {
           var ex = match.courses.filter(function (x) { return x.code === c.code; })[0];
-          if (ex) { if (ex.score !== c.score || ex.unit !== c.unit) { ex.score = c.score; ex.unit = c.unit; upd++; } }
-          else { match.courses.push(c); add++; }
+          if (ex) { if (ex.score !== c.score || ex.unit !== c.unit) { if (W._ocr) extra = ' | a screenshot score differed, kept your saved one'; else { ex.score = c.score; ex.unit = c.unit; upd++; } } }
+          else { match.courses.push(c); add++; match.pending = (match.pending || []).filter(function (p) { return p.code !== c.code; }); }
         });
         refreshCarry();
         (U.cgpaLog = U.cgpaLog || []).push({ t: Date.now(), g: cum().g, d: cum().g - g0 });
@@ -139,7 +149,7 @@ var noResults = !lec && U.role === 'student' && !(U.semesters || []).length && l
       /* once-only follow-ups, only for a fresh paste of a portal page */
       try { reconcileProfile(courses.map(function (c) { return { code: c.code }; }), W._lastPasteRaw || raw); } catch (e) {}
       if (raw) {
-        try { splitByPortal(raw, lenBefore); } catch (e) { console.error('split', e); }
+        try { var sp = splitByPortal(raw, lenBefore); if (sp && sp.conflict) extra = ' | ' + sp.conflict + ' score(s) differed, kept your saved ones'; } catch (e) { console.error('split', e); }
         var m = raw.match(/CUMMULATIVE\s+GRADE\s+POINT\s+AVERAGE\s*:?\s*([0-5]\.\d{1,2})/i) || raw.match(/CUMULATIVE[^0-9]{0,8}([0-5]\.\d{1,2})/i);
         if (m) { U.portalCGPA = parseFloat(m[1]); U.portalCGPAAt = Date.now(); }
         try { capturePortalGPAs(); } catch (e) {}
@@ -153,18 +163,56 @@ var noResults = !lec && U.role === 'student' && !(U.semesters || []).length && l
         } catch (e) {}
       }
     }
-    W._lastRaw = ''; W._lastPasteRaw = ''; W._parsedRows = []; W._pasted = false;   // a later manual save must not reuse this paste
-    refreshCarry(); save();
+    W._lastRaw = ''; W._lastPasteRaw = ''; W._parsedRows = []; W._pasted = false; W._ocr = false;
+if (snap) { try { var st = JSON.parse(localStorage.getItem('as_undo') || '[]'); st.push({ t: Date.now(), d: snap }); localStorage.setItem('as_undo', JSON.stringify(st.slice(-2))); } catch (e) {} }   // a later manual save must not reuse this paste
+    verifyPortalGPAs();
+refreshCarry(); save();
     go('home');
-    showToast(msg());
+    showToast(msg() + extra);
     try { rwDone(); } catch (e) {}
   };
-} catch (err) {
-  console.error('[CIRCUIT BREAKER] ' + MODULE_NAME + ' failed to load:', err);
-  try {
-    (window._featureFailures = window._featureFailures || {})[MODULE_NAME] = { time: Date.now(), message: (err && err.message) || String(err) };
-    if (window._cbNotify) window._cbNotify(MODULE_NAME);
-  } catch (e) {}
-  if (MODULE_NAME === 'CORE' || MODULE_NAME === 'AUTH') throw err;
+
+var pendUnits = function (s) { return (s.pending || []).reduce(function (a, cc) { return a + (+cc.unit || 0); }, 0); };
+function verifyPortalGPAs() {
+var changed = false;
+(U.semesters || []).forEach(function (s) {
+if (s.portalGPA == null) return;
+var st = semS({ courses: s.courses || [] }), reg = st.u + pendUnits(s);
+if (!st.u) return;
+var ok = Math.abs(st.q / reg - s.portalGPA) <= 0.015 || Math.abs(st.q / st.u - s.portalGPA) <= 0.015;
+if (!ok) { s.portalGPAUnverified = s.portalGPA; delete s.portalGPA; s.check = 'mismatch'; changed = true; }
+else if (s.check) { delete s.check; changed = true; }
+});
+if (changed) save();
 }
+W.capturePortalGPAs = function () {
+var groups = typeof semGroupsFromRaw === 'function' ? semGroupsFromRaw(W._lastRaw || '') : null;
+if (!groups) return;
+groups.forEach(function (g) {
+var m = g.section.match(/Grade Point Average\s*\(GPA\)\s*:?\s*([0-5]\.\d{1,2})/i);
+if (!m) return;
+var codes = g.section.match(/\b[A-Z]{2,6}(?:-[A-Z]{2,6})?\d{3}\b/g) || [], best = null, bh = 0;
+(U.semesters || []).forEach(function (s) {
+var have = (s.courses || []).concat(s.pending || []).map(function (x) { return x.code; });
+var hit = codes.filter(function (x) { return have.indexOf(x) > -1; }).length;
+if (hit > bh) { bh = hit; best = s; }
+});
+if (best) { best.portalGPA = parseFloat(m[1]); delete best.portalGPAUnverified; delete best.check; }
+});
+verifyPortalGPAs();
+try { deduceMissing(); } catch (e) {}
+save();
+};
+W.undoCount = function () { try { return JSON.parse(localStorage.getItem('as_undo') || '[]').length; } catch (e) { return 0; } };
+W.undoImport = function () {
+var st = []; try { st = JSON.parse(localStorage.getItem('as_undo') || '[]'); } catch (e) {}
+var u = st.pop(); try { localStorage.setItem('as_undo', JSON.stringify(st)); } catch (e) {}
+if (!u) return showToast('Nothing to undo on this device', 'error');
+U.semesters = u.d.semesters;
+if (u.d.portalCGPA == null) delete U.portalCGPA; else U.portalCGPA = u.d.portalCGPA;
+refreshCarry(); save(); aTab = 'rec'; go('acad');
+showToast('Last import undone');
+};
+var startBase2 = W.start;
+W.start = function () { try { if (U && U.undo) { delete U.undo; save(); } } catch (e) {} try { verifyPortalGPAs(); } catch (e) {} return startBase2.apply(this, arguments); };
 })();

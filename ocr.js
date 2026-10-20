@@ -3,9 +3,6 @@
    Load order: academics.js -> ocr.js -> patch.js (v68 reps only)            */
 (function () {
   'use strict';
-var MODULE_NAME = 'OCR';
-try {
-
   var W = window;
 
   /* ---------- onboarding: hide "Grad Units" (doOnboard still reads it, empty = 120) ---------- */
@@ -178,7 +175,9 @@ try {
         texts.push(r.data.text); conf.push(r.data.confidence || 0);
       }
       var text = fixOcrText(texts.join('\n')), avg = conf.reduce(function (a, b) { return a + b; }, 0) / conf.length;
-      var ta = $('paste-a'); if (ta) ta.value = text;
+      if (W._ocrSink) { var sink = W._ocrSink; W._ocrSink = null; sink(text); say('Read. Check the text below, then tap Save my courses.'); input.value = ''; return; }
+var ta = $('paste-a'); if (ta) ta.value = text;
+W._ocr = true;
       var n = ocrRows(text).length, issues = verifyOcr(text);
       if (!n) return say('No courses found. Zoom in on the results table so the text fills the screen, take a screenshot, and try again.', true);
       if (avg < 65) issues.unshift('The image is blurry or too small');
@@ -212,12 +211,4 @@ try {
     calcBase.apply(this, arguments);
     try { mount(); } catch (e) { console.error('ocr mount', e); }
   };
-} catch (err) {
-  console.error('[CIRCUIT BREAKER] ' + MODULE_NAME + ' failed to load:', err);
-  try {
-    (window._featureFailures = window._featureFailures || {})[MODULE_NAME] = { time: Date.now(), message: (err && err.message) || String(err) };
-    if (window._cbNotify) window._cbNotify(MODULE_NAME);
-  } catch (e) {}
-  if (MODULE_NAME === 'CORE' || MODULE_NAME === 'AUTH') throw err;
-}
 })();
