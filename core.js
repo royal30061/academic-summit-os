@@ -182,6 +182,7 @@ if (!st.u) return;
 var ok = Math.abs(st.q / reg - s.portalGPA) <= 0.015 || Math.abs(st.q / st.u - s.portalGPA) <= 0.015;
 if (!ok) { s.portalGPAUnverified = s.portalGPA; delete s.portalGPA; s.check = 'mismatch'; changed = true; }
 else if (s.check) { delete s.check; changed = true; }
+return stats;
 });
 if (changed) save();
 }
