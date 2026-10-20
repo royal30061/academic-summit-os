@@ -164,7 +164,7 @@
       '<div class="card p-6 space-y-3"><div class="flex justify-between items-center"><div class="font-extrabold">Today\'s classes</div><button class="text-xs font-bold text-violet-600" onclick="pTab=\'week\';go(\'plan\')">Timetable</button></div>' +
       (cls.length ? cls.map(function (c) { return '<div class="text-xs p-3 rounded-xl" style="background:var(--sub)"><b>' + esc(c.code) + '</b><div class="text-slate-500">' + c.start + '\u2013' + c.end + ' \u2022 ' + esc(c.venue || 'TBA') + '</div></div>'; }).join('') : '<p class="text-xs text-slate-500">No classes on your timetable today.</p>') + '</div>' +
       '<div class="card p-6 space-y-3"><div class="flex justify-between items-center"><div class="font-extrabold">My courses</div><button class="text-xs font-bold text-violet-600" onclick="regOpen()">Update registration</button></div>' + tabs + '<div class="space-y-2">' + rows + '</div></div>' +
-      (cg !== null ? '<button type="button" class="card p-5 text-left w-full flex items-center justify-between" onclick="go(\'acad\')"><span><span class="lbl block">Cumulative GPA</span><span class="text-2xl font-extrabold">' + cg.toFixed(2) + '<span class="text-sm text-slate-400"> / 5.00</span></span></span>' + ic('r', 'w-5 h-5') + '</button>' : '') + '</div>';
+      (cg !== null ? '<button type="button" class="card p-5 text-left w-full flex items-center justify-between" onclick="cgpaBreakdown()"><span><span class="lbl block">Cumulative GPA</span><span class="text-2xl font-extrabold">' + cg.toFixed(2) + '<span class="text-sm text-slate-400"> / 5.00</span></span></span>' + ic('r', 'w-5 h-5') + '</button>' : '') + '</div>';
   }
 
   /* set from the admin panel (extras.js): a level's registration is live */
