@@ -35,7 +35,7 @@ if (document.body) document.body.appendChild(d); else document.addEventListener(
 var born = Date.now(), gone = false;
 function off() {
   if (gone) return; gone = true;
-  var wait = Math.max(0, 900 - (Date.now() - born));
+  var wait = Math.max(0, 1120 - (Date.now() - born));
   setTimeout(function () { d.classList.add('off'); setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 500); }, wait);
 }
 var iv = setInterval(function () {
