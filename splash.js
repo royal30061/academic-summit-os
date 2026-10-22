@@ -8,6 +8,7 @@ var W = window;
 try { if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch (e) {}
 var st = document.createElement('style');
 st.textContent =
+  '#splash,#app-splash,.splash-screen,#loading,.loader,[data-splash]{display:none!important}' +
   '@keyframes asRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}' +
   '@keyframes asTwinkle{0%,100%{opacity:0;transform:scale(.4) rotate(0)}50%{opacity:1;transform:scale(1) rotate(90deg)}}' +
   '@keyframes asSweep{from{transform:translateX(-110%)}to{transform:translateX(260%)}}' +

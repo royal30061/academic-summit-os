@@ -30,7 +30,7 @@ W.readDone = function (code) {
     setTimeout(function () { showToast('❄ Freeze token earned at ' + si.n + ' days. It guards one missed day.'); }, 900);
   }
 };
-function strip() {
+function strip() { return '';   // merged into the single tappable streak button (read.js)
   var si = W.streakInfo(), f = left();
   if (si.state === 'safe' && !f && si.n < 3) return '';
   var m = {
