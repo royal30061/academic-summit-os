@@ -4,7 +4,7 @@
   "start_url": "/",
   "display": "standalone",
   "background_color": "#02120c",
-  "theme_color": "#04271c",
+  "theme_color": "#161210",
   "description": "Results, GPA intelligence, planner, finance and attendance - your whole campus in one place.",
   "icons": [{"src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}]
 }
