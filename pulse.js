@@ -50,7 +50,7 @@ function badgeButton() {
 function fixReadLabels() {
   Array.from(($('main') || document).querySelectorAll('.space-y-2 > div')).forEach(function (row) {
     if (!/Read \u2713/.test(row.textContent || '')) return;
-    var sub = row.querySelector('.text-[11px]');
+    var sub = row.querySelector('[class*="text-[11px]"]');
     if (sub && /not opened yet|days since/.test(sub.textContent || '')) sub.textContent = 'read today';
   });
 }
