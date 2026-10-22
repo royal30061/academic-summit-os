@@ -155,7 +155,7 @@
       ? '<div class="grid grid-cols-2 gap-2">' + [0, 1].map(function (h) { return '<button class="' + ((U.curHalf || 0) === h ? 'btn' : 'btn2') + ' justify-center" onclick="setCurHalf(' + h + ')">' + (h ? 'Second' : 'First') + ' semester</button>'; }).join('') + '</div>' : '';
     var cg = (U.semesters || []).length ? (U.portalCGPA != null ? +U.portalCGPA : cum().g) : null;
     return '<div class="space-y-5">' + head() +
-      '<div class="card p-6 space-y-3"><div class="flex justify-between items-start"><div><div class="font-extrabold text-lg">Today\'s reading list</div><div class="text-[11px] text-slate-500">' + new Date().toDateString() + '</div></div>' +
+      '<div class="card p-6 space-y-3"><div class="flex justify-between items-start"><div><div class="font-extrabold text-lg">Today\'s reading list</div></div>' +
       (n ? '<span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold" style="background:rgba(16,185,129,.15);color:#047857">' + n + '-day streak</span>' : '') + '</div>' +
       (ex ? '<div class="text-xs font-bold" style="color:#d97706">' + esc(ex.code) + ' exam ' + (ex.d === 0 ? 'is today' : 'in ' + ex.d + ' day' + (ex.d === 1 ? '' : 's')) + '</div>' : '') +
       '<div class="space-y-2">' + (read || '<p class="text-xs text-slate-500">No courses yet.</p>') + '</div>' +
