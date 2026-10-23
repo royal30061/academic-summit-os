@@ -129,7 +129,7 @@ W.streakCal = function (dy) {
     '<div class="flex justify-between items-center"><button class="btn2 px-3" onclick="streakCal(-1)">\u2039</button><div class="font-extrabold">' + names[calM.m] + ' ' + calM.y + '</div><button class="btn2 px-3" onclick="streakCal(1)">\u203a</button></div>' +
     '<div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-500">' + ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(function (x) { return '<span>' + x + '</span>'; }).join('') + '</div>' +
     '<div class="grid grid-cols-7 gap-1" style="grid-auto-rows:40px">' + cells + '</div>' +
-    '<p class="text-[11px] text-slate-500">Every day you read keeps its mountain forever - new reads add peaks, they never move old ones. Empty days are simply skipped' + (U.freezeGap ? '; the blue ring is a freeze token covering a gap' : '') + '.</p>' +
+    
     '<div class="grid grid-cols-3 gap-2 text-center text-xs">' +
     '<div class="rounded-xl p-3" style="background:var(--sub)"><div class="lbl">Current</div><b>' + (si ? si.n : 0) + ' days</b></div>' +
     '<div class="rounded-xl p-3" style="background:var(--sub)"><div class="lbl">Best</div><b>' + (U.bestStreak || (si ? si.n : 0)) + ' days</b></div>' +

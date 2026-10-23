@@ -32,7 +32,8 @@ function nextTip() {
   return list[i];
 }
 function find(id) { return TIPS.student.concat(TIPS.lecturer).filter(function (t) { return t.id === id; })[0]; }
-var PEAKS = '<svg viewBox="0 0 48 32" width="104" height="70" aria-hidden="true"><path d="M2 30 L18 6 L28 20 L34 12 L46 30 Z" fill="rgba(16,185,129,.14)" stroke="#10b981" stroke-width="2.5" stroke-linejoin="round"/></svg>';
+var PEAKS = '<button type="button" onclick="coachHome()" aria-label="Back to home" style="cursor:pointer;background:none;border:none;padding:0">' + MTN('w-28 h-28') + '</button>';
+W.coachHome = function () { closeSheet(); go('home'); };
 W.coachShow = function (force) {
   if (!U) return;
   var t = force ? find(force) : nextTip();

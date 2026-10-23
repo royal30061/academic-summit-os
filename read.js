@@ -149,22 +149,15 @@ function compactReading() {
   });
   if (card) card.innerHTML = '<div class="space-y-3">' + compactCard() + '</div>';
 }
-function dateUnderGreeting() {
-  var h1 = document.querySelector('#main h1');
-  if (!h1 || h1.parentNode.querySelector('.d-date')) return;
-  var p = document.createElement('p');
-  p.className = 'text-xs text-slate-500 d-date';
-  p.textContent = new Date().toDateString();
-  h1.insertAdjacentElement('afterend', p);
-}
+
 /* ---------- header: mountain + flame chip left, theme + avatar right ---------- */
 function paintTop() {
   var t = $('top');
   if (!t || !U) return;
-  var chip = U.role === 'student' ? streakBtn() : '';
+  var chip = U.role === 'student' ? '<button type="button" class="streak-btn px-2.5 py-1 rounded-full text-xs font-extrabold" style="background:rgba(16,185,129,.15);color:#047857" onclick="streakCal()" aria-label="Open your reading calendar">' + FLAME + ' <b>' + ((W.streakInfo ? W.streakInfo() : { n: 0 }).n) + '</b></button>' : '';
   var parts = U.name.split(' ');
   var ini = parts.map(function (w) { return w[0]; }).slice(0, 2).join('').toUpperCase();
-  t.innerHTML = '<div class="flex items-center gap-2.5">' + MTN('w-8 h-8') + chip + '</div>' +
+  t.innerHTML = '<div class="flex items-center gap-2.5"><button type="button" onclick="go(\'home\')" aria-label="Go to home" style="cursor:pointer;display:inline-flex;background:none;border:none;padding:0">' + MTN('w-8 h-8') + '</button>' + chip + '</div>' +
     '<div class="flex items-center gap-3">' +
     '<button onclick="toggleTheme()" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm" aria-label="Toggle theme">' + ic(isDark ? 'sun' : 'moon') + '</button>' +
     '<button onclick="go(\'prof\')" class="flex items-center gap-2.5 pl-2 border-l border-slate-200 dark:border-slate-800" aria-label="Profile">' +
@@ -278,7 +271,7 @@ W.go = function (v) {
   var r = goB.apply(this, arguments);
   setTimeout(function () {
     paintTop(); sideEntry();
-    if (v === 'home') { dateUnderGreeting(); compactReading(); }
+    if (v === 'home') { compactReading(); }
   }, 70);
   return r;
 };
