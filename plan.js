@@ -211,7 +211,7 @@ V.timer = function () {
       '<div class="card p-6 space-y-4 text-center"><div class="text-5xl font-extrabold" style="color:#10b981">\u2713</div><p class="text-sm text-slate-500">All focus sessions for this course are done.</p>' +
       '<button class="btn w-full" onclick="timerMarkDone(\'' + esc(t.code) + '\')">Mark as read & close</button><button class="btn2 w-full" onclick="timerEnd()">Just close</button></div></div>';
   }
-  var tip = t.phase === 'rest' ? '<p class="text-xs text-slate-500 mt-4" style="font-style:italic">' + W.pickTip('rest') + '</p>' : '';
+  var tip = t.phase === 'rest' ? '<div class="flex items-center gap-3 mt-4">' + (W.zumaImg ? W.zumaImg('read', 56) : '') + '<p class="text-xs text-slate-500" style="font-style:italic">' + W.pickTip('rest') + '</p></div>' : '';
   return '<div class="space-y-5"><div class="flex items-center gap-3"><button class="btn2 px-3" onclick="timerEnd()">' + ic('l') + '</button><div class="font-extrabold text-lg">' + esc(t.code) + '</div></div>' +
     '<div class="card p-6 space-y-4 text-center"><div class="text-xs font-bold uppercase tracking-wider" style="color:' + (t.phase === 'focus' ? '#059669' : '#d97706') + '">' + (t.phase === 'focus' ? 'Focus' : 'Rest') + ' \u2022 session ' + t.session + ' of ' + t.total + '</div>' +
     '<div class="flex justify-center"><svg viewBox="0 0 120 120" width="220" height="220"><circle cx="60" cy="60" r="' + R + '" fill="none" stroke="var(--bd)" stroke-width="8"/>' +

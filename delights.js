@@ -103,7 +103,7 @@ V.home = function () {
         var extra = ring(done, undone + done);
         if ((n === 7 || n === 30) && localStorage.getItem('d_mile') !== t + ':' + n) {
           localStorage.setItem('d_mile', t + ':' + n);
-          extra += '<div class="card p-4 d-mile text-xs font-bold mk-gold">' + (n === 7 ? 'Seven days in a row. The list is yours now.' : 'Thirty days. This is a habit, not a streak.') + '</div>';
+          extra += '<div class="card p-4 d-mile text-xs font-bold mk-gold flex items-center gap-3">' + (W.zumaImg ? W.zumaImg('cheer', 52) : '') + '<span>' + (n === 7 ? 'Seven days in a row. The list is yours now.' : 'Thirty days. This is a habit, not a streak.') + '</span></div>';
         }
         if (n > 0 && n > (U.bestStreak || 0)) {
           extra += '<p class="text-xs font-bold mk-gold">You passed your old best of ' + (U.bestStreak || 0) + ' days. Quietly extraordinary.</p>';

@@ -134,7 +134,7 @@ function compactCard() {
       out += '<div class="flex items-center justify-between gap-3 p-3 rounded-xl" style="background:var(--sub)"><div><b class="font-mono">' + esc(next.code) + '</b><div class="text-[11px] text-slate-500">' + next.sessions + ' session' + (next.sessions===1?'':'s') + '</div></div>' +
         '<div class="flex gap-2 shrink-0"><button class="btn2" onclick="timerStart(\'' + esc(next.code) + '\',' + next.sessions + ')">Start</button><button class="btn2" onclick="readDone(\'' + esc(next.code) + '\')">Done</button></div></div>';
     } else {
-      out += '<div class="p-3 rounded-xl text-xs font-bold" style="background:rgba(16,185,129,.12);color:#047857">All done today.</div>';
+      out += '<div class="p-3 rounded-xl text-xs font-bold flex items-center gap-3" style="background:rgba(16,185,129,.12);color:#047857">' + (W.zumaImg ? W.zumaImg('cheer', 48) : '') + '<span>All done today. Come back tomorrow.</span></div>';
     }
   }
   out += '<p class="text-xs text-slate-500 mt-2" style="font-style:italic">' + (W.pickTip ? W.pickTip() : '') + '</p>';

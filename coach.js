@@ -1,8 +1,7 @@
-/* Academic Summit - coach.js v2: calm full-page teacher + the help button.
-   Blank stage, drawn mountains centred, words and doors near the bottom
-   (about an inch above the gesture bar). No emoji anywhere.
-   The "?" fab is reinstated on Home: right side, inset from the edge,
-   double its old size, bold, and it stays. Load after fixes.js. */
+/* Academic Summit - coach.js v3: Zuma guides from a half-sheet, not a takeover.
+   Text starts left, Zuma sits right, Skip left / Next right.
+   First launch: Zuma introduces himself, once, then never interrupts again.
+   Load after zuma.js. */
 (function () {
 'use strict';
 var W = window;
@@ -20,7 +19,7 @@ var TIPS = {
     { id: 'profile', title: 'Teaching profile', pitch: 'Two minutes now: your courses and levels fill themselves in every time you start a class.', cta: 'Set it up', go: function () { ls2Open(); } }
   ]
 };
-var K_IDX = 'as_coach_idx', K_KNOWN = 'as_coach_known', K_LAST = 'as_coach_last';
+var K_IDX = 'as_coach_idx', K_KNOWN = 'as_coach_known', K_LAST = 'as_coach_last', K_INTRO = 'as_zuma_intro';
 function known() { try { return JSON.parse(localStorage.getItem(K_KNOWN) || '[]'); } catch (e) { return []; } }
 function markKnown(id) { var k = known(); if (k.indexOf(id) < 0) k.push(id); try { localStorage.setItem(K_KNOWN, JSON.stringify(k)); } catch (e) {} }
 function shouldShow() { try { return Date.now() - (+localStorage.getItem(K_LAST) || 0) > 12 * 3600e3; } catch (e) { return false; } }
@@ -32,8 +31,7 @@ function nextTip() {
   return list[i];
 }
 function find(id) { return TIPS.student.concat(TIPS.lecturer).filter(function (t) { return t.id === id; })[0]; }
-var PEAKS = '<button type="button" onclick="coachHome()" aria-label="Back to home" style="cursor:pointer;background:none;border:none;padding:0">' + MTN('w-28 h-28') + '</button>';
-W.coachHome = function () { closeSheet(); go('home'); };
+/* ---------- the half-sheet tour ---------- */
 W.coachShow = function (force) {
   if (!U) return;
   var t = force ? find(force) : nextTip();
@@ -41,25 +39,47 @@ W.coachShow = function (force) {
   if (!t) return;
   try { localStorage.setItem(K_LAST, String(Date.now())); } catch (e) {}
   var sh = $('sheet'); if (!sh) return;
-  sh.innerHTML = '<div class="fixed inset-0 flex flex-col" style="background:var(--card);z-index:9990">' +
-    '<div class="flex-1 grid place-items-center">' + PEAKS + '</div>' +
-    '<div class="space-y-4 px-6" style="padding-bottom:calc(env(safe-area-inset-bottom,0px) + 84px)">' +
-    '<div class="text-center space-y-2"><div class="font-extrabold text-xl">' + esc(t.title) + '</div>' +
-    '<p class="text-sm text-slate-500">' + esc(t.pitch) + '</p></div>' +
+  sh.innerHTML =
+    '<div class="fixed inset-0" style="background:rgba(2,6,23,.45);z-index:9989" onclick="coachSkip()"></div>' +
+    '<div class="fixed inset-x-0 bottom-0" style="z-index:9990;background:var(--card);border-top:1px solid var(--bd);border-radius:28px 28px 0 0;box-shadow:0 -18px 50px rgba(0,0,0,.28);max-height:62vh;overflow-y:auto">' +
+    '<div style="width:44px;height:4px;border-radius:2px;background:var(--bd);margin:10px auto 0"></div>' +
+    '<div class="p-6 space-y-4" style="padding-bottom:calc(env(safe-area-inset-bottom,0px) + 18px)">' +
+    '<div class="flex items-end gap-4"><div class="flex-1 space-y-2 text-left">' +
+    '<div class="font-extrabold text-xl">' + esc(t.title) + '</div>' +
+    '<p class="text-sm text-slate-500">' + esc(t.pitch) + '</p></div>' + W.zumaImg('point', 96) + '</div>' +
     '<button class="btn w-full py-3" onclick="coachGo(\'' + t.id + '\')">' + esc(t.cta) + '</button>' +
-    '<button class="btn2 w-full" onclick="coachSkip()">Not now</button>' +
-    '<button class="text-xs text-slate-500 w-full pt-1" onclick="coachKnown(\'' + t.id + '\')">I already know this - don\'t show it again</button>' +
+    '<div class="flex gap-2"><button class="btn2 flex-1" onclick="coachSkip()">Skip</button>' +
+    '<button class="btn flex-1" onclick="coachNext()">Next</button></div>' +
+    '<button class="text-xs text-slate-500 w-full" onclick="coachKnown(\'' + t.id + '\')">I already know this - don\'t show it again</button>' +
     '</div></div>';
 };
+W.coachNext = function () { W.coachShow(); };
 W.coachGo = function (id) { closeSheet(); var t = find(id); if (t) { markKnown(id); t.go(); } };
 W.coachSkip = function () { closeSheet(); };
 W.coachKnown = function (id) { markKnown(id); closeSheet(); showToast('Noted - this tip will not return'); };
+/* ---------- Zuma's first hello (once per install) ---------- */
+W.zumaIntro = function () {
+  var sh = $('sheet'); if (!sh) return;
+  try { localStorage.setItem(K_INTRO, '1'); } catch (e) {}
+  sh.innerHTML = '<div class="fixed inset-0 flex flex-col" style="background:var(--card);z-index:9995">' +
+    '<div class="flex-1 grid place-items-center p-6">' + W.zumaImg('wave', 210, 32) + '</div>' +
+    '<div class="space-y-3 px-7 text-left" style="padding-bottom:calc(env(safe-area-inset-bottom,0px) + 26px)">' +
+    '<div class="font-extrabold text-2xl">Hello. My name is Zuma.</div>' +
+    '<p class="text-sm text-slate-500">I am from Academic Summit. I will walk with you - attendance, reading, results - until your goals reach the top of the mountain. I know the way. I live there.</p>' +
+    '<button class="btn w-full py-3" onclick="closeSheet()">Let\'s walk</button>' +
+    '<button class="text-xs text-slate-500 w-full" onclick="closeSheet()">Skip the introductions</button>' +
+    '</div></div>';
+};
 function auto() {
-  if (!U || !shouldShow() || !listFor().length) return;
+  if (!U) return;
   var sh = $('sheet'); if (sh && sh.innerHTML.trim()) return;
+  var introDone = false;
+  try { introDone = !!localStorage.getItem(K_INTRO); } catch (e) { introDone = true; }
+  if (!introDone) return W.zumaIntro();
+  if (!shouldShow() || !listFor().length) return;
   W.coachShow();
 }
-/* ---------- the "?" button: reinstated, right, inset, doubled, bold, permanent ---------- */
+/* ---------- the "?" button stays: right, inset, doubled, bold ---------- */
 function fabFix() {
   if (!U || view !== 'home') return;
   var b = Array.from(document.querySelectorAll('button')).find(function (x) { return (x.textContent || '').trim() === '?'; });
@@ -71,13 +91,10 @@ function fabFix() {
     document.body.appendChild(b);
     created = true;
   }
-  if (!b.dataset.fabbed) {
-    var size = created ? 88 : Math.round((b.offsetWidth || 44) * 2);   // literally double what it was
-    b.dataset.fabbed = String(size);
-  }
-  var size2 = +b.dataset.fabbed;
-  b.style.cssText = 'position:fixed;right:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 92px);width:' + size2 + 'px;height:' + size2 +
-    'px;border-radius:50%;background:linear-gradient(135deg,#059669,#0d9488);color:#fff;font-size:' + Math.round(size2 * 0.42) +
+  if (!b.dataset.fabbed) b.dataset.fabbed = String(created ? 88 : Math.round((b.offsetWidth || 44) * 2));
+  var s = +b.dataset.fabbed;
+  b.style.cssText = 'position:fixed;right:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 92px);width:' + s + 'px;height:' + s +
+    'px;border-radius:50%;background:linear-gradient(135deg,#059669,#0d9488);color:#fff;font-size:' + Math.round(s * 0.42) +
     'px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 26px rgba(5,150,105,.45);z-index:60;cursor:pointer;border:none';
   b.onclick = function () { W.coachShow(); };
 }
