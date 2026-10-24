@@ -1,5 +1,6 @@
 /* Academic Summit - zuma.js v4: the vector mascot.
-   No assets, no crops, no 404s. Aliases keep every call site working:
+   No assets to courier, no crops to suspect, no 404s to haunt.
+   Aliases keep every existing call site working:
    wave->welcome, point->notice, read->studying, cheer->cheer.
    Load AFTER zuma-art.js, BEFORE coach.js. */
 (function () {

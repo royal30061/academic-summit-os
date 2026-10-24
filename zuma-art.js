@@ -1,4 +1,5 @@
-/* Academic Summit - zuma-art.js: the four clay poses as vectors (part 1 of 2). */
+/* Academic Summit - zuma-art.js: the four clay poses as vectors.
+   Transcribed from the mascot studio page - do not edit by hand. */
 window.ZUMA_SVG = {
 welcome: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
   <defs>
