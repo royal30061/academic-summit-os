@@ -33,6 +33,22 @@ d.innerHTML = '<div style="position:relative;display:flex;flex-direction:column;
   '<div class="bar"><i></i></div>' +
   '<div style="color:#a7f3d0;font-size:11px;font-weight:700;letter-spacing:2px;opacity:0;animation:asRise .5s .9s both">HIGHER GOALS, BIGGER FUTURE</div></div>';
 if (document.body) document.body.appendChild(d); else document.addEventListener('DOMContentLoaded', function () { document.body.appendChild(d); });
+(function hideLegacySplash(){
+  try {
+    var walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT), n;
+    while ((n = walk.nextNode())) {
+      if ((n.nodeValue || '').indexOf('summit starts here') > -1) {
+        var el = n.parentNode;
+        while (el && el !== document.body) {
+          var cs = getComputedStyle(el);
+          if (cs.position === 'fixed' || cs.position === 'absolute' || el.id) { el.style.display = 'none'; break; }
+          el = el.parentNode;
+        }
+        break;
+      }
+    }
+  } catch (e) {}
+})();
 var born = Date.now(), gone = false;
 function off() {
   if (gone) return; gone = true;

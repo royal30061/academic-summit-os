@@ -1,7 +1,6 @@
-/* Academic Summit - zuma.js v4: the vector mascot.
-   No assets to courier, no crops to suspect, no 404s to haunt.
-   Aliases keep every existing call site working:
-   wave->welcome, point->notice, read->studying, cheer->cheer.
+/* Academic Summit - zuma.js v4.1: the vector mascot, now facing the room.
+   notice (the pointing pose) is mirrored so he gestures at the words,
+   not at oblivion. Aliases: wave->welcome, point->notice, read->studying.
    Load AFTER zuma-art.js, BEFORE coach.js. */
 (function () {
 'use strict';
@@ -10,8 +9,10 @@ var MAP = { wave: 'welcome', point: 'notice', read: 'studying', cheer: 'cheer',
             welcome: 'welcome', notice: 'notice', studying: 'studying' };
 W.zumaImg = function (pose, px) {
   px = px || 72;
-  var svg = (W.ZUMA_SVG || {})[MAP[pose] || 'welcome'];
+  var key = MAP[pose] || 'welcome';
+  var svg = (W.ZUMA_SVG || {})[key];
   if (!svg) return '';
-  return '<span aria-hidden="true" style="display:inline-flex;flex:none;width:' + px + 'px;height:' + px + 'px">' + svg + '</span>';
+  var flip = key === 'notice' ? 'transform:scaleX(-1);' : '';
+  return '<span aria-hidden="true" style="display:inline-flex;flex:none;width:' + px + 'px;height:' + px + 'px;' + flip + '">' + svg + '</span>';
 };
 })();
