@@ -7,7 +7,7 @@
 'use strict';
 var W = window;
 W.ZUMA = { sheet: 'assets/zuma-sheet.png', wave: 'assets/zuma-wave.png' };
-W.ZUMA_POS = { point: '0% 50%', read: '50% 50%', cheer: '100% 50%' };
+W.ZUMA_POS = { read: '50% 50%' };
 var sheetOk = true;
 (function () { var im = new Image(); im.onerror = function () { sheetOk = false; }; im.src = W.ZUMA.sheet; })();
 var CHIP = '#f6f8f9';
