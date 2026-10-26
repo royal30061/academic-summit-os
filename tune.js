@@ -151,13 +151,20 @@ function cleanHome() {
   if (keep && !keep.dataset.tuned) {
     keep.dataset.tuned = '1';
     keep.classList.add('mk-strip');
+    keep.style.color = '';
+    Array.prototype.forEach.call(keep.querySelectorAll('*'), function (x) { x.style.color = ''; });
     keep.style.cursor = 'pointer';
     keep.setAttribute('onclick', 'zumaRemind()');
   }
 }
+var st2 = document.createElement('style');
+st2.textContent = '.mk-strip,.mk-strip *{color:#047857 !important}' +
+  'html.dark .mk-strip,html.dark .mk-strip *,.dark .mk-strip,.dark .mk-strip *{color:#34d399 !important}';
+document.head.appendChild(st2);
 var goB = W.go;
 W.go = function (v) {
   var r = goB.apply(this, arguments);
+  requestAnimationFrame(function () { if (v === 'home' || v === 'study') cleanHome(); });
   setTimeout(function () { if (v === 'home' || v === 'study') cleanHome(); }, 160);
   setTimeout(function () { if (v === 'home') { cleanHome(); maybeRemind(); } }, 1200);
   return r;
