@@ -77,6 +77,7 @@ function bannerSheet(line) {
     '<button class="btn w-full py-3" onclick="closeSheet();courseTap(hfNext())">Start today\'s session</button>' +
     '<button class="btn2 w-full" onclick="closeSheet()">Later</button></div></div>';
 }
+W.hfBannerSheet = bannerSheet;
 W.hfNext = function () {
   var cs = W.h2courses ? W.h2courses() : [];
   var done = (U.readLog || {})[todayKey()] || [];
