@@ -1,22 +1,28 @@
-/* Academic Summit - tune.js: runtime tunes, zero anchors.
-   Routes h2go kinds, buttons the streak pill, doubles the attendance door,
-   seats the target-to-study link on Home and in Target, empties Results for
-   freshers, and turns Zuma to face the words. Load LAST. */
+/* Academic Summit - tune.js v2: the concierge.
+   Full-screen welcome with open-armed Zuma on EVERY open.
+   A full-screen Session takeover (V.sess) is where targets and sessions lead.
+   Target strip: one only, calm emerald, home only, taps to the session.
+   Hero subtitle stutter silenced whatever tag the card wears.
+   Load LAST. */
 (function () {
 'use strict';
 var W = window;
-/* 1. h2go routing that can never dead-end */
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function isoLocal() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+var st = document.createElement('style');
+st.textContent = '.mk-strip,.mk-strip *{color:#047857 !important}.dark .mk-strip,.mk-strip .dark *{color:#34d399 !important}' +
+  '.dark .mk-strip,.dark .mk-strip *{color:#34d399 !important}';
+document.head.appendChild(st);
+/* h2go routing that can never dead-end */
 var hg = W.h2go;
 W.h2go = function (k) {
-  var m = {
-    study: ['study', 'read', 'home'], read: ['read', 'study', 'home'],
-    res: ['traj'], acad: ['study', 'acad', 'home'],
-    att: ['att', 'attendance', 'attend', 'home'], plan: ['planner', 'plan', 'home']
-  };
+  var m = { study: ['sess', 'study', 'read', 'home'], read: ['read', 'study', 'home'],
+    res: ['traj'], acad: ['study', 'acad', 'home'], att: ['att', 'attendance', 'attend', 'home'],
+    plan: ['planner', 'plan', 'home'], sess: ['sess'] };
   if (m[k]) { for (var i = 0; i < m[k].length; i++) if (V[m[k][i]]) { W.go(m[k][i]); return; } }
   if (hg) return hg.apply(this, arguments);
 };
-/* 2. Zuma faces the words, whatever zuma.js version lives */
+/* Zuma faces the words, whatever zuma.js version lives */
 var zi = W.zumaImg;
 if (zi) W.zumaImg = function (pose) {
   var h = zi.apply(this, arguments);
@@ -31,117 +37,94 @@ function targetVal() {
   for (var i = 0; i < c.length; i++) {
     var t = c[i];
     if (typeof t === 'number' && t >= 1 && t <= 5) return t;
-    if (t && typeof t === 'object') {
-      var v = t.cgpa || t.target || t.value;
-      if (typeof v === 'number') return v;
-    }
+    if (t && typeof t === 'object') { var v = t.cgpa || t.target || t.value; if (typeof v === 'number') return v; }
   }
   return null;
 }
-function mkBtn(cls, label, fn) {
-  var b = document.createElement('button');
-  b.type = 'button'; b.className = cls; b.textContent = label;
-  b.onclick = fn;
-  return b;
+function nextCourse() {
+  var cs = W.h2courses ? W.h2courses() : [];
+  var done = (U.readLog || {})[isoLocal()] || [];
+  return cs.filter(function (c) { return done.indexOf(c.code) < 0; })[0] || cs[0] || null;
 }
-function tuneHome() {
-  var m = $('main'); if (!m) return;
-  var pill = Array.from(m.querySelectorAll('div,span')).find(function (n) {
-    return /^(day \d+ streak|\d+-day streak|start a streak)$/i.test((n.textContent || '').trim());
-  });
-  if (pill && !pill.dataset.tuned && W.streakCal) {
-    pill.dataset.tuned = '1';
-    pill.style.cursor = 'pointer';
-    pill.setAttribute('role', 'button');
-    pill.addEventListener('click', function () { W.streakCal(); });
+/* ---------- the Session takeover (full screen) ---------- */
+V.sess = function () {
+  var c = nextCourse();
+  if (!c) {
+    return '<div class="space-y-4"><button type="button" class="btn2 px-3" onclick="go(\'home\')">' + ic('l') + '</button>' +
+      '<div class="font-extrabold text-2xl">No session yet</div>' +
+      '<p class="text-xs" style="color:var(--mut)">Add your courses and the summit builds your day.</p>' +
+      '<button class="btn w-full" onclick="go(\'study\')">Go to Study</button></div>';
   }
-  var att = Array.from(m.querySelectorAll('button')).find(function (b) {
-    return (b.getAttribute('onclick') || '').indexOf("h2go('att')") > -1;
-  });
-  if (att && !att.dataset.tuned) {
-    att.dataset.tuned = '1';
-    att.style.minHeight = '88px';
-    att.style.padding = '18px';
-    var s = att.querySelector('span');
-    if (s) s.style.fontSize = '17px';
-  }
-  if (!m.querySelector('[data-tgt-strip]') && (m.textContent || '').indexOf('not a figure, a habit') < 0) {
-    var grad = m.querySelector('button.grad');
-    var host = grad ? grad.parentNode : null;
-    if (host) {
-      var tv = targetVal();
-      var d = document.createElement('div');
-      d.setAttribute('data-tgt-strip', '1');
-      d.className = 'card flex items-center gap-3';
-      d.style.padding = '12px 14px';
-      var txt = document.createElement('div');
-      txt.className = 'flex-1 text-xs';
-      txt.style.color = 'var(--mut)';
-      txt.textContent = tv
-        ? 'Target ' + tv.toFixed(2) + ' - not a figure, a habit. Today\'s sessions feed it.'
-        : 'Set your target - 4.5 is not a figure, it is consistent study.';
-      if (W.zumaImg) d.insertAdjacentHTML('beforeend', W.zumaImg('read', 44));
-      d.appendChild(txt);
-      d.appendChild(mkBtn('btn2 shrink-0', tv ? 'Start' : 'Set target', function () {
-        if (tv) W.h2go('study');
-        else if (W.rTabSet) W.rTabSet('tgt');
-        else W.go('traj');
-      }));
-      if (grad.nextSibling) host.insertBefore(d, grad.nextSibling);
-      else host.appendChild(d);
-    }
-  }
+  var lv = ((U.study && U.study.courses && U.study.courses[c.code]) || {}).level || 1;
+  var min = { 1: 15, 2: 23, 3: 45, 4: 60 }[lv];
+  var tv = targetVal();
+  return '<div class="space-y-4">' +
+    '<div class="grad" style="padding:22px;border-radius:26px;color:#fff">' +
+    '<div class="lbl" style="color:rgba(255,255,255,.85)">Today\'s session</div>' +
+    '<div style="font-size:26px;font-weight:800;margin:8px 0 2px">' + esc(c.title || c.code) + '</div>' +
+    '<div style="font-size:13px;color:rgba(255,255,255,.85)">' + esc(c.code) + ' | ' + min + ' min | Level ' + lv + '</div>' +
+    (tv ? '<div style="font-size:12px;margin-top:10px;color:rgba(255,255,255,.9)">Toward ' + tv.toFixed(2) + ' - not a figure, a habit.</div>' : '') +
+    '</div>' +
+    (W.zumaImg ? '<div class="card flex items-center gap-3" style="padding:14px">' + W.zumaImg('studying', 72) +
+      '<div class="flex-1 text-xs" style="color:var(--mut)">One section, one timer, no skipping. Zuma reads with you.</div></div>' : '') +
+    '<button class="btn w-full py-3" onclick="' + (W.timerStart ? 'timerStart(\'' + esc(c.code) + '\',1)' : 'go(\'read\')') + '">Start focus timer</button>' +
+    '<button class="btn2 w-full" onclick="go(\'read\')">Open reading list</button>' +
+    '<button class="btn2 w-full" onclick="go(\'home\')">Not now</button></div>';
+};
+/* ---------- welcome: open arms, every open ---------- */
+function welcome() {
+  var sh = $('sheet'); if (!sh || sh.innerHTML.trim()) return;
+  var name = ((U.name || (U.profile && U.profile.name) || '') + '').trim().split(/\s+/)[0] || 'there';
+  var hr = new Date().getHours();
+  var gr = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+  var c = nextCourse();
+  sh.innerHTML = '<div class="fixed inset-0 flex flex-col" style="background:var(--card);z-index:9995">' +
+    '<div class="flex-1 grid place-items-center p-6">' + (W.zumaImg ? W.zumaImg('welcome', 200) : '') + '</div>' +
+    '<div class="space-y-3 px-7 text-left" style="padding-bottom:calc(env(safe-area-inset-bottom,0px) + 26px)">' +
+    '<div class="font-extrabold text-2xl">' + gr + ', ' + esc(name) + '.</div>' +
+    '<p class="text-sm" style="color:var(--mut)">' + (c ? 'Today we start with ' + esc(c.code) + '. I have been waiting at the trailhead.' : 'I have been waiting at the trailhead.') + '</p>' +
+    '<button class="btn w-full py-3" onclick="closeSheet();go(\'sess\')">Start today\'s session</button>' +
+    '<button class="btn2 w-full" onclick="closeSheet()">Just browse</button>' +
+    '</div></div>';
 }
-function activeChip(name) {
-  var m = $('main'); if (!m) return null;
-  return Array.from(m.querySelectorAll('button')).find(function (b) {
-    var oc = b.getAttribute('onclick') || '';
-    return oc.indexOf("rTabSet('" + name + "')") > -1 && /(^|\s)btn(\s|$)/.test(b.className || '');
-  });
-}
-function tuneResults() {
-  var sub = $('sub'); if (!sub) return;
-  if (!(U.semesters || []).length && activeChip('graph')) {
-    sub.innerHTML = '';
-    var card = document.createElement('div');
-    card.className = 'card p-6 space-y-3';
-    card.innerHTML = '<div class="font-extrabold">No results yet</div>' +
-      '<p class="text-xs" style="color:var(--mut)">Your story starts with your first semester. Until then, set your target and let the study plan build toward it.</p>';
-    card.appendChild(mkBtn('btn w-full', 'Upload my first result', function () { if (W.rTabSet) W.rTabSet('calc'); }));
-    card.appendChild(mkBtn('btn2 w-full', 'Set my target', function () { if (W.rTabSet) W.rTabSet('tgt'); }));
-    sub.appendChild(card);
-  }
-  if (activeChip('tgt') && !sub.querySelector('[data-tgt-door]')) {
-    var door = mkBtn('btn w-full mt-3', 'Open today\'s study session', function () { W.h2go('study'); });
-    door.setAttribute('data-tgt-door', '1');
-    sub.appendChild(door);
-  }
-}
+/* ---------- cleanHome: dedupe strips, silence stutter, heal the strip ---------- */
 function cleanHome() {
   var m = $('main'); if (!m) return;
-  var grad = m.querySelector('button.grad');
+  var grad = m.querySelector('.grad');
   if (grad) {
     var big = null, small = null;
     Array.prototype.forEach.call(grad.querySelectorAll('div'), function (d2) {
-      var st = d2.getAttribute('style') || '';
-      if (st.indexOf('22px') > -1) big = d2;
-      if (st.indexOf('13px') > -1) small = d2;
+      var s2 = d2.getAttribute('style') || '';
+      if (s2.indexOf('22px') > -1 || s2.indexOf('26px') > -1) big = d2;
+      if (s2.indexOf('13px') > -1) small = d2;
     });
     if (big && small && big.textContent.trim() === small.textContent.trim()) small.style.display = 'none';
   }
-  var strips = [];
-    Array.prototype.forEach.call(m.querySelectorAll('.card, button'), function (n) {
-    if ((n.textContent || '').indexOf('not a figure, a habit') > -1 && !n.querySelector('.card')) strips.push(n);
+  var all = Array.from(m.querySelectorAll('*')).filter(function (n) {
+    return (n.textContent || '').indexOf('not a figure, a habit') > -1 && n.children.length <= 5;
   });
-  for (var i = 1; i < strips.length; i++) if (strips[i].parentNode) strips[i].parentNode.removeChild(strips[i]);
+  var tops = all.filter(function (n) { return !all.some(function (o) { return o !== n && n.contains(o); }); });
+  if (view !== 'home') { tops.forEach(function (n) { if (n.parentNode) n.parentNode.removeChild(n); }); return; }
+  tops.slice(1).forEach(function (n) { if (n.parentNode) n.parentNode.removeChild(n); });
+  var keep = tops[0];
+  if (keep && !keep.dataset.tuned) {
+    keep.dataset.tuned = '1';
+    keep.classList.add('mk-strip');
+    keep.style.cursor = 'pointer';
+    keep.setAttribute('onclick', "go('sess')");
+  }
 }
 var goB = W.go;
 W.go = function (v) {
   var r = goB.apply(this, arguments);
-  setTimeout(function () {
-    if (v === 'home') tuneHome();
-    if (v === 'traj') tuneResults();
-  }, 160);
+  setTimeout(function () { if (v === 'home' || v === 'study') cleanHome(); }, 160);
+  setTimeout(function () { if (v === 'home' || v === 'study') cleanHome(); }, 700);
+  return r;
+};
+var stB = W.start;
+W.start = function () {
+  var r = stB.apply(this, arguments);
+  setTimeout(welcome, 700);
   return r;
 };
 })();
