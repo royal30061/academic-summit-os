@@ -44,7 +44,7 @@ function paint() {
   var bar = probe.parentNode;
   bar.innerHTML = ORDER.map(function (v) {
     var on = v === view;
-    return '<button type="button" data-n="' + v + '" onclick="' + ((U && U.role === 'lecturer') ? 'lectGo(\'' + v + '\')' : 'go(\'' + v + '\')') + '"' class="bn flex-1 flex flex-col items-center gap-1 py-2 ' + (on ? 'text-violet-600 dark:text-violet-400' : 'text-slate-500') + '" style="background:none;border:none;cursor:pointer">' +
+    return '<button type="button" data-n="' + v + '" onclick="' + ((U && U.role === 'lecturer') ? 'lectGo(\'' + v + '\')' : 'go(\'' + v + '\')') + '" class="bn flex-1 flex flex-col items-center gap-1 py-2 ' + (on ? 'text-violet-600 dark:text-violet-400' : 'text-slate-500') + '" style="background:none;border:none;cursor:pointer">' +
       (ICONX[v] || ICONS[v] || CHART) + '<span class="text-[10px] font-bold">' + LABEL[v] + '</span></button>';
   }).join('');
   var fb = Array.from(document.querySelectorAll('button')).find(function (x) { return (x.textContent || '').trim() === '?'; });
