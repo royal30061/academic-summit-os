@@ -65,7 +65,7 @@ function tuneHome() {
     var s = att.querySelector('span');
     if (s) s.style.fontSize = '17px';
   }
-  if (!m.querySelector('[data-tgt-strip]')) {
+  if (!m.querySelector('[data-tgt-strip]') && (m.textContent || '').indexOf('not a figure, a habit') < 0) {
     var grad = m.querySelector('button.grad');
     var host = grad ? grad.parentNode : null;
     if (host) {
@@ -80,7 +80,7 @@ function tuneHome() {
       txt.textContent = tv
         ? 'Target ' + tv.toFixed(2) + ' - not a figure, a habit. Today\'s sessions feed it.'
         : 'Set your target - 4.5 is not a figure, it is consistent study.';
-      d.appendChild(W.zumaImg ? W.zumaImg('read', 44) : document.createTextNode(''));
+      if (W.zumaImg) d.insertAdjacentHTML('beforeend', W.zumaImg('read', 44));
       d.appendChild(txt);
       d.appendChild(mkBtn('btn2 shrink-0', tv ? 'Start' : 'Set target', function () {
         if (tv) W.h2go('study');
@@ -116,6 +116,24 @@ function tuneResults() {
     door.setAttribute('data-tgt-door', '1');
     sub.appendChild(door);
   }
+}
+function cleanHome() {
+  var m = $('main'); if (!m) return;
+  var grad = m.querySelector('button.grad');
+  if (grad) {
+    var big = null, small = null;
+    Array.prototype.forEach.call(grad.querySelectorAll('div'), function (d2) {
+      var st = d2.getAttribute('style') || '';
+      if (st.indexOf('22px') > -1) big = d2;
+      if (st.indexOf('13px') > -1) small = d2;
+    });
+    if (big && small && big.textContent.trim() === small.textContent.trim()) small.style.display = 'none';
+  }
+  var strips = [];
+    Array.prototype.forEach.call(m.querySelectorAll('.card, button'), function (n) {
+    if ((n.textContent || '').indexOf('not a figure, a habit') > -1 && !n.querySelector('.card')) strips.push(n);
+  });
+  for (var i = 1; i < strips.length; i++) if (strips[i].parentNode) strips[i].parentNode.removeChild(strips[i]);
 }
 var goB = W.go;
 W.go = function (v) {
