@@ -80,24 +80,60 @@ V.sess = function () {
     '<button class="btn2 w-full" onclick="go(\'home\')">Not now</button></div>';
 };
 /* ---------- welcome: open arms, once an hour, quiet after study ---------- */
+function surname() {
+  var parts = ((U.name || (U.profile && U.profile.name) || '') + '').trim().split(/\s+/);
+  return parts.length > 1 ? parts[parts.length - 1] : (parts[0] || 'there');
+}
+function address() {
+  var raw = (U.lecTitle || (U.lec && U.lec.title) || (U.profile && U.profile.title) || '') + '';
+  var map = { sir: 'Sir', ma: 'Ma', dr: 'Dr', prof: 'Prof' };
+  var m = map[raw.toLowerCase()];
+  if (m === 'Sir' || m === 'Ma') return m;
+  if (m) return m + ' ' + surname();
+  if (raw) return raw + ' ' + surname();
+  return surname();
+}
+W.askAddress = function (v) { U.lecTitle = v; save(); closeSheet(); lsSet('as_welc_last', '0'); W._welcThisOpen = 0; setTimeout(welcome, 400); };
+function fabRule() {
+  var f = Array.from(document.querySelectorAll('button')).find(function (b) { return (b.textContent || '').trim() === '?'; });
+  if (f) f.style.display = (U && U.role === 'lecturer') ? 'none' : '';
+}
 function welcome() {
   if (!sheetFree() || studiedToday() || !hourPassed('as_welc_last')) return;
   var sh = $('sheet'); if (!sh) return;
   lsSet('as_welc_last', String(Date.now()));
   W._welcThisOpen = 1;
-  var name = ((U.name || (U.profile && U.profile.name) || '') + '').trim().split(/\s+/)[0] || 'there';
   var hr = new Date().getHours();
   var gr = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
-  var c = nextCourse();
+  var lec = U.role === 'lecturer';
+  if (lec && !U.lecTitle && !lsGet('as_addr_asked')) {
+    lsSet('as_addr_asked', '1');
+    sh.innerHTML = '<div class="fixed inset-0 flex flex-col" style="background:var(--card);z-index:9995">' +
+      '<div class="flex-1 grid place-items-center p-6">' + (W.zumaImg ? W.zumaImg('welcome', 180) : '') + '</div>' +
+      '<div class="space-y-3 px-7 text-left" style="padding-bottom:calc(env(safe-area-inset-bottom,0px) + 26px)">' +
+      '<div class="font-extrabold text-2xl">How should I call you?</div>' +
+      '<p class="text-sm" style="color:var(--mut)">Zuma likes to greet properly.</p>' +
+      '<div class="grid grid-cols-4 gap-2">' + ['Dr', 'Prof', 'Sir', 'Ma'].map(function (x) {
+        return '<button type="button" class="btn2 py-3" onclick="askAddress(\'' + x.toLowerCase() + '\')">' + x + '</button>';
+      }).join('') + '</div>' +
+      '<button type="button" class="btn2 w-full" onclick="askAddress(\'\')">Use my name</button>' +
+      '</div></div>';
+    scrubX(sh);
+    return;
+  }
+  var who = lec ? address() : (((U.name || (U.profile && U.profile.name) || '') + '').trim().split(/\s+/)[0] || 'there');
+  var c = lec ? null : nextCourse();
   sh.innerHTML = '<div class="fixed inset-0 flex flex-col" style="background:var(--card);z-index:9995">' +
     '<div class="flex-1 grid place-items-center p-6">' + (W.zumaImg ? W.zumaImg('welcome', 200) : '') + '</div>' +
     '<div class="space-y-3 px-7 text-left" style="padding-bottom:calc(env(safe-area-inset-bottom,0px) + 26px)">' +
-    '<div class="font-extrabold text-2xl">' + gr + ', ' + esc(name) + '.</div>' +
-    '<p class="text-sm" style="color:var(--mut)">' + (c ? 'Today we start with ' + esc(c.code) + '. I have been waiting at the trailhead.' : 'I have been waiting at the trailhead.') + '</p>' +
-    '<button class="btn w-full py-3" onclick="closeSheet();go(\'sess\')">Start today\'s session</button>' +
-    '<button class="btn2 w-full" onclick="closeSheet()">Just browse</button>' +
+    '<div class="font-extrabold text-2xl">' + gr + ', ' + esc(who) + '.</div>' +
+    '<p class="text-sm" style="color:var(--mut)">' + (lec ? 'Your console is ready. The class moves when you say.' : (c ? 'Today we start with ' + esc(c.code) + '. I have been waiting at the trailhead.' : 'I have been waiting at the trailhead.')) + '</p>' +
+    (lec ? '<button type="button" class="btn w-full py-3" onclick="closeSheet();go(\'home\')">Open attendance console</button>'
+         : '<button type="button" class="btn w-full py-3" onclick="closeSheet();go(\'sess\')">Start today\'s session</button>') +
+    '<button type="button" class="btn2 w-full" onclick="closeSheet()">Just browse</button>' +
     '</div></div>';
   scrubX(sh);
+}
 }
 /* ---------- the target reminder: Zuma half-sheet that leads to STUDY ---------- */
 W.zumaRemind = function () {
@@ -165,14 +201,14 @@ var goB = W.go;
 W.go = function (v) {
   var r = goB.apply(this, arguments);
   requestAnimationFrame(function () { if (v === 'home' || v === 'study') cleanHome(); });
-  setTimeout(function () { if (v === 'home' || v === 'study') cleanHome(); }, 160);
+  setTimeout(function () { fabRule(); if (v === 'home' || v === 'study') cleanHome(); }, 160);
   setTimeout(function () { if (v === 'home') { cleanHome(); maybeRemind(); } }, 1200);
   return r;
 };
 var stB = W.start;
 W.start = function () {
   var r = stB.apply(this, arguments);
-  setTimeout(welcome, 700);
+  setTimeout(function () { fabRule(); welcome(); }, 700);
   return r;
 };
 })();

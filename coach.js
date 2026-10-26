@@ -32,11 +32,24 @@ function nextTip() {
 }
 function find(id) { return TIPS.student.concat(TIPS.lecturer).filter(function (t) { return t.id === id; })[0]; }
 /* ---------- the half-sheet tour ---------- */
+function closing() {
+  var sh = $('sheet'); if (!sh) return;
+  var lec = U.role === 'lecturer';
+  sh.innerHTML = '<div class="fixed inset-0" style="background:rgba(2,6,23,.45);z-index:9989" onclick="closeSheet()"></div>' +
+    '<div class="fixed inset-x-0 bottom-0" style="z-index:9990;background:var(--card);border-top:1px solid var(--bd);border-radius:28px 28px 0 0;box-shadow:0 -18px 50px rgba(0,0,0,.28);max-height:62vh;overflow-y:auto">' +
+    '<div style="width:44px;height:4px;border-radius:2px;background:var(--bd);margin:10px auto 0"></div>' +
+    '<div class="p-6 space-y-4" style="padding-bottom:calc(env(safe-area-inset-bottom,0px) + 18px)">' +
+    '<div class="flex items-end gap-4"><div class="flex-1 space-y-2 text-left">' +
+    '<div class="font-extrabold text-xl">That\'s the whole trail.</div>' +
+    '<p class="text-sm" style="color:var(--mut)">' + (lec ? 'I\'ll be waiting in your console when you need me.' : 'I\'ll be waiting behind the ? for you when you need me.') + '</p></div>' +
+    (W.zumaImg ? W.zumaImg('welcome', 96) : '') + '</div>' +
+    '<button type="button" class="btn w-full py-3" onclick="closeSheet()">Got it</button>' +
+    '</div></div>';
+}
 W.coachShow = function (force) {
   if (!U) return;
   var t = force ? find(force) : nextTip();
-  if (!t) t = (TIPS[U.role] || TIPS.student)[0];
-  if (!t) return;
+  if (!t) { closing(); return; }
   try { localStorage.setItem(K_LAST, String(Date.now())); localStorage.setItem(K_LAST + 'day', new Date().toDateString()); } catch (e) {}
   var sh = $('sheet'); if (!sh) return;
   sh.innerHTML =
@@ -54,7 +67,7 @@ W.coachShow = function (force) {
     '</div></div>';
 };
 W.coachNext = function () { W.coachShow(); };
-W.coachGo = function (id) { closeSheet(); var t = find(id); if (t) { markKnown(id); t.go(); } };
+W.coachGo = function (id) { closeSheet(); var t = find(id); if (t) { markKnown(id); t.go(); if (!listFor().length) setTimeout(function () { var sh = $('sheet'); if (sh && !sh.innerHTML.trim()) W.coachShow(); }, 600); } };
 W.coachSkip = function () { closeSheet(); };
 W.coachKnown = function (id) { markKnown(id); closeSheet(); showToast('Noted - this tip will not return'); };
 /* ---------- Zuma's first hello (once per install) ---------- */
