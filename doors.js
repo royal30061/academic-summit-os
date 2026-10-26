@@ -19,7 +19,7 @@ var ICONS = {
   fin: S + '<path d="M20 7H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/><path d="M2 9V5a2 2 0 0 1 2-2h12"/></svg>'
 };
 var CHART = ICONS.traj;
-var ORDER = (U && U.role === 'lecturer') ? ['home', 'roster', 'reps', 'prof'] : ['home', 'study', 'traj', 'att', 'fin'];
+function orderFor() { return (U && U.role === 'lecturer') ? ['home', 'roster', 'reps', 'prof'] : ['home', 'study', 'traj', 'att', 'fin']; }
 var LABEL = { home: 'Home', study: 'Study', traj: 'Results', att: 'Attend', fin: 'Finance', roster: 'Roster', reps: 'Records', prof: 'Profile' };
 var goB = W.go;
 W.go = function (v) {
@@ -42,7 +42,7 @@ function paint() {
     Array.from(document.querySelectorAll('button')).find(function (b) { return /bn/.test(b.className || '') && /Home/i.test(b.textContent || ''); });
   if (!probe) return;
   var bar = probe.parentNode;
-  bar.innerHTML = ORDER.map(function (v) {
+  bar.innerHTML = orderFor().map(function (v) {
     var on = v === view;
     return '<button type="button" data-n="' + v + '" onclick="' + ((U && U.role === 'lecturer') ? 'lectGo(\'' + v + '\')' : 'go(\'' + v + '\')') + '" class="bn flex-1 flex flex-col items-center gap-1 py-2 ' + (on ? 'text-violet-600 dark:text-violet-400' : 'text-slate-500') + '" style="background:none;border:none;cursor:pointer">' +
       (ICONX[v] || ICONS[v] || CHART) + '<span class="text-[10px] font-bold">' + LABEL[v] + '</span></button>';

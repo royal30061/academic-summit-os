@@ -166,6 +166,15 @@ if (W.timerMarkDone) { var tmB = W.timerMarkDone; W.timerMarkDone = function () 
 /* ---------- cleanHome: one strip, calm colour, taps to the reminder; subtitle unstutters ---------- */
 function cleanHome() {
   var m = $('main'); if (!m) return;
+  var pill = Array.from(m.querySelectorAll('div,span')).find(function (n) {
+    return /^(day \d+ streak|\d+-day streak|start a streak)$/i.test((n.textContent || '').trim());
+  });
+  if (pill && !pill.dataset.tuned && W.streakCal) {
+    pill.dataset.tuned = '1';
+    pill.style.cursor = 'pointer';
+    pill.setAttribute('role', 'button');
+    pill.addEventListener('click', function () { W.streakCal(); });
+  }
   var grad = m.querySelector('.grad');
   if (grad) {
     var big = null, small = null;
@@ -175,6 +184,16 @@ function cleanHome() {
       if (s2.indexOf('13px') > -1) small = d2;
     });
     if (big && small && big.textContent.trim() === small.textContent.trim()) small.style.display = 'none';
+    if (!grad.dataset.wired) {
+      grad.dataset.wired = '1';
+      grad.style.cursor = 'pointer';
+      grad.addEventListener('click', function () {
+        if (grad.style.opacity === '0.62') { if (W.h2locked) W.h2locked(); return; }
+        W.go(V.sess ? 'sess' : 'read');
+      });
+    }
+    var pb = grad.querySelector('button[aria-label="Start reading"]');
+    if (pb) pb.setAttribute('onclick', "go('sess')");
   }
   var strips = [];
   Array.prototype.forEach.call(m.querySelectorAll('.card, button'), function (n) {
