@@ -39,9 +39,15 @@ V.traj = function () {
     '<div id="sub"></div></div>';
 };
 W.rTabSet = function (t) { rTab = t; go('traj'); };
+function noResultsYet() {
+  return '<div class="card p-6 space-y-3 text-center">' + (W.zumaImg ? W.zumaImg('welcome', 96) : '') +
+    '<div class="font-extrabold">No results yet - and that is fine.</div>' +
+    '<p class="text-xs text-slate-500">This house holds your trajectory, your target and the detective. Start with your target, then bring your first result when it lands.</p>' +
+    '<div class="flex gap-2"><button class="btn2 flex-1" onclick="rTabSet(\'tgt\')">Set my target</button><button class="btn flex-1" onclick="rTabSet(\'calc\')">Upload results</button></div></div>';
+}
 function fillResults() {
   var sub = $('sub'); if (!sub) return;
-  if (rTab === 'graph') sub.innerHTML = trajB();
+  if (rTab === 'graph') sub.innerHTML = (U.semesters || []).length ? trajB() : noResultsYet();
   else if (typeof ACAD[rTab] === 'function') ACAD[rTab]();
 }
 function renameDoor() {
