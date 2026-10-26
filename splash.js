@@ -14,7 +14,7 @@ st.textContent =
   '@keyframes asSweep{from{transform:translateX(-110%)}to{transform:translateX(260%)}}' +
   '#as-splash{position:fixed;inset:0;z-index:99999;background:#021812;display:flex;align-items:center;justify-content:center;transition:opacity .45s ease}' +
   '#as-splash.off{opacity:0;pointer-events:none}' +
-  '.as-orb{position:absolute;top:50%;left:50%;width:190px;height:190px;margin:-95px 0 0 -95px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#6ee7b7,#10b981 55%,rgba(16,185,129,0) 74%);box-shadow:0 0 70px rgba(16,185,129,.35);opacity:0;animation:asBreath 1.12s ease-out both;z-index:-1}' +
+  '.as-orb{position:absolute;top:50%;left:50%;width:190px;height:190px;margin:-95px 0 0 -95px;background:none;display:grid;place-items:center;filter:drop-shadow(0 0 34px rgba(16,185,129,.45));opacity:0;animation:asBreath 1.12s ease-out both;z-index:-1}' +
   '@keyframes asBreath{0%{transform:scale(.85);opacity:0}60%{opacity:.85}100%{transform:scale(1);opacity:.5}}' +
   '#as-splash .w{display:flex}' +
   '#as-splash .w span{color:#e7fff5;font-weight:800;font-size:26px;opacity:0;animation:asRise .5s both}' +
@@ -29,7 +29,7 @@ document.head.appendChild(st);
 var word = 'Academic Summit';
 var d = document.createElement('div');
 d.id = 'as-splash';
-d.innerHTML = '<div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:14px">' + '<span class="as-orb"></span>' +
+d.innerHTML = '<div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:14px">' + '<span class="as-orb"><svg viewBox="0 0 48 32" width="150" height="100" aria-hidden="true"><defs><linearGradient id="asMtn" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6ee7b7"/><stop offset="1" stop-color="#0f766e"/></linearGradient></defs><path d="M2 30 L18 6 L28 20 L34 12 L46 30 Z" fill="url(#asMtn)"/></svg></span>' +
   '<span class="sp" style="top:-18px;right:-26px">\u2726</span><span class="sp" style="bottom:-14px;left:-30px;animation-delay:.7s">\u2726</span>' +
   '<div class="w">' + word.split('').map(function (ch, i) { return '<span style="animation-delay:' + (i * 45) + 'ms">' + (ch === ' ' ? '&nbsp;' : ch) + '</span>'; }).join('') + '</div>' +
   '<div class="bar"><i></i></div>' +

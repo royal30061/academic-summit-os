@@ -22,7 +22,7 @@ var TIPS = {
 var K_IDX = 'as_coach_idx', K_KNOWN = 'as_coach_known', K_LAST = 'as_coach_last', K_INTRO = 'as_zuma_intro';
 function known() { try { return JSON.parse(localStorage.getItem(K_KNOWN) || '[]'); } catch (e) { return []; } }
 function markKnown(id) { var k = known(); if (k.indexOf(id) < 0) k.push(id); try { localStorage.setItem(K_KNOWN, JSON.stringify(k)); } catch (e) {} }
-function shouldShow() { try { return Date.now() - (+localStorage.getItem(K_LAST) || 0) > 12 * 3600e3; } catch (e) { return false; } }
+function shouldShow() { try { var d0 = +localStorage.getItem('as_first_seen') || Date.now(); if (Date.now() - d0 > 3 * 864e5) return false; return localStorage.getItem(K_LAST + 'day') !== new Date().toDateString(); } catch (e) { return false; } }
 function listFor() { return (TIPS[U.role] || TIPS.student).filter(function (t) { return known().indexOf(t.id) < 0; }); }
 function nextTip() {
   var list = listFor(); if (!list.length) return null;
@@ -37,7 +37,7 @@ W.coachShow = function (force) {
   var t = force ? find(force) : nextTip();
   if (!t) t = (TIPS[U.role] || TIPS.student)[0];
   if (!t) return;
-  try { localStorage.setItem(K_LAST, String(Date.now())); } catch (e) {}
+  try { localStorage.setItem(K_LAST, String(Date.now())); localStorage.setItem(K_LAST + 'day', new Date().toDateString()); } catch (e) {}
   var sh = $('sheet'); if (!sh) return;
   sh.innerHTML =
     '<div class="fixed inset-0" style="background:rgba(2,6,23,.45);z-index:9989" onclick="coachSkip()"></div>' +
