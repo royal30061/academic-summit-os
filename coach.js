@@ -16,6 +16,7 @@ var TIPS = {
   lecturer: [
     { id: 'reps', title: 'Class reps', pitch: 'Appoint a rep: they see your live code, re-issue it, and send names for your approval. You stay in control.', cta: 'Open console', go: function () { go('home'); } },
     { id: 'csv', title: 'Roster export', pitch: 'One tap exports the class list as a sorted CSV - matric, department, course, method.', cta: 'Open roster', go: function () { go('roster'); } },
+    { id: 'profnav', title: 'Your profile', pitch: 'Tap the avatar with your initials at the top-right - your teaching courses, roster tools and account settings all live behind it.', cta: 'Open profile', go: function () { go('prof'); } },
     { id: 'profile', title: 'Teaching profile', pitch: 'Two minutes now: your courses and levels fill themselves in every time you start a class.', cta: 'Set it up', go: function () { ls2Open(); } }
   ]
 };

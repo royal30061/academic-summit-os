@@ -96,7 +96,7 @@ function address() {
 W.askAddress = function (v) { U.lecTitle = v; save(); closeSheet(); lsSet('as_welc_last', '0'); W._welcThisOpen = 0; setTimeout(welcome, 400); };
 function fabRule() {
   var f = Array.from(document.querySelectorAll('button')).find(function (b) { return (b.textContent || '').trim() === '?'; });
-  if (f) f.style.display = (U && U.role === 'lecturer') ? 'none' : '';
+  if (f) f.style.display = '';
 }
 function welcome() {
   if (!sheetFree() || studiedToday() || !hourPassed('as_welc_last')) return;
@@ -133,7 +133,6 @@ function welcome() {
     '<button type="button" class="btn2 w-full" onclick="closeSheet()">Just browse</button>' +
     '</div></div>';
   scrubX(sh);
-}
 }
 /* ---------- the target reminder: Zuma half-sheet that leads to STUDY ---------- */
 W.zumaRemind = function () {
