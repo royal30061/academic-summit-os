@@ -1,18 +1,26 @@
-/* Academic Summit - tune.js v2: the concierge.
-   Full-screen welcome with open-armed Zuma on EVERY open.
-   A full-screen Session takeover (V.sess) is where targets and sessions lead.
-   Target strip: one only, calm emerald, home only, taps to the session.
-   Hero subtitle stutter silenced whatever tag the card wears.
+/* Academic Summit - tune.js v3: the concierge with manners.
+   Welcome: at most once per hour, and silent for the day once you've studied.
+   Target strip: taps open a Zuma half-sheet that leads to STUDY, not Results;
+   the same half-sheet also reminds you proactively on the same hourly routine.
+   No X button on any Zuma takeover - companions don't post exit signs.
    Load LAST. */
 (function () {
 'use strict';
 var W = window;
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 function isoLocal() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
-var st = document.createElement('style');
-st.textContent = '.mk-strip,.mk-strip *{color:#047857 !important}.dark .mk-strip,.mk-strip .dark *{color:#34d399 !important}' +
-  '.dark .mk-strip,.dark .mk-strip *{color:#34d399 !important}';
-document.head.appendChild(st);
+function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+function studiedToday() { return lsGet('as_study_day') === isoLocal(); }
+function hourPassed(k) { return Date.now() - (+lsGet(k) || 0) >= 3600e3; }
+function sheetFree() { var sh = $('sheet'); return sh && !sh.innerHTML.trim(); }
+function scrubX(sh) {
+  Array.from(sh.querySelectorAll('button')).forEach(function (b) {
+    var t = (b.textContent || '').trim();
+    var al = (b.getAttribute('aria-label') || '').toLowerCase();
+    if (t === '\u00d7' || t === 'x' || t === 'X' || al.indexOf('close') > -1) b.style.display = 'none';
+  });
+}
 /* h2go routing that can never dead-end */
 var hg = W.h2go;
 W.h2go = function (k) {
@@ -71,9 +79,12 @@ V.sess = function () {
     '<button class="btn2 w-full" onclick="go(\'read\')">Open reading list</button>' +
     '<button class="btn2 w-full" onclick="go(\'home\')">Not now</button></div>';
 };
-/* ---------- welcome: open arms, every open ---------- */
+/* ---------- welcome: open arms, once an hour, quiet after study ---------- */
 function welcome() {
-  var sh = $('sheet'); if (!sh || sh.innerHTML.trim()) return;
+  if (!sheetFree() || studiedToday() || !hourPassed('as_welc_last')) return;
+  var sh = $('sheet'); if (!sh) return;
+  lsSet('as_welc_last', String(Date.now()));
+  W._welcThisOpen = 1;
   var name = ((U.name || (U.profile && U.profile.name) || '') + '').trim().split(/\s+/)[0] || 'there';
   var hr = new Date().getHours();
   var gr = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
@@ -86,8 +97,38 @@ function welcome() {
     '<button class="btn w-full py-3" onclick="closeSheet();go(\'sess\')">Start today\'s session</button>' +
     '<button class="btn2 w-full" onclick="closeSheet()">Just browse</button>' +
     '</div></div>';
+  scrubX(sh);
 }
-/* ---------- cleanHome: dedupe strips, silence stutter, heal the strip ---------- */
+/* ---------- the target reminder: Zuma half-sheet that leads to STUDY ---------- */
+W.zumaRemind = function () {
+  if (!sheetFree()) return;
+  var sh = $('sheet'); if (!sh) return;
+  lsSet('as_remind_last', String(Date.now()));
+  var tv = targetVal();
+  sh.innerHTML = '<div class="fixed inset-0" style="background:rgba(2,6,23,.45);z-index:9989" onclick="closeSheet()"></div>' +
+    '<div class="fixed inset-x-0 bottom-0" style="z-index:9990;background:var(--card);border-top:1px solid var(--bd);border-radius:28px 28px 0 0;box-shadow:0 -18px 50px rgba(0,0,0,.28);max-height:62vh;overflow-y:auto">' +
+    '<div style="width:44px;height:4px;border-radius:2px;background:var(--bd);margin:10px auto 0"></div>' +
+    '<div class="p-6 space-y-4" style="padding-bottom:calc(env(safe-area-inset-bottom,0px) + 18px)">' +
+    '<div class="flex items-end gap-4"><div class="flex-1 space-y-2 text-left">' +
+    '<div class="font-extrabold text-xl">' + (tv ? 'Target ' + tv.toFixed(2) + ' - not a figure, a habit.' : 'The summit is not a figure, it is a habit.') + '</div>' +
+    '<p class="text-sm" style="color:var(--mut)">One session now keeps the number honest. I will sit with you while you read.</p></div>' +
+    (W.zumaImg ? W.zumaImg('studying', 96) : '') + '</div>' +
+    '<button class="btn w-full py-3" onclick="closeSheet();go(\'sess\')">Start today\'s session</button>' +
+    '<button class="btn2 w-full" onclick="closeSheet()">Later</button>' +
+    '</div></div>';
+  scrubX(sh);
+};
+function maybeRemind() {
+  if (W._welcThisOpen) { W._welcThisOpen = 0; return; }
+  if (studiedToday() || !hourPassed('as_remind_last')) return;
+  W.zumaRemind();
+}
+/* ---------- studying silences both until tomorrow ---------- */
+function markStudied() { lsSet('as_study_day', isoLocal()); }
+var rdB = W.readDone;
+W.readDone = function () { var r = rdB.apply(this, arguments); markStudied(); return r; };
+if (W.timerMarkDone) { var tmB = W.timerMarkDone; W.timerMarkDone = function () { markStudied(); return tmB.apply(this, arguments); }; }
+/* ---------- cleanHome: one strip, calm colour, taps to the reminder; subtitle unstutters ---------- */
 function cleanHome() {
   var m = $('main'); if (!m) return;
   var grad = m.querySelector('.grad');
@@ -100,25 +141,25 @@ function cleanHome() {
     });
     if (big && small && big.textContent.trim() === small.textContent.trim()) small.style.display = 'none';
   }
-  var all = Array.from(m.querySelectorAll('*')).filter(function (n) {
-    return (n.textContent || '').indexOf('not a figure, a habit') > -1 && n.children.length <= 5;
+  var strips = [];
+  Array.prototype.forEach.call(m.querySelectorAll('.card, button'), function (n) {
+    if ((n.textContent || '').indexOf('not a figure, a habit') > -1 && !n.querySelector('.card')) strips.push(n);
   });
-  var tops = all.filter(function (n) { return !all.some(function (o) { return o !== n && n.contains(o); }); });
-  if (view !== 'home') { tops.forEach(function (n) { if (n.parentNode) n.parentNode.removeChild(n); }); return; }
-  tops.slice(1).forEach(function (n) { if (n.parentNode) n.parentNode.removeChild(n); });
-  var keep = tops[0];
+  if (view !== 'home') { strips.forEach(function (n) { if (n.parentNode) n.parentNode.removeChild(n); }); return; }
+  strips.slice(1).forEach(function (n) { if (n.parentNode) n.parentNode.removeChild(n); });
+  var keep = strips[0];
   if (keep && !keep.dataset.tuned) {
     keep.dataset.tuned = '1';
     keep.classList.add('mk-strip');
     keep.style.cursor = 'pointer';
-    keep.setAttribute('onclick', "go('sess')");
+    keep.setAttribute('onclick', 'zumaRemind()');
   }
 }
 var goB = W.go;
 W.go = function (v) {
   var r = goB.apply(this, arguments);
   setTimeout(function () { if (v === 'home' || v === 'study') cleanHome(); }, 160);
-  setTimeout(function () { if (v === 'home' || v === 'study') cleanHome(); }, 700);
+  setTimeout(function () { if (v === 'home') { cleanHome(); maybeRemind(); } }, 1200);
   return r;
 };
 var stB = W.start;
