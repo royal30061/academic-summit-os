@@ -160,7 +160,7 @@ function paintTop() {
   t.innerHTML = '<div class="flex items-center gap-2.5"><button type="button" onclick="go(\'home\')" aria-label="Go to home" style="cursor:pointer;display:inline-flex;background:none;border:none;padding:0">' + MTN('w-8 h-8') + '</button>' + chip + '</div>' +
     '<div class="flex items-center gap-3">' +
     '<button onclick="toggleTheme()" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm" aria-label="Toggle theme">' + ic(isDark ? 'sun' : 'moon') + '</button>' +
-    '<button onclick="go(\'prof\')" class="flex items-center gap-2.5 pl-2 border-l border-slate-200 dark:border-slate-800" aria-label="Profile">' +
+    '<button onclick="go(\'aprof\')" class="flex items-center gap-2.5 pl-2 border-l border-slate-200 dark:border-slate-800" aria-label="Profile">' +
     '<span class="grad w-9 h-9 rounded-full grid place-items-center text-xs font-bold">' + esc(ini) + '</span></button></div>';
 }
 /* ---------- sidebar door for Reading (flag 5) ---------- */

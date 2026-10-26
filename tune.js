@@ -99,9 +99,9 @@ function fabRule() {
   if (f) f.style.display = '';
 }
 function welcome() {
-  if (!sheetFree() || studiedToday() || !hourPassed('as_welc_last')) return;
+  if (!sheetFree() || (localStorage.getItem('as_welc_day') === new Date().toDateString())) return;
   var sh = $('sheet'); if (!sh) return;
-  lsSet('as_welc_last', String(Date.now()));
+  lsSet('as_welc_last', String(Date.now())); lsSet('as_welc_day', new Date().toDateString());
   W._welcThisOpen = 1;
   var hr = new Date().getHours();
   var gr = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';

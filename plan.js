@@ -117,9 +117,9 @@ function catchUp(s, plan, now) {
   return { state: cur, changed: changed };
 }
 
-W.timerStart = function (code, sessions) {
+W.timerStart = function (code, sessions, minOverride) {
   if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
-  var plan = U.studyPlan, ms = plan.focusMin * MIN;
+  var plan = U.studyPlan, ms = (minOverride || +(localStorage.getItem("as_focus_min") || 0) || plan.focusMin) * MIN;
   saveTimer({ code: code, phase: 'focus', session: 1, total: sessions, endsAt: Date.now() + ms, phaseMs: ms, pausedLeft: null });
   go('timer');
 };

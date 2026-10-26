@@ -65,6 +65,7 @@ function dueReviews() {
   } catch (e) { return []; }
 }
 function home2() {
+if (U && U.role === 'lecturer') return oldHome.apply(this, arguments);
   var name = ((U.name || (U.profile && U.profile.name) || '') + '').trim().split(/\s+/)[0] || 'there';
   var hr = new Date().getHours(), gr = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
   var si = W.streakInfo ? W.streakInfo() : null, n = (si && si.n) || 0;
