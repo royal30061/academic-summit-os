@@ -46,10 +46,14 @@ function bannerLine() {
 }
 function applyBanner() {
   var m = $('main'); if (!m) return;
-  var el = Array.from(m.querySelectorAll('div,button,p')).find(function (n) {
+  var cands = Array.from(m.querySelectorAll('div,button,p')).filter(function (n) {
     var tx = (n.textContent || '').trim();
     return tx.indexOf('not a figure') > -1 || tx.indexOf('Target CGPA') === 0;
   });
+  var el = m.querySelector('[data-hf-banner]') || cands.filter(function (n) {
+    return !cands.some(function (o) { return o !== n && n.contains(o); });
+  })[0];
+  if (el && el.querySelector('.grad')) el = null;
   if (!el) {
     var grad = m.querySelector('.grad');
     if (!grad || !grad.parentNode) return;
@@ -225,7 +229,7 @@ var goB = W.go;
 W.go = function (v) {
   var r = goB.apply(this, arguments);
   setTimeout(function () {
-    if (v === 'home') { tagHome(); applyBanner(); gateDone(); }
+    if (v === 'home') { [tagHome, applyBanner, gateDone].forEach(function (f) { try { f(); } catch (e) { console.error('home patch failed:', f.name, e); } }); }
     if (v === 'timer') { tagTimer(); gateDone(); }
     if (v === 'chist') fillChist();
   }, 150);
