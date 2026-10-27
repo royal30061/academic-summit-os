@@ -49,5 +49,5 @@ function dedupe() {
 var tm = null;
 new MutationObserver(function () { clearTimeout(tm); tm = setTimeout(function () { try { dedupe(); } catch (e) {} }, 120); })
   .observe(document.body, { childList: true, subtree: true });
-var st = document.createElement('style'); st.textContent = '#main{padding-bottom:110px}'; document.head.appendChild(st);
+var st = document.createElement('style'); st.textContent = '#main::after{content:"";display:block;height:140px}'; document.head.appendChild(st);
 })();
