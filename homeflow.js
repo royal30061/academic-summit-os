@@ -9,6 +9,11 @@ var W = window;
 function LSg(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 function LSs(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function hfTag(tm, c) {
+  var t = tm && tm.get(c); if (!t || t.kind === 'first') return '';
+  var lab = t.kind === 'resit' ? 'Re-sit' : t.kind === 'late-first' ? 'First attempt' : 'Earlier result missing';
+  return ' <span style="font-size:9px;font-weight:700;opacity:.7;border:1px solid var(--bd);border-radius:6px;padding:0 4px">' + lab + '</span>';
+}
 function todayKey() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
 function targetVal() {
   var c = [U.target, U.targetCGPA, U.dreamCGPA, U.targets];
@@ -195,6 +200,7 @@ W.timerEnd = function () { if (W.SS && SS.active()) SS.finish(); return teB.appl
 V.aprof = function () {
   var sems = (U.semesters || []).filter(function (s) { return s.courses && s.courses.length; });
   var totU = 0, totP = 0, cum = [];
+  var tm = (window.Resit && Resit.tagMap) ? Resit.tagMap(U.semesters || [], U.entry) : null;
   sems.forEach(function (s) {
     var su = 0, sp = 0;
     s.courses.forEach(function (c) {
@@ -216,7 +222,7 @@ V.aprof = function () {
   } else chart = '<p class="text-xs" style="color:var(--mut)">No released results yet - the line starts with your first grade.</p>';
   var rows = sems.map(function (s) {
     return '<div class="card p-3"><div class="font-bold text-xs mb-1">' + esc(s.name || s.sem || 'Semester') + '</div>' +
-      s.courses.map(function (c) { return '<div class="flex justify-between text-xs py-0.5"><span>' + esc(c.code) + '</span><b>' + esc(c.grade || '-') + '</b></div>'; }).join('') + '</div>';
+      s.courses.map(function (c) { return '<div class="flex justify-between text-xs py-0.5"><span>' + esc(c.code) + hfTag(tm, c) + '</span><b>' + esc(c.grade || '-') + '</b></div>'; }).join('') + '</div>';
   }).join('');
   return '<div class="space-y-4"><div class="font-extrabold text-2xl">Academic profile</div>' +
     '<div class="card p-4 grid grid-cols-2 gap-3 text-center">' +

@@ -20,6 +20,12 @@ V.reg = function () {
   var cur = (U.dec && U.dec[0]) || [];
   return '<div class="space-y-4"><div class="font-extrabold text-2xl">Course registration</div>' +
     '<input id="rg-sem" class="inp" value="' + esc(U.regSem || semGuess()) + '">' +
+    '<div class="card p-3 space-y-2"><div class="lbl">How did you enter the university?</div>' +
+    '<select id="rg-entry" class="inp">' +
+    [[100, 'Started in 100 Level'], [200, 'Direct entry into 200 Level'], [300, 'Direct entry into 300 Level']].map(function (o) {
+      return '<option value="' + o[0] + '"' + (((U.entry && +U.entry.startLevel) || 100) === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
+    }).join('') + '</select>' +
+    '<p class="text-[11px]" style="color:var(--mut)">Direct-entry students never took the earlier levels here, so a lower-level course they take later is a first attempt, not a carryover.</p></div>' +
     '<div id="rg-rows" class="space-y-2">' + cur.map(row).join('') + '</div>' +
     '<div class="flex gap-2"><button class="btn2 flex-1" onclick="rgAdd()">Add course</button>' +
     '<button class="btn flex-1" onclick="rgSave()">Save & build timetable</button></div>' +
@@ -38,6 +44,8 @@ W.rgSave = function () {
   U.regArchive = U.regArchive || [];
   if (U.dec && U.dec[0] && U.dec[0].length) U.regArchive.push({ sem: U.regSem || semGuess(), courses: U.dec[0], archivedOn: new Date().toISOString() });
   U.regSem = (($('rg-sem') || {}).value) || semGuess();
+  var ev = +((($('rg-entry') || {}).value) || 0);
+  if (ev) U.entry = { startLevel: ev, route: ev > 100 ? 'de' : 'utme' };
   U.dec = [cs, []];
   U.readPlan = { order: [], days: {} };
   save();
