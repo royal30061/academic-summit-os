@@ -1,0 +1,24 @@
+const S = require('./study-core.js');
+let ok = 0, bad = 0;
+function t(name, cond) { cond ? ok++ : bad++; console.log((cond ? 'PASS ' : 'FAIL ') + name); }
+const oct = (...d) => d.map(x => '2026-10-' + String(x).padStart(2, '0'));
+const days = oct(20, 21, 22, 25, 26, 27, 29);
+let r = S.streakFromDays(days, '2026-10-29', []);
+t('matches the calendar today: current 1, best 3', r.count === 1 && r.best === 3);
+r = S.streakFromDays(days, '2026-10-29', [], oct(28));
+t('repairing the 28th joins 25-29: current 5, best 5', r.count === 5 && r.best === 5);
+r = S.streakFromDays(days, '2026-10-29', [], oct(23, 24));
+t('repairing 23 and 24 rebuilds the first run: best 8, current 1', r.best === 8 && r.count === 1);
+r = S.streakFromDays(oct(20, 21, 22, 24), '2026-10-24', [5]);
+t('Friday rest day still bridges (same as updateStreak test): 4', r.count === 4);
+r = S.streakFromDays(oct(25, 26, 27), '2026-10-28', []);
+t('not studied yet today but yesterday counts: streak alive at 3', r.count === 3);
+r = S.streakFromDays(oct(25, 26, 27), '2026-10-30', []);
+t('two days idle: streak broken (count 0, best kept)', r.count === 0 && r.best === 3);
+t('empty input is safe', S.streakFromDays([], '2026-10-29', []).count === 0 && S.streakFromDays(null, '2026-10-29').best === 0);
+r = S.streakFromDays(oct(25, 25, 26), '2026-10-26', [], oct(31));
+t('duplicates and future-dated repairs are ignored: 2', r.count === 2);
+r = S.streakFromDays(oct(27, 25, 26), '2026-10-27', []);
+t('unsorted input is fine: 3', r.count === 3);
+t('old updateStreak behaviour unchanged', S.updateStreak(null, '2026-10-20').count === 1 && S.updateStreak({ count: 3, last: '2026-10-22', best: 3 }, '2026-10-24').count === 1);
+console.log(ok + ' passed, ' + bad + ' failed'); process.exit(bad ? 1 : 0);

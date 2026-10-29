@@ -196,6 +196,22 @@ function updateStreak(st, today, rest) {
   var count = st.last && missed(st.last, today, rest) === 0 ? st.count + 1 : 1;
   return { count: count, last: today, best: Math.max(st.best || 0, count) };
 }
+/* Streak rebuilt from the dates the student really studied, plus any missed days they
+   made up (repaired). A made-up day counts as a studied day. Pure: no UI, no storage. */
+function streakFromDays(days, today, rest, repaired) {
+  var seen = {}, all = [];
+  (days || []).concat(repaired || []).forEach(function (d) { if (d && d <= today && !seen[d]) { seen[d] = 1; all.push(d); } });
+  all.sort();
+  if (!all.length) return { count: 0, last: null, best: 0 };
+  var run = 1, best = 1;
+  for (var i = 1; i < all.length; i++) {
+    run = missed(all[i - 1], all[i], rest) === 0 ? run + 1 : 1;
+    if (run > best) best = run;
+  }
+  var last = all[all.length - 1];
+  var alive = last === today || missed(last, today, rest) === 0;
+  return { count: alive ? run : 0, last: last, best: best };
+}
 function streakStatus(st, today, rest) {
   if (!st || !st.last) return { count: 0, doneToday: false, atRisk: false, broken: false };
   if (st.last === today) return { count: st.count, doneToday: true, atRisk: false, broken: false };
@@ -218,6 +234,6 @@ var API = { LEVELS: LEVELS, MIN_PER_COURSE: MIN_PER_COURSE, MAX_COURSES: MAX_COU
   splitSections: splitSections, sentences: sentences, mainPoints: mainPoints, questionsFor: questionsFor,
   checkAnswer: checkAnswer, gradeSection: gradeSection, newItem: newItem, advance: advance, dueNow: dueNow,
   isLocked: isLocked, previousSessionQuiz: previousSessionQuiz, recapDue: recapDue, monthlyRecap: monthlyRecap,
-  updateStreak: updateStreak, streakStatus: streakStatus, pickCgpa: pickCgpa };
+  updateStreak: updateStreak, streakStatus: streakStatus, streakFromDays: streakFromDays, pickCgpa: pickCgpa };
 if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.StudyCore = API;
 })(typeof window !== 'undefined' ? window : this);
