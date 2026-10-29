@@ -1,85 +1,109 @@
-/* Academic Summit - polish.js: badge detail sheets with Zuma, calendar text-select guard,
-   padding fix for the Study engine card. Isolated: one click listener, one observer, every step guarded. */
+/* Academic Summit - polish.js
+   1. Larger, more readable text across the app
+   2. Academics split into [ Courses & Materials ] | [ Performance & Grades ]
+   Load order: ... home -> extras -> polish -> reps -> lecturer -> auth          */
 (function () {
-'use strict';
-var W = window;
-function txt(n) { return ((n && n.textContent) || '').replace(/\s+/g, ' ').trim(); }
-function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-function up(t, test, max) {
-  for (var n = t, i = 0; n && n !== document.body && i < (max || 6); n = n.parentNode, i++) if (test(n)) return n;
-  return null;
-}
-function leafWith(text) {
-  return Array.from(document.querySelectorAll('div,span,p,h1,h2,h3,b')).filter(function (n) { return n.children.length === 0 && txt(n) === text; })[0] || null;
-}
-var css = document.createElement('style');
-css.textContent =
-  '@keyframes asDance{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-16px) rotate(-9deg)}50%{transform:translateY(0) rotate(0)}75%{transform:translateY(-16px) rotate(9deg)}}' +
-  '@keyframes asFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}' +
-  '@keyframes asFall{0%{transform:translateY(-10px) rotate(0);opacity:1}100%{transform:translateY(240px) rotate(540deg);opacity:0}}' +
-  '.as-dance{animation:asDance 1.1s ease-in-out infinite}.as-float{animation:asFloat 3s ease-in-out infinite}' +
-  '.as-conf{position:absolute;top:0;width:8px;height:12px;border-radius:2px;animation:asFall 1.9s ease-out forwards}' +
-  'body.as-nosel,body.as-nosel *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}' +
-  '@media (prefers-reduced-motion:reduce){.as-dance,.as-float,.as-conf{animation:none}}';
-document.head.appendChild(css);
+  'use strict';
+  var W = window;
 
-/* ---- Summit Marks: tap a badge ---- */
-function isEarned(el) {
-  try { var m = getComputedStyle(el).color.match(/\d+/g) || []; return (+m[0] - +m[2]) > 60 && +m[0] > 120; } catch (e) { return false; }
-}
-function confetti() {
-  var cols = ['#10b981', '#06b6d4', '#f59e0b', '#ef4444', '#8b5cf6'], out = '';
-  for (var i = 0; i < 16; i++) {
-    out += '<i class="as-conf" style="left:' + (4 + Math.random() * 92).toFixed(0) + '%;background:' + cols[i % cols.length] +
-      ';animation-delay:' + (Math.random() * 0.5).toFixed(2) + 's"></i>';
+  /* ---------- 1. text size ---------- */
+  var css = document.createElement('style');
+  css.textContent =
+    'body{font-size:15px}' +
+    '.text-xs{font-size:.86rem!important;line-height:1.3rem!important}' +
+    '.text-sm{font-size:.96rem!important;line-height:1.4rem!important}' +
+    '.text-\\[11px\\]{font-size:.8rem!important;line-height:1.15rem!important}' +
+    '.text-\\[10px\\]{font-size:.72rem!important}' +
+    '.lbl{font-size:.72rem!important}' +
+    '.btn,.btn2{font-size:.92rem!important}' +
+    '.inp{font-size:1rem!important}';                      // 16px also stops phones zooming in when a field is focused
+  document.head.appendChild(css);
+
+  /* ---------- 2. Academics: two sections ---------- */
+  var seg = function () {
+    var on = aTab === 'crs';
+    var b = function (active, label, fn) {
+      return '<button type="button" class="' + (active ? 'btn' : 'text-slate-500') + ' justify-center py-2.5 rounded-xl text-sm font-bold" onclick="' + fn + '">' + label + '</button>';
+    };
+    return '<div class="grid grid-cols-2 gap-1 p-1 rounded-2xl" style="background:var(--sub)">' +
+      b(on, 'Courses &amp; Materials', "aTab='crs';editing=null;go('acad')") +
+      b(!on, 'Performance &amp; Grades', "aTab='calc';editing=null;go('acad')") + '</div>';
+  };
+  var acadBase = V.acad;
+  V.acad = function () {
+    if (U.role !== 'student') return acadBase();
+    if (aTab === 'crs') return '<div class="space-y-5">' + seg() + '<div id="sub"></div></div>';
+    return acadBase().replace('<div class="space-y-5">', '<div class="space-y-5">' + seg());
+  };
+
+  var sets = function () { return (U.dec && U.dec.length === 2) ? U.dec : [[], []]; };
+  W.crsHalf = function (h) { U.curHalf = h; U.todayList = null; save(); go('acad'); };
+  W.setLecturer = function (code) {
+    var meta = U.courseMeta = U.courseMeta || {}, v = prompt('Lecturer for ' + code + ':', (meta[code] || {}).lecturer || '');
+    if (v === null) return;
+    meta[code] = { lecturer: v.trim() }; save(); go('acad');
+  };
+
+  ACAD.crs = function () {
+    var S = sets(), h = U.curHalf || 0, courses = (S[h] && S[h].length) ? S[h] : (S[1 - h] || []);
+    if (!courses.length) {
+      $('sub').innerHTML = '<div class="card p-6 space-y-3"><div class="font-extrabold">No courses yet</div><p class="text-sm text-slate-500">Upload your course registration and your courses, reading progress and files will live here.</p><button class="btn w-full" onclick="regOpen()">Upload course registration</button></div>';
+      return;
+    }
+    var log = U.readLog || {}, today = new Date(), weekRead = {}, i, k, d;
+    for (i = 0; i < 7; i++) {                                // courses read in the last 7 days
+      d = new Date(today); d.setDate(d.getDate() - i);
+      k = new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
+      (log[k] || []).forEach(function (c) { weekRead[c] = 1; });
+    }
+    var done = courses.filter(function (c) { return weekRead[c.code]; }).length, pct = Math.round(done / courses.length * 100);
+    var tabs = (S[0].length && S[1].length)
+      ? '<div class="grid grid-cols-2 gap-2">' + [0, 1].map(function (x) { return '<button class="' + (h === x ? 'btn' : 'btn2') + ' justify-center" onclick="crsHalf(' + x + ')">' + (x ? 'Second' : 'First') + ' semester</button>'; }).join('') + '</div>' : '';
+    var rows = courses.map(function (c) {
+      var days = Object.keys(log).filter(function (dk) { return (log[dk] || []).indexOf(c.code) > -1; }).length;
+      var last = (U.reads || {})[c.code], lec = ((U.courseMeta || {})[c.code] || {}).lecturer;
+      return '<div class="p-4 rounded-2xl space-y-2" style="background:var(--sub)"><div class="flex justify-between items-start"><div><b class="font-mono text-base">' + esc(c.code) + '</b><div class="text-xs text-slate-500">' + c.unit + ' unit' + (c.unit > 1 ? 's' : '') + ' \u2022 ' + (c.st === 'E' ? 'Elective' : 'Compulsory') + '</div></div>' +
+        '<span class="text-xs font-bold ' + (weekRead[c.code] ? '' : 'text-slate-400') + '" style="' + (weekRead[c.code] ? 'color:#10b981' : '') + '">' + (weekRead[c.code] ? 'Read this week' : 'Not read this week') + '</span></div>' +
+        '<div class="text-xs text-slate-500">Read on ' + days + ' day' + (days === 1 ? '' : 's') + (last ? ' \u2022 last ' + fmtD(last) : '') + '</div>' +
+        '<div class="text-xs text-slate-500">Lecturer: ' + (lec ? esc(lec) : 'not added') + '</div>' +
+        '<div class="flex gap-4 pt-1"><button class="text-xs font-bold text-violet-600" onclick="filesOpen(\'' + esc(c.code) + '\')">Files' + (W.fileCount ? W.fileCount(c.code) : '') + '</button><button class="text-xs font-bold text-violet-600" onclick="setLecturer(\'' + esc(c.code) + '\')">' + (lec ? 'Edit lecturer' : 'Add lecturer') + '</button></div></div>';
+    }).join('');
+    $('sub').innerHTML = '<div class="card p-5 space-y-3"><div class="flex justify-between text-sm font-extrabold"><span>Reading this week</span><span>' + done + ' of ' + courses.length + ' courses</span></div>' +
+      '<div class="h-2.5 rounded-full" style="background:var(--sub)"><div class="h-full rounded-full" style="width:' + pct + '%;background:#10b981"></div></div></div>' +
+      '<div class="card p-5 space-y-3"><div class="flex justify-between items-center"><div class="font-extrabold">Course vault</div><button class="text-xs font-bold text-violet-600" onclick="regOpen()">Update registration</button></div>' + tabs + '<div class="space-y-3">' + rows + '</div></div>';
+  };
+
+  /* ---------- 3. no emoji in the interface ----------
+     A big decorative emoji (e.g. the light bulb on "Did you know?") becomes a calm green icon badge;
+     an emoji beside text is simply dropped. Check marks and arrows are kept. */
+  var EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{26FF}\u{2B50}\u{2705}\u{274C}\u{2728}\u{2764}\u{FE0F}\u{200D}]/gu;
+  var HAS = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{26FF}\u{2B50}\u{2705}\u{274C}\u{2728}\u{2764}]/u;
+  var BADGE = '<span style="display:inline-grid;place-items:center;width:64px;height:64px;border-radius:50%;background:rgba(16,185,129,.15);color:#10b981"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg></span>';
+  function cleanEmoji(root) {
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), hits = [], n;
+    while ((n = w.nextNode())) if (HAS.test(n.nodeValue)) hits.push(n);
+    hits.forEach(function (t) {
+      var p = t.parentNode;
+      if (!p || /^(SCRIPT|STYLE|TEXTAREA|INPUT|OPTION)$/.test(p.tagName)) return;
+      var rest = t.nodeValue.replace(EMOJI, '').trim();
+      if (!rest && p.childNodes.length === 1) {                        // the emoji is the whole element
+        if (/text-(3|4|5|6)xl/.test(p.className)) { p.innerHTML = BADGE; p.style.display = 'flex'; p.style.justifyContent = 'center'; }
+        else p.innerHTML = '';
+      } else t.nodeValue = t.nodeValue.replace(EMOJI, '').replace(/^\s+/, '');
+    });
   }
-  return out;
-}
-function badgeSheet(title, desc, earned) {
-  var sh = document.getElementById('sheet'); if (!sh || sh.innerHTML.trim()) return;
-  var zuma = W.zumaImg ? W.zumaImg(earned ? 'cheer' : 'notice', 116) : '';
-  sh.innerHTML = '<div class="fixed inset-0" style="background:rgba(2,6,23,.45);z-index:9989" onclick="closeSheet()"></div>' +
-    '<div class="fixed inset-x-0 bottom-0" style="z-index:9990;background:var(--card);border-top:1px solid var(--bd);border-radius:28px 28px 0 0;overflow:hidden">' +
-    '<div style="position:relative;pointer-events:none;height:0">' + (earned ? confetti() : '') + '</div>' +
-    '<div style="padding:24px 24px calc(env(safe-area-inset-bottom,0px) + 18px);text-align:center">' +
-    '<div class="' + (earned ? 'as-dance' : 'as-float') + '" style="display:inline-block">' + zuma + '</div>' +
-    '<div style="font-weight:800;font-size:22px;margin-top:8px">' + esc(title) + '</div>' +
-    '<div style="display:inline-block;margin:8px 0;padding:3px 12px;border-radius:999px;font-size:11px;font-weight:800;' +
-    (earned ? 'background:#d1fae5;color:#047857' : 'background:rgba(100,116,139,.15);color:#64748b') + '">' + (earned ? 'Earned' : 'Not yet') + '</div>' +
-    '<p style="font-size:14px;margin:4px 0 16px;color:var(--mut)">' + (earned ? 'You did this: ' : 'How to earn it: ') + esc(desc || title) +
-    (earned ? '. Zuma is dancing for you.' : '. Zuma is waiting at the trailhead.') + '</p>' +
-    '<button class="btn w-full" onclick="closeSheet()">' + (earned ? 'Nice' : 'Got it') + '</button></div></div>';
-}
-document.addEventListener('click', function (e) {
-  try {
-    var tile = up(e.target, function (n) {
-      var p = n.parentNode; if (!p || p === document.body || p.children.length < 4) return false;
-      if (String(getComputedStyle(p).display).indexOf('grid') < 0) return false;
-      return !!up(p, function (x) { return /^Summit Marks/.test(txt(x)); }, 3);
-    }, 5);
-    if (!tile) return;
-    var leaves = Array.from(tile.querySelectorAll('*')).filter(function (n) { return !n.children.length && txt(n); });
-    var tEl = leaves[0] || tile;
-    badgeSheet(txt(tEl), leaves[1] ? txt(leaves[1]) : '', isEarned(tEl));
-  } catch (err) { console.error('badge tap', err); }
-});
+  new MutationObserver(function (muts) {
+    muts.forEach(function (m) {
+      m.addedNodes.forEach(function (nd) { if (nd.nodeType === 1) cleanEmoji(nd); else if (nd.nodeType === 3 && nd.parentNode) cleanEmoji(nd.parentNode); });
+    });
+  }).observe(document.body, { childList: true, subtree: true });
+  cleanEmoji(document.body);
 
-/* ---- calendar: stop the day numbers being selected (the Google pop-up) ---- */
-function syncNoSel() { document.body.classList.toggle('as-nosel', !!leafWith('Reading calendar')); }
-
-/* ---- Study engine / Your data card: missing inner padding ---- */
-function pad(label) {
-  var h = leafWith(label); if (!h) return;
-  var card = up(h, function (n) { return parseFloat(getComputedStyle(n).borderTopLeftRadius) >= 16; }, 4);
-  if (!card || card.dataset.asPad) return;
-  if (parseFloat(getComputedStyle(card).paddingLeft) < 8) card.style.padding = '18px';
-  card.dataset.asPad = '1';
-}
-var tm = null;
-new MutationObserver(function () {
-  clearTimeout(tm);
-  tm = setTimeout(function () {
-    try { syncNoSel(); pad('Study engine'); pad('Your data'); } catch (e) { console.error('polish', e); }
-  }, 150);
-}).observe(document.body, { childList: true, subtree: true });
+  /* students with a registration land on Courses first, once per launch */
+  var startBase = W.start, first = true;
+  W.start = function () {
+    if (first && U && U.role === 'student' && typeof W.hasCourses === 'function' && W.hasCourses()) { aTab = 'crs'; }
+    first = false;
+    return startBase.apply(this, arguments);
+  };
 })();
