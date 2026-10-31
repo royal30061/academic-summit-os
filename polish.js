@@ -73,6 +73,32 @@
       '<div class="card p-5 space-y-3"><div class="flex justify-between items-center"><div class="font-extrabold">Course vault</div><button class="text-xs font-bold text-violet-600" onclick="regOpen()">Update registration</button></div>' + tabs + '<div class="space-y-3">' + rows + '</div></div>';
   };
 
+  /* ---------- 3. no emoji in the interface ----------
+     A big decorative emoji (e.g. the light bulb on "Did you know?") becomes a calm green icon badge;
+     an emoji beside text is simply dropped. Check marks and arrows are kept. */
+  var EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{26FF}\u{2B50}\u{2705}\u{274C}\u{2728}\u{2764}\u{FE0F}\u{200D}]/gu;
+  var HAS = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{26FF}\u{2B50}\u{2705}\u{274C}\u{2728}\u{2764}]/u;
+  var BADGE = '<span style="display:inline-grid;place-items:center;width:64px;height:64px;border-radius:50%;background:rgba(16,185,129,.15);color:#10b981"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg></span>';
+  function cleanEmoji(root) {
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), hits = [], n;
+    while ((n = w.nextNode())) if (HAS.test(n.nodeValue)) hits.push(n);
+    hits.forEach(function (t) {
+      var p = t.parentNode;
+      if (!p || /^(SCRIPT|STYLE|TEXTAREA|INPUT|OPTION)$/.test(p.tagName)) return;
+      var rest = t.nodeValue.replace(EMOJI, '').trim();
+      if (!rest && p.childNodes.length === 1) {                        // the emoji is the whole element
+        if (/text-(3|4|5|6)xl/.test(p.className)) { p.innerHTML = BADGE; p.style.display = 'flex'; p.style.justifyContent = 'center'; }
+        else p.innerHTML = '';
+      } else t.nodeValue = t.nodeValue.replace(EMOJI, '').replace(/^\s+/, '');
+    });
+  }
+  new MutationObserver(function (muts) {
+    muts.forEach(function (m) {
+      m.addedNodes.forEach(function (nd) { if (nd.nodeType === 1) cleanEmoji(nd); else if (nd.nodeType === 3 && nd.parentNode) cleanEmoji(nd.parentNode); });
+    });
+  }).observe(document.body, { childList: true, subtree: true });
+  cleanEmoji(document.body);
+
   /* students with a registration land on Courses first, once per launch */
   var startBase = W.start, first = true;
   W.start = function () {
