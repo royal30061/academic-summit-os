@@ -1,0 +1,11 @@
+/* Academic Summit theme patch v1. Dark-mode contrast + sheet discipline.
+   If your dark mode uses a different hook than body.dark, edit selector line 1 only. */
+body.dark, html.dark, .dark, [data-theme="dark"], .theme-dark{
+  --bg:#08110d; --bg2:#0b1712; --card:#0e1c15; --sub:#15281e; --bd:#22402f;
+  --mut:#a3bfae; --txt:#f4f8f5; --text:#f4f8f5; --fg:#f4f8f5;
+}
+body.dark .card, html.dark .card, .dark .card, [data-theme="dark"] .card{ background:var(--card); border:1px solid var(--bd); }
+body.dark .card .card, .dark .card .card, [data-theme="dark"] .card .card{ background:var(--sub); }
+/* compact feature discovery: no more full-height intro sheets */
+[class*="sheet"], [id*="sheet"]{ max-height:72vh; overflow:auto; }
+.btn, .btn2{ min-height:44px; }
