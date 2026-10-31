@@ -105,31 +105,6 @@ body[data-role="lecturer"] #tour-fab{display:none!important}
 </head>
 <body class="antialiased">
 
-<!-- Splash -->
-<div id="splash" style="position:fixed;inset:0;z-index:99999;background:#02120c;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:0 32px;text-align:center">
-  <svg viewBox="0 0 512 512" style="width:88px;height:88px"><rect width="512" height="512" rx="112" fill="#07271d"/><path d="M80 384 L224 140 L300 268 L352 192 L432 384 Z" fill="#10b981"/><path d="M256 64 l40 52 h-26 v40 h-28 v-40 h-26 z" fill="#6ee7b7"/></svg>
-  <div style="color:#e7fff5;font-weight:800;font-size:19px;letter-spacing:.01em">Academic Summit</div>
-  <div style="color:#8fb8a9;font-size:11.5px;line-height:1.5;max-width:270px">Results, GPA intelligence, planner, finance &amp; attendance - your whole campus in one place.</div>
-  <div style="width:160px;height:3px;border-radius:2px;background:#0d3f2e;overflow:hidden;margin-top:6px"><div id="splash-bar" style="width:0%;height:100%;background:linear-gradient(90deg,#059669,#06b6d4);transition:width .25s"></div></div>
-  <div id="splash-tag" style="color:#6ee7b7;font-size:11px;font-weight:600">Academic success, within reach.</div>
-</div>
-
-<div id="toast-container"></div>
-<div id="auth"></div>
-<div id="app" class="hidden">
-  <div class="lg:flex">
-    <aside id="side" class="hidden lg:flex flex-col w-64 shrink-0 min-h-screen sticky top-0 p-5 text-white z-30"></aside>
-    <div class="flex-1 min-w-0 flex flex-col min-h-screen">
-      <header id="top" class="flex items-center justify-between px-4 md:px-6 py-4 border-b border-slate-200/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-900/50 backdrop-blur-md sticky top-0 z-20"></header>
-      <main id="main" class="flex-1 p-4 md:p-6 pb-28 lg:pb-8 max-w-6xl mx-auto w-full"></main>
-    </div>
-  </div>
-  <nav id="bnav" class="lg:hidden fixed bottom-0 inset-x-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 flex items-end justify-around px-1 z-40" style="padding-bottom:env(safe-area-inset-bottom,6px)"></nav>
-</div>
-<div id="sheet"></div>
-<button id="tour-fab" onclick="startTour()" class="fixed right-4 z-40 w-10 h-10 rounded-full grad text-white font-extrabold shadow-lg" style="bottom:calc(env(safe-area-inset-bottom,6px) + 76px)">?</button>
-
-<script>
 /* =====================================================================
    Academic Summit - single consolidated script (Parser Fixed)
    ===================================================================== */
@@ -244,22 +219,6 @@ function showToast(msg,type){
   $('toast-container').appendChild(t);
   setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),200);},3000);
 }
-
-// ---------- Splash ----------
-let splashDone=false,splashPct=0,tagI=0;
-const TAGS=['Academic success, within reach.','Your summit starts here.','Every grade. One climb.','Climb smart. Rise fast.'];
-const tagT=setInterval(()=>{tagI=(tagI+1)%TAGS.length;const el=$('splash-tag');if(el)el.textContent=TAGS[tagI];},1100);
-const fillT=setInterval(()=>{
-  const b=$('splash-bar');
-  if(!b||splashDone)return clearInterval(fillT);
-  if(splashPct<90){splashPct+=(90-splashPct)*.07+.5;b.style.width=Math.min(90,splashPct).toFixed(1)+'%';}
-},120);
-function hideSplash(){
-  if(splashDone)return;splashDone=true;
-  const b=$('splash-bar');if(b)b.style.width='100%';
-  setTimeout(()=>{clearInterval(tagT);clearInterval(fillT);const s=$('splash');if(s){s.style.transition='opacity .35s';s.style.opacity='0';setTimeout(()=>s.remove(),400);}},350);
-}
-setTimeout(hideSplash,4000);
 
 // ---------- Academic engine ----------
 const gr=s=>{s=parseFloat(s);if(isNaN(s))return['-',0];return s>=70?['A',5]:s>=60?['B',4]:s>=50?['C',3]:s>=45?['D',2]:s>=40?['E',1]:['F',0];};
