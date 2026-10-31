@@ -130,13 +130,6 @@ body[data-role="lecturer"] #tour-fab{display:none!important}
 <button id="tour-fab" onclick="startTour()" class="fixed right-4 z-40 w-10 h-10 rounded-full grad text-white font-extrabold shadow-lg" style="bottom:calc(env(safe-area-inset-bottom,6px) + 76px)">?</button>
 
 <script>
-  /* Academic Summit theme patch v2. Your html.dark tokens already match the brief;
-   this only adds discipline rules. Safe to delete entirely. */
-[class*="sheet"], [id*="sheet"]{ max-height:78vh; overflow-y:auto; }
-.btn, .btn2{ min-height:44px; }
-html.dark .card .card{ background:var(--sub); }
-html.dark .inp{ background:var(--sub); }
-@media print{ [data-hh] .btn, [data-sh] .btn, [data-hh] .btn2, [data-sh] .btn2{ display:none!important; } }
 /* =====================================================================
    Academic Summit - single consolidated script (Parser Fixed)
    ===================================================================== */
@@ -3081,6 +3074,13 @@ go=function(v){
 };
 const _start63=start;
 start=function(){_start63();setTimeout(function(){homeExtras();acadExtras();},250);};
+  /* Academic Summit theme patch v2. Your html.dark tokens already match the brief;
+   this only adds discipline rules. Safe to delete entirely. */
+[class*="sheet"], [id*="sheet"]{ max-height:78vh; overflow-y:auto; }
+.btn, .btn2{ min-height:44px; }
+html.dark .card .card{ background:var(--sub); }
+html.dark .inp{ background:var(--sub); }
+@media print{ [data-hh] .btn, [data-sh] .btn, [data-hh] .btn2, [data-sh] .btn2{ display:none!important; } }
   /* Academic Summit - insights.js v2: GPA trajectory, academic risk, weekly report.
    Aligned to the real engine: U.semesters + gr/semS/cum/requiredAvg/U.target/U.carry.
    Load after studyhub.js, before homehub.js. Read-only + U.target writes via save().
