@@ -54,14 +54,14 @@ function preview(key) {
 function meId() {
   try { if (typeof uid !== 'undefined') { var v = typeof uid === 'function' ? uid() : uid; if (v) return Promise.resolve(v); } } catch (e) {}
   try { if (W._uid) return Promise.resolve(W._uid); if (U && U.uid) return Promise.resolve(U.uid); } catch (e) {}
-  try { if (W.sb && W.sb.auth && W.sb.auth.getUser) return W.sb.auth.getUser().then(function (r) { return r && r.data && r.data.user ? r.data.user.id : null; }); } catch (e) {}
+  try { if ((typeof sb!=='undefined'?sb:W.sb) && (typeof sb!=='undefined'?sb:W.sb).auth && (typeof sb!=='undefined'?sb:W.sb).auth.getUser) return (typeof sb!=='undefined'?sb:W.sb).auth.getUser().then(function (r) { return r && r.data && r.data.user ? r.data.user.id : null; }); } catch (e) {}
   return Promise.resolve(null);
 }
 function minutesSince(from) {
-  if (!W.sb) return Promise.resolve(null);
+  if (!(typeof sb!=='undefined'?sb:W.sb)) return Promise.resolve(null);
   return meId().then(function (id) {
     if (!id) return null;
-    return W.sb.from('study_sessions').select('minutes,valid,started_at').eq('uid', id).gte('started_at', from)
+    return (typeof sb!=='undefined'?sb:W.sb).from('study_sessions').select('minutes,valid,started_at').eq('uid', id).gte('started_at', from)
       .then(function (r) {
         if (!r || r.error) return null;
         return (r.data || []).reduce(function (a, x) { return a + (x.valid ? (+x.minutes || 0) : 0); }, 0);
