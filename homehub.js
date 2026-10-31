@@ -1,18 +1,13 @@
-/* Academic Summit - homehub.js v3: Home dashboard redesign in the app's own design language.
-   Wraps go() so it applies at boot, on nav taps and after every action. Colours untouched.
-   Kill switches: localStorage.as_hh_off=1 or sessionStorage.as_hh_classic=1 (classic Home). */
+/* Academic Summit - homehub.js v4: the home dashboard. Student-facing copy only.
+   Kill switches: localStorage.as_hh_off=1 or sessionStorage.as_hh_classic=1. */
 (function () {
 'use strict';
 var W = window;
 if (typeof document === 'undefined') return;
-
-/* ---------- helpers (prefer the app's own, fall back safely) ---------- */
 function has(f) { return typeof f === 'function'; }
 var E = has(esc) ? esc : function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
-var GREET = has(greet) ? greet : function () { var h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; };
+var GREET = has(greet) ? greet : function () { var h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : h < 21 ? 'Good evening' : 'Good night'; };
 var FMTD = has(fmtD) ? fmtD : function (d) { return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); };
-var DAYSLEFT = has(days) ? days : function (d) { return Math.ceil((new Date(d) - new Date().setHours(0, 0, 0, 0)) / 864e5); };
-var CHIP = has(chip) ? chip : function (t, c) { return '<span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-' + c + '-100 dark:bg-' + c + '-950 text-' + c + '-600 dark:text-' + c + '-300">' + t + '</span>'; };
 var DAYN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 function pad(n) { return (n < 10 ? '0' : '') + n; }
@@ -33,8 +28,6 @@ function byTime(a, b) { return (a.date + (a.time || '99')) < (b.date + (b.time |
 function classicOn() { try { return sessionStorage.getItem('as_hh_classic') === '1' || localStorage.getItem('as_hh_off') === '1'; } catch (e) { return false; } }
 function HHon() { var u = UU(); return !!u && u.role !== 'lecturer' && !classicOn(); }
 function curView() { try { return (typeof view !== 'undefined') ? view : ''; } catch (e) { return ''; } }
-
-/* ---------- timetable (Mon=0, matches dow()) ---------- */
 var NC = null;
 function nextClass() {
   var u = UU(), list = (u && u.timetable) || []; if (!list.length) return null;
@@ -58,8 +51,6 @@ function cdLabel(nc, now) {
   if (nc.off === 1) return 'tomorrow ' + (nc.row.start || '');
   return 'in ' + nc.off + ' days';
 }
-
-/* ---------- sections ---------- */
 var MT = null, TICK = null, HH = { more: false, day: 6 };
 function streakChip() {
   var u = UU(), n = u && (u.streak != null ? u.streak : u.streakDays != null ? u.streakDays : null);
@@ -74,54 +65,54 @@ function snapshotCard() {
   var req = (typeof requiredAvg === 'function') ? requiredAvg() : null;
   var t = u.target || null;
   if (!c.u && !(u.semesters || []).length) {
-    return '<div class="card p-5 space-y-2"><div class="font-extrabold">Academic snapshot</div><p class="text-xs text-slate-500">Paste your first portal result and this card comes alive with your real CGPA, units and standing. Nothing here is estimated.</p><button class="btn2" onclick="hhResults()">Open results</button></div>';
+    return '<div class="card p-5 space-y-2"><div class="font-extrabold">Academic standing</div><p class="text-xs text-slate-500">Import your first semester result and your CGPA, units and standing will appear here, computed from your real results.</p><button class="btn2" onclick="hhResults()">Open results</button></div>';
   }
   var stand = c.g >= 4.5 ? 'First Class' : c.g >= 3.5 ? 'Second Class Upper' : c.g >= 2.5 ? 'Second Class Lower' : c.g >= 1.5 ? 'Third Class' : 'Pass / Probation';
   var h = '<div class="grad rounded-3xl p-6 space-y-3 shadow-lg">' +
     '<div class="flex items-center justify-between"><div class="text-xs font-bold uppercase tracking-wider opacity-80">Cumulative GPA</div>' + streakChip() + '</div>' +
-    '<div class="flex items-end justify-between"><div class="text-4xl font-extrabold">' + c.g.toFixed(2) + '<span class="text-base opacity-75"> / 5.00</span></div><span class="text-[11px] bg-white/20 rounded-full px-3 py-1 font-bold cursor-pointer" onclick="hhTarget()">Target ' + (t ? t.toFixed(2) : '—') + '</span></div>' +
+    '<div class="flex items-end justify-between"><div class="text-4xl font-extrabold">' + c.g.toFixed(2) + '<span class="text-base opacity-75"> / 5.00</span></div><span class="text-[11px] bg-white/20 rounded-full px-3 py-1 font-bold cursor-pointer" onclick="hhTarget()">Target ' + (t ? t.toFixed(2) : '\u2014') + '</span></div>' +
     '<div class="h-2 rounded-full bg-white/30"><div class="h-2 rounded-full bg-white" style="width:' + Math.min(100, c.g / 5 * 100) + '%"></div></div>' +
-    '<div class="text-xs font-semibold" style="color:rgba(255,255,255,.85)">' + c.u + ' of ' + tot + ' units • ' + stand + (t ? (c.g >= t ? ' • target met' : ' • ' + (t - c.g).toFixed(2) + ' below target (' + Math.round(c.g / t * 100) + '% of target)') : '') + '</div>' +
-    (req != null ? '<div class="text-[11px] font-semibold" style="color:rgba(255,255,255,.75)">Required average in remaining units: ' + req.toFixed(2) + (req > 5 ? ' — target out of reach in remaining units' : '') + '</div>' : '') +
+    '<div class="text-xs font-semibold" style="color:rgba(255,255,255,.85)">' + c.u + ' of ' + tot + ' units completed \u2022 ' + stand + (t ? (c.g >= t ? ' \u2022 target achieved' : ' \u2022 ' + (t - c.g).toFixed(2) + ' below target (' + Math.round(c.g / t * 100) + '% of target)') : '') + '</div>' +
+    (req != null ? '<div class="text-[11px] font-semibold" style="color:rgba(255,255,255,.75)">' + (req > 5 ? 'Your target is out of reach in the remaining units - consider reviewing it with your adviser.' : 'To finish at ' + t.toFixed(2) + ' you need a ' + req.toFixed(2) + ' average across your remaining ' + Math.max(0, tot - c.u) + ' units.') + '</div>' : '') +
     '</div>';
   if (localStorage.getItem('as_ins_off') !== '1' && W.asGpaOpen) {
-    h += '<div class="card p-4 flex flex-wrap gap-2"><button class="btn2" onclick="asGpaOpen()">GPA trajectory</button><button class="btn2" onclick="asRiskOpen()">Risk check</button><button class="btn2" onclick="asReportOpen()">Weekly report</button></div>';
+    h += '<div class="card p-4 flex flex-wrap gap-2"><button class="btn2" onclick="asGpaOpen()">GPA trajectory</button><button class="btn2" onclick="asRiskOpen()">Risk review</button><button class="btn2" onclick="asReportOpen()">Weekly report</button></div>';
   }
   return h;
 }
 function focusCard(st, today) {
-  var head = '<div class="font-extrabold">Today\'s focus</div>';
-  if (!st) return '<div class="card p-5 space-y-2">' + head + '<p class="text-xs text-slate-500">Your study sessions live in the Study tab.</p><button class="btn w-full" onclick="go(\'study\')">Open Study</button></div>';
+  var head = '<div class="font-extrabold">Today\u2019s session</div>';
+  if (!st) return '<div class="card p-5 space-y-2">' + head + '<p class="text-xs text-slate-500">Your study sessions are managed in the Study tab.</p><button class="btn w-full" onclick="hhOpenStudy()">Open Study</button></div>';
   var A = st.active;
   if (A) return '<div class="card p-5 space-y-2">' + head +
-    '<div class="flex justify-between items-center"><div class="text-sm font-extrabold">' + E(A.course) + (titleOf(A.course) ? ' <span class="text-xs text-slate-500">' + E(titleOf(A.course)) + '</span>' : '') + '</div>' + CHIP('In progress', 'emerald') + '</div>' +
-    '<p class="text-xs text-slate-500">' + E(A.topic || A.method) + ' • planned ' + A.planned + ' min • ' + fmt(W.SHCalc.clocks(A).focused) + ' focused</p>' +
+    '<div class="flex justify-between items-center"><div class="text-sm font-extrabold">' + E(A.course) + (titleOf(A.course) ? ' <span class="text-xs text-slate-500">' + E(titleOf(A.course)) + '</span>' : '') + '</div><span class="text-[10px] font-extrabold bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-300 px-2.5 py-1 rounded-full">In progress</span></div>' +
+    '<p class="text-xs text-slate-500">' + E(A.topic || A.method) + ' \u2022 planned ' + A.planned + ' min \u2022 ' + fmt(W.SHCalc.clocks(A).focused) + ' focused so far</p>' +
     '<button class="btn w-full" onclick="hhGoStudy(\'sessions\')">Resume session</button></div>';
   var next = st.plan.filter(function (p) { return p.kind === 'session' && !p.done && p.date >= today; }).sort(byTime)[0];
   if (next) return '<div class="card p-5 space-y-2">' + head +
     '<div class="flex justify-between items-center"><div class="text-sm font-extrabold">' + E(next.course) + (titleOf(next.course) ? ' <span class="text-xs text-slate-500">' + E(titleOf(next.course)) + '</span>' : '') + '</div><span class="text-[10px] font-extrabold bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-300 px-2.5 py-1 rounded-full">' + E(next.min) + ' min</span></div>' +
-    '<p class="text-xs text-slate-500">' + E(next.topic || next.method) + ' • ' + (next.date === today ? 'scheduled today' : 'scheduled ' + nice(next.date)) + (next.time ? ' at ' + E(next.time) : '') + '</p>' +
+    '<p class="text-xs text-slate-500">' + E(next.topic || next.method) + ' \u2022 ' + (next.date === today ? 'scheduled for today' : 'scheduled for ' + nice(next.date)) + (next.time ? ' at ' + E(next.time) : '') + '</p>' +
     '<button class="btn w-full" onclick="hhBegin(\'' + E(next.id) + '\')">Start session</button>' +
-    '<button class="btn2 w-full" onclick="hhGoStudy(\'planner\')">See full schedule</button></div>';
+    '<button class="btn2 w-full" onclick="hhGoStudy(\'planner\')">View full schedule</button></div>';
   var plans = st.plan.filter(function (p) { return p.kind === 'session' && p.date === today; });
   var doneN = plans.filter(function (p) { return p.done; }).length;
   if (doneN) {
     var mins = sum(st.log.filter(function (e) { return e.date === today; }), function (e) { return e.focused || 0; });
-    return '<div class="card p-5 space-y-2">' + head + '<p class="text-xs text-slate-500">Completed ' + doneN + ' of ' + plans.length + ' scheduled sessions today • ' + mins + ' focused minutes.</p><button class="btn2 w-full" onclick="hhGoStudy(\'planner\')">Plan another session</button></div>';
+    return '<div class="card p-5 space-y-2">' + head + '<p class="text-xs text-slate-500">You completed ' + doneN + ' of ' + plans.length + ' scheduled sessions today (' + mins + ' focused minutes). Well done.</p><button class="btn2 w-full" onclick="hhGoStudy(\'planner\')">Plan another session</button></div>';
   }
-  return '<div class="card p-5 space-y-2">' + head + '<p class="text-xs text-slate-500">No session scheduled. Your next action appears here the moment you plan one.</p><button class="btn w-full" onclick="hhGoStudy(\'planner\')">Plan a session</button></div>';
+  return '<div class="card p-5 space-y-2">' + head + '<p class="text-xs text-slate-500">Nothing scheduled for today. Plan a session and it will appear here, ready to start.</p><button class="btn w-full" onclick="hhGoStudy(\'planner\')">Plan a session</button></div>';
 }
 function priorities(u, today) {
   var out = [];
-  (u.exams || []).forEach(function (e) { var l = DAYSLEFT(e.date); if (l < 0) return; out.push({ w: l <= 2 ? 1 : 2, lab: l <= 2 ? 'Urgent' : 'Upcoming', col: l <= 2 ? 'rose' : 'violet', t: e.code, s: 'Examination • ' + FMTD(e.date) + (e.time ? ' ' + e.time : '') + (e.venue ? ' • ' + e.venue : ''), js: "go('plan')" }); });
-  (u.events || []).forEach(function (e) { if (!/exam|test|assignment/i.test(e.type || '')) return; var l = DAYSLEFT(e.date); if (l < 0) return; out.push({ w: l <= 2 ? 1 : 2, lab: l <= 2 ? 'Urgent' : 'Upcoming', col: l <= 2 ? 'rose' : 'violet', t: e.title, s: e.type + ' • ' + FMTD(e.date), js: "go('plan')" }); });
-  (u.tasks || []).forEach(function (t) { if (t.done) return; var l = t.end ? DAYSLEFT(String(t.end).slice(0, 10)) : null; out.push({ w: l == null ? 2 : l < 0 ? 0 : l <= 2 ? 1 : 2, lab: l == null ? 'Open' : l < 0 ? 'Overdue' : l <= 2 ? 'Urgent' : 'Upcoming', col: l != null && l < 0 ? 'rose' : l != null && l <= 2 ? 'rose' : 'violet', t: t.t, s: 'Task' + (t.end ? ' • ' + String(t.end).slice(0, 10) : ''), js: "go('plan')" }); });
+  (u.exams || []).forEach(function (e) { var l = has(days) ? days(e.date) : dd(today, e.date); if (l < 0) return; out.push({ w: l <= 2 ? 1 : 2, lab: l <= 2 ? 'Urgent' : 'Upcoming', col: l <= 2 ? 'rose' : 'violet', t: e.code, s: 'Examination \u2022 ' + FMTD(e.date) + (e.time ? ' ' + e.time : '') + (e.venue ? ' \u2022 ' + e.venue : ''), js: "go('plan')" }); });
+  (u.events || []).forEach(function (e) { if (!/exam|test|assignment/i.test(e.type || '')) return; var l = dd(today, e.date); if (l < 0) return; out.push({ w: l <= 2 ? 1 : 2, lab: l <= 2 ? 'Urgent' : 'Upcoming', col: l <= 2 ? 'rose' : 'violet', t: e.title, s: e.type + ' \u2022 ' + FMTD(e.date), js: "go('plan')" }); });
+  (u.tasks || []).forEach(function (t) { if (t.done) return; var l = t.end ? dd(today, String(t.end).slice(0, 10)) : null; out.push({ w: l == null ? 2 : l < 0 ? 0 : l <= 2 ? 1 : 2, lab: l == null ? 'Open' : l < 0 ? 'Overdue' : l <= 2 ? 'Urgent' : 'Upcoming', col: l != null && l <= 2 ? 'rose' : 'violet', t: t.t, s: 'Task' + (t.end ? ' \u2022 ' + String(t.end).slice(0, 10) : ''), js: "go('plan')" }); });
   var st = state();
   (st ? st.plan : []).forEach(function (p) {
     var l = dd(today, p.date);
-    if (p.kind === 'session') { if (!p.done && l < 0) out.push({ w: 0, lab: 'Overdue', col: 'rose', t: p.course + ' — unfinished session', s: p.topic || p.method, js: 'hhGoStudy(\'sessions\')' }); else if (!p.done && l === 0) out.push({ w: 1, lab: 'Today', col: 'emerald', t: p.course + ' — study session', s: p.topic || p.method, js: 'hhBegin(\'' + E(p.id) + '\')' }); return; }
+    if (p.kind === 'session') { if (!p.done && l < 0) out.push({ w: 0, lab: 'Overdue', col: 'rose', t: p.course + ' \u2014 study session', s: p.topic || p.method, js: 'hhGoStudy(\'sessions\')' }); else if (!p.done && l === 0) out.push({ w: 1, lab: 'Today', col: 'emerald', t: p.course + ' \u2014 study session', s: p.topic || p.method, js: 'hhBegin(\'' + E(p.id) + '\')' }); return; }
     if (p.done) return;
-    out.push({ w: l < 0 ? 0 : l <= 2 ? 1 : 2, lab: l < 0 ? 'Overdue' : l <= 2 ? 'Urgent' : 'Upcoming', col: l <= 2 ? 'rose' : 'violet', t: p.course + ' — ' + (p.kind === 'exam' ? 'examination' : 'assignment'), s: p.topic || '', js: 'hhGoStudy(\'planner\')' });
+    out.push({ w: l < 0 ? 0 : l <= 2 ? 1 : 2, lab: l < 0 ? 'Overdue' : l <= 2 ? 'Urgent' : 'Upcoming', col: l <= 2 ? 'rose' : 'violet', t: p.course + ' \u2014 ' + (p.kind === 'exam' ? 'examination' : 'assignment'), s: p.topic || '', js: 'hhGoStudy(\'planner\')' });
   });
   out.sort(function (a, b) { return a.w - b.w; });
   return out;
@@ -129,56 +120,53 @@ function priorities(u, today) {
 function prioritiesCard(u, today) {
   var ps = priorities(u, today), show = HH.more ? ps : ps.slice(0, 4);
   var inner = show.length ? show.map(function (x) {
-    return '<button class="w-full flex justify-between items-center text-xs p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 text-left" onclick="' + x.js + '"><span style="min-width:0"><b class="block">' + E(x.t) + '</b><span class="text-slate-400 text-[11px]">' + E(x.s) + '</span></span>' + CHIP(x.lab, x.col) + '</button>';
-  }).join('') : '<p class="text-xs text-slate-400">Nothing urgent. Priorities appear from exams, tasks and your study plan.</p>';
+    return '<button class="w-full flex justify-between items-center text-xs p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 text-left" onclick="' + x.js + '"><span style="min-width:0"><b class="block">' + E(x.t) + '</b><span class="text-slate-400 text-[11px]">' + E(x.s) + '</span></span>' + (has(chip) ? chip(x.lab, x.col) : '<span class="text-[10px] font-extrabold">' + x.lab + '</span>') + '</button>';
+  }).join('') : '<p class="text-xs text-slate-400">You are all caught up. Exams, tasks and deadlines will appear here as they come in.</p>';
   if (ps.length > 4) inner += '<button class="btn2 w-full" onclick="hhMore()">' + (HH.more ? 'Show less' : 'Show all ' + ps.length) + '</button>';
-  return '<div class="card p-5 space-y-2"><div class="font-extrabold">Your priorities</div>' + inner + '</div>';
+  return '<div class="card p-5 space-y-2"><div class="font-extrabold">Priorities</div>' + inner + '</div>';
 }
 function classCard() {
   NC = nextClass(); if (!NC) return '';
   var r = NC.row;
   return '<div class="card p-5 space-y-1"><div class="flex justify-between items-center"><div class="font-extrabold">Next class</div><span class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400" id="hh-cd">' + E(cdLabel(NC, new Date())) + '</span></div>' +
     '<div class="text-sm font-extrabold">' + E(r.code) + (titleOf(r.code) ? ' <span class="text-xs text-slate-500">' + E(titleOf(r.code)) + '</span>' : '') + '</div>' +
-    '<p class="text-xs text-slate-500">' + E(r.start || '') + (r.end ? '–' + E(r.end) : '') + (r.venue ? ' • ' + E(r.venue) : '') + '</p>' +
-    '<button class="btn2" onclick="hhTimetable()">Full timetable</button></div>';
+    '<p class="text-xs text-slate-500">' + E(r.start || '') + (r.end ? '\u2013' + E(r.end) : '') + (r.venue ? ' \u2022 ' + E(r.venue) : '') + '</p>' +
+    '<button class="btn2" onclick="hhTimetable()">View timetable</button></div>';
 }
 function activityCard(st, today) {
   if (!W.SHCalc || !st) return '';
   var wk = W.SHCalc.week(st.log, today), tgt = W.asWeekTarget ? W.asWeekTarget() : 600;
   var mx = Math.max.apply(null, wk.perDay.concat([1])), sd = HH.day == null ? 6 : HH.day;
   var dayLogs = st.log.filter(function (e) { return e.date === wk.days[sd]; });
-  return '<div class="card p-5 space-y-3"><div class="font-extrabold">This week</div>' +
-    '<div class="grid grid-cols-3 gap-2 text-center"><div><div class="text-xl font-extrabold">' + wk.sessions + '</div><div class="text-[11px] text-slate-500">sessions</div></div><div><div class="text-xl font-extrabold">' + Math.floor(wk.minutes / 60) + 'h ' + (wk.minutes % 60) + 'm</div><div class="text-[11px] text-slate-500">focused</div></div><div><div class="text-xl font-extrabold">' + wk.activeDays + '/7</div><div class="text-[11px] text-slate-500">consistency</div></div></div>' +
+  return '<div class="card p-5 space-y-3"><div class="font-extrabold">Study activity</div>' +
+    '<div class="grid grid-cols-3 gap-2 text-center"><div><div class="text-xl font-extrabold">' + wk.sessions + '</div><div class="text-[11px] text-slate-500">sessions</div></div><div><div class="text-xl font-extrabold">' + Math.floor(wk.minutes / 60) + 'h ' + (wk.minutes % 60) + 'm</div><div class="text-[11px] text-slate-500">focused</div></div><div><div class="text-xl font-extrabold">' + wk.activeDays + '/7</div><div class="text-[11px] text-slate-500">days studied</div></div></div>' +
     '<div class="h-2 rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-2 rounded-full bg-emerald-500" style="width:' + Math.min(100, Math.round(wk.minutes / tgt * 100)) + '%"></div></div>' +
-    '<p class="text-[11px] text-slate-500">' + wk.minutes + ' of ' + tgt + ' min weekly target • courses: ' + E(Object.keys(wk.byCourse).join(', ') || 'none') + '</p>' +
+    '<p class="text-[11px] text-slate-500">' + wk.minutes + ' of ' + tgt + ' minutes this week \u2022 courses: ' + E(Object.keys(wk.byCourse).join(', ') || 'none') + '</p>' +
     '<div style="display:flex;align-items:flex-end;gap:6px;height:72px">' + wk.perDay.map(function (m, i) {
       return '<button aria-label="' + E(nice(wk.days[i])) + ': ' + m + ' minutes" onclick="hhDay(' + i + ')" style="flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;background:none;border:0"><span style="width:100%;height:' + Math.max(4, Math.round(m / mx * 52)) + 'px;border-radius:6px;background:' + (i === sd ? '#10b981' : 'var(--sub)') + '"></span><span class="text-[10px] text-slate-400">' + DAYN[wd(wk.days[i])][0] + '</span></button>';
     }).join('') + '</div>' +
-    '<p class="text-[11px] text-slate-500">' + E(nice(wk.days[sd])) + ': ' + wk.perDay[sd] + ' min' + (function () { var c = []; dayLogs.forEach(function (e) { if (c.indexOf(e.course) < 0) c.push(e.course); }); return c.length ? ' on ' + E(c.join(', ')) : ''; })() + '</p></div>';
+    '<p class="text-[11px] text-slate-500">' + E(nice(wk.days[sd])) + ': ' + wk.perDay[sd] + ' min' + (function () { var c = []; dayLogs.forEach(function (e) { if (c.indexOf(e.course) < 0) c.push(e.course); }); return c.length ? ' \u2022 ' + E(c.join(', ')) : ''; })() + '</p></div>';
 }
 function attendanceCard(u, today) {
   var recs = []; try { if (W.asAtt) recs = W.asAtt(); } catch (e) {}
   var head = '<div class="font-extrabold">Attendance</div>';
   var btn = '<button class="btn w-full" onclick="hhAttend()">Mark attendance</button>';
-  if (!recs.length) return '<div class="card p-5 space-y-2">' + head + '<p class="text-xs text-slate-500">No attendance records yet.</p>' + btn + '</div>';
+  if (!recs.length) return '<div class="card p-5 space-y-2">' + head + '<p class="text-xs text-slate-500">No attendance recorded yet. Mark your first class to start your record.</p>' + btn + '</div>';
   var line = '<p class="text-xs text-slate-500">' + recs.length + ' classes marked present.</p>';
   if ((u.timetable || []).length) {
     var first = recs.map(function (a) { return a.date; }).sort()[0];
     var weeks = Math.max(1, Math.ceil(dd(first, today) / 7));
     var sched = u.timetable.length * weeks, missed = Math.max(0, sched - recs.length), pct = Math.round(recs.length / sched * 100);
-    line = '<div class="grid grid-cols-3 gap-2 text-center"><div><div class="text-xl font-extrabold">' + recs.length + '</div><div class="text-[11px] text-slate-500">attended</div></div><div><div class="text-xl font-extrabold">' + missed + '</div><div class="text-[11px] text-slate-500">missed (est.)</div></div><div><div class="text-xl font-extrabold ' + (pct < 75 ? 'text-amber-500' : 'text-emerald-600 dark:text-emerald-400') + '">' + pct + '%</div><div class="text-[11px] text-slate-500">rate (est.)</div></div></div><p class="text-[11px] text-slate-400">Missed count estimated from your ' + u.timetable.length + ' weekly slots since ' + FMTD(first) + '.</p>';
+    line = '<div class="grid grid-cols-3 gap-2 text-center"><div><div class="text-xl font-extrabold">' + recs.length + '</div><div class="text-[11px] text-slate-500">Attended</div></div><div><div class="text-xl font-extrabold">' + missed + '</div><div class="text-[11px] text-slate-500">Missed</div></div><div><div class="text-xl font-extrabold ' + (pct < 75 ? 'text-amber-500' : 'text-emerald-600 dark:text-emerald-400') + '">' + pct + '%</div><div class="text-[11px] text-slate-500">Rate</div></div></div><p class="text-[11px] text-slate-400">Estimated from your ' + u.timetable.length + ' weekly class slots since ' + FMTD(first) + '.</p>';
   }
   return '<div class="card p-5 space-y-2">' + head + line + btn + '</div>';
 }
 function render() {
   var u = UU(), today = iso(), p = (u && u.profile) || {};
-  var h = '<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"><div><h1 class="text-2xl font-extrabold">' + GREET() + ' ' + E(String(u.name || '').split(' ')[0]) + '</h1><p class="text-xs text-slate-500">' + E(p.program || '') + ' • ' + E(p.level || '') + ' Level' + (p.matric ? ' • ' + E(p.matric) : '') + '</p></div><div class="text-xs text-slate-500 font-semibold">' + new Date().toDateString() + '</div></div>';
+  var h = '<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"><div><h1 class="text-2xl font-extrabold">' + GREET() + ' ' + E(String(u.name || '').split(' ')[0]) + '</h1><p class="text-xs text-slate-500">' + E(p.program || '') + ' \u2022 ' + E(p.level || '') + ' Level' + (p.matric ? ' \u2022 ' + E(p.matric) : '') + '</p></div><div class="text-xs text-slate-500 font-semibold">' + new Date().toDateString() + '</div></div>';
   h += snapshotCard() + focusCard(state(), today) + prioritiesCard(u, today) + classCard() + activityCard(state(), today) + attendanceCard(u, today);
-  h += '<div class="card p-4 space-y-2"><div class="font-extrabold text-sm">Classic Home</div><p class="text-[11px] text-slate-500">The old dashboard is untouched underneath.</p><button class="btn2 w-full" onclick="hhClassic()">Use classic Home</button></div>';
   return '<div data-hh="1" class="space-y-5">' + h + '</div>';
 }
-
-/* ---------- shell ---------- */
 function stopTick() { if (TICK) { clearInterval(TICK); TICK = null; } }
 function startTick() { stopTick(); TICK = setInterval(function () { var el = document.getElementById('hh-cd'); if (el && NC) el.textContent = cdLabel(NC, new Date()); }, 30000); }
 function mount() {
@@ -186,19 +174,14 @@ function mount() {
   try { m.innerHTML = render(); startTick(); } catch (e) { try { console.error('homehub', e); } catch (_) {} }
 }
 function paint() { mount(); }
-/* wrap go(): applies at boot, on nav taps, after every save */
 if (typeof go === 'function') {
   var _goHH = go;
   go = function (v) {
     var r = _goHH.apply(this, arguments);
-    try {
-      if (v === 'home') { if (HHon()) { clearTimeout(MT); MT = setTimeout(mount, 80); } }
-      else stopTick();
-    } catch (e) {}
+    try { if (v === 'home' && HHon()) { clearTimeout(MT); MT = setTimeout(mount, 80); } else stopTick(); } catch (e) {}
     return r;
   };
 }
-/* re-assert if another home script repaints over us */
 try {
   new MutationObserver(function () {
     if (!HHon() || curView() !== 'home') return;
@@ -207,13 +190,11 @@ try {
     clearTimeout(MT); MT = setTimeout(mount, 60);
   }).observe(document.getElementById('main') || document.body, { childList: true });
 } catch (e) {}
-
-/* ---------- actions ---------- */
 W.hhMore = function () { HH.more = !HH.more; paint(); };
 W.hhDay = function (i) { HH.day = i; paint(); };
 W.hhTarget = function () {
   var u = UU(); if (!u) return;
-  var v = prompt('New target CGPA (0.00 - 5.00):', (u.target || 4.5).toFixed(2));
+  var v = prompt('Set your target CGPA (0.00 - 5.00):', (u.target || 4.5).toFixed(2));
   if (v === null) return; var t = parseFloat(v);
   if (isNaN(t) || t < 0 || t > 5) return toast('Target must be between 0 and 5', 'error');
   u.target = t; try { if (typeof save === 'function') save(); } catch (e) {} toast('Target updated to ' + t.toFixed(2)); paint();
@@ -221,7 +202,7 @@ W.hhTarget = function () {
 W.hhResults = function () { if (typeof go === 'function') go('acad'); };
 W.hhAttend = function () { if (typeof go === 'function') go('att'); };
 W.hhTimetable = function () { if (W.shOld) W.shOld(['Timetable']); else if (typeof go === 'function') go('plan'); };
-W.hhClassic = function () { try { sessionStorage.setItem('as_hh_classic', '1'); } catch (e) {} if (typeof go === 'function') go('home'); };
+W.hhOpenStudy = function () { if (typeof go === 'function') go('study'); };
 W.hhGoStudy = function (tab, id) {
   if (typeof go !== 'function') return;
   go('study');

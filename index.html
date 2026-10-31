@@ -10,7 +10,7 @@
 <script>
 // On-screen error banner (debug aid)
 (function(){
-  var dbg=function(m){if(document.getElementById('dbg'))return;var d=document.createElement('pre');d.id='dbg';d.style.cssText='position:fixed;z-index:99999;top:0;left:0;right:0;background:#7f1d1d;color:#fff;font:12px monospace;padding:10px;white-space:pre-wrap;margin:0';d.textContent='ERROR: '+m;document.documentElement.appendChild(d);};
+  var dbg=function(m){if(!/[?&]debug=1/.test(location.search)&&location.hostname!=='localhost')return;if(document.getElementById('dbg'))return;var d=document.createElement('pre');d.id='dbg';d.style.cssText='position:fixed;z-index:99999;top:0;left:0;right:0;background:#7f1d1d;color:#fff;font:12px monospace;padding:10px;white-space:pre-wrap;margin:0';d.textContent='ERROR: '+m;document.documentElement.appendChild(d);};
   window.addEventListener('error',function(e){dbg(e.message+' (line '+e.lineno+')');});
   window.addEventListener('unhandledrejection',function(e){dbg(String((e.reason&&e.reason.message)||e.reason));});
 })();
