@@ -1,149 +1,202 @@
-/* Academic Summit - zumaguide.js v2: the ? button opens Zuma, the interactive guide.
-   Natural-language search, real routes, take-me-there shortcuts, conversation memory.
-   Also governs the legacy GPA intro sheet and warms the attendance consent screen. */
+/* Academic Summit - zumaguide.js v1: Zuma, your Academic Summit tour guide.
+   The floating "?" opens a bottom panel: a personal greeting, a search box, and answers that say
+   what a feature does, where it lives, the exact steps, and a button that takes you there.
+   It knows which screen you are on. The answers live in the KB list at the top: edit a step there
+   if a screen changes. Delete the script tag and the old "?" panel returns.
+   Load near the end, after studyhub.js. */
 (function () {
 'use strict';
 var W = window;
 if (typeof document === 'undefined') return;
-function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-function norm(s) { return String(s || '').toLowerCase().replace(/\s+/g, ' '); }
-function toast(m, k) { if (W.showToast) W.showToast(m, k); }
-function zuma(p, px) { return W.zumaImg ? W.zumaImg(p, px) : ''; }
-function UU() { return (typeof U !== 'undefined' && U) ? U : null; }
-function goSafe(v) { if (typeof go === 'function') go(v); }
-function study(tab) { goSafe('study'); setTimeout(function () { if (W.shTab) W.shTab(tab); }, 250); }
+try { if (/[?&]zuma=off/.test(location.search)) return; } catch (e) {}
 
+/* ---------- what Zuma knows (edit freely) ---------- */
 var KB = [
-  { k: ['cgpa', 'calculate', 'calculator'], t: 'CGPA calculation', tag: 'Academics', steps: ['Tap Academics on the bottom bar.', 'Choose GPA Calculator.', 'Add your courses, units and scores - or paste your portal page and tap Parse.', 'Tap Calculate & Save; your dashboard updates instantly.'], go: function () { goSafe('acad'); } },
-  { k: ['trajectory', 'graph', 'climb'], t: 'GPA Trajectory', tag: 'Academics', steps: ['Tap Study on the bottom bar.', 'Open GPA Trajectory from the Academic standing row.', 'Tap See my trajectory.', 'Tap any point to inspect a semester and see which courses moved your line.'], go: function () { if (W.asGpaOpen) W.asGpaOpen(); else study('overview'); } },
-  { k: ['result', 'upload', 'import', 'paste'], t: 'Result import', tag: 'Academics', steps: ['Tap Academics.', 'Open Import / Paste Portal Result Text.', 'Paste the full results page and tap Parse & Auto-Fill.', 'Review the rows, then tap Calculate & Save.'], go: function () { goSafe('acad'); setTimeout(function () { var p = document.getElementById('paste'); if (p) p.classList.remove('hidden'); }, 300); } },
-  { k: ['course', 'registration'], t: 'Course management', tag: 'Study', steps: ['Tap Study, then Courses.', 'Open any course to add topics, notes and reading material.', 'Your course list is built from your saved results and registration.'], go: function () { study('courses'); } },
-  { k: ['study session', 'start studying', 'timer', 'focus', 'study'], t: 'Study sessions', tag: 'Study', steps: ['Tap Study, then Sessions.', 'Choose course, topic, objectives, duration and method.', 'Tap Start session - only focused time counts.', 'Complete the session and rate your understanding to grow your history.'], go: function () { study('sessions'); } },
-  { k: ['attendance', 'attend', 'present', 'scan', 'code'], t: 'Attendance', tag: 'Attend', steps: ['Tap Attend on the bottom bar.', 'Enter your course code and the 5-digit code your lecturer calls out.', 'Tap Mark. If a QR scan is offered, one distance reading per scan - declining still marks you present.'], go: function () { goSafe('att'); } },
-  { k: ['timetable', 'class', 'schedule', 'venue'], t: 'Timetable', tag: 'Planner', steps: ['Tap Planner, then Timetable.', 'Add your class slots once - they repeat weekly.', 'Your home screen shows the next class with a live countdown.'], go: function () { goSafe('plan'); } },
-  { k: ['exam', 'test', 'assignment', 'deadline'], t: 'Exams and deadlines', tag: 'Planner', steps: ['Tap Planner, then Exam Timetable.', 'Add exams with date, time and venue.', 'They appear on your home screen under Priorities with urgency labels.'], go: function () { goSafe('plan'); } },
-  { k: ['task', 'todo'], t: 'Tasks', tag: 'Planner', steps: ['Tap Planner.', 'Use Smart Tasks at the bottom of the screen.', 'Set start and end times to see live countdowns.'], go: function () { goSafe('plan'); } },
-  { k: ['finance', 'money', 'expense', 'budget', 'fees', 'naira'], t: 'Finances', tag: 'Finance', steps: ['Tap Finance.', 'Log income and expenses by category.', 'School-fees progress is tracked on the same screen.'], go: function () { goSafe('fin'); } },
-  { k: ['material', 'file', 'pdf', 'past question', 'library'], t: 'Materials library', tag: 'Materials', steps: ['Tap the + button, then Materials.', 'Upload a PDF or paste a link.', 'It is filed under its course code in your library.'], go: function () { goSafe('mat'); } },
-  { k: ['profile', 'personal information', 'update profile', 'matric', 'name'], t: 'Profile', tag: 'Account', steps: ['Tap your avatar at the top right.', 'Use Personal Information or Update Profile.', 'Matric number, phone, faculty, level and target CGPA are all editable there.'], go: function () { goSafe('prof'); } },
-  { k: ['theme', 'dark', 'light', 'mode', 'appearance', 'dashboard', 'home screen'], t: 'Appearance and dashboard style', tag: 'Account', steps: ['Tap Profile.', 'Under Appearance, choose Light, Dark or System.', 'Under Dashboard style, choose the new or classic home dashboard. Your choice is remembered.'], go: function () { goSafe('prof'); } },
-  { k: ['download', 'backup', 'export', 'my data'], t: 'Data export', tag: 'Account', steps: ['Tap Profile.', 'Tap Download Backup.', 'You receive a JSON copy of everything in your account.'], go: function () { if (typeof exportData === 'function') exportData(); else goSafe('prof'); } },
-  { k: ['notification', 'alerts', 'reminders'], t: 'Notifications', tag: 'Account', steps: ['Tap Profile, then Notifications.', 'Switch channels and smart alerts on or off individually.'], go: function () { if (typeof openNotifSheet === 'function') openNotifSheet(); else goSafe('prof'); } },
-  { k: ['streak', 'flame', 'missed day', 'make up', 'repair'], t: 'Streak and make-up days', tag: 'Home', steps: ['On Home, open the reading calendar.', 'Tap a missed day from the last seven.', 'Complete 120 verified study minutes within 48 hours and the day counts. One make-up per week.'], go: function () { goSafe('home'); } },
-  { k: ['badge', 'mark', 'achievement', 'summit marks'], t: 'Summit Marks', tag: 'Account', steps: ['Tap Profile.', 'Summit Marks lists every achievement.', 'Tap any mark to see its condition and your live progress toward it.'], go: function () { goSafe('prof'); } },
-  { k: ['risk', 'warning', 'carryover', 'danger'], t: 'Academic risk review', tag: 'Intelligence', steps: ['On Home, tap Risk review in the Academic standing row.', 'Confirmed risks come from your records; predictive signals are clearly labelled as warnings.'], go: function () { if (W.asRiskOpen) W.asRiskOpen(); } },
-  { k: ['report', 'weekly', 'summary'], t: 'Weekly report', tag: 'Intelligence', steps: ['On Home, tap Weekly report.', 'Sessions, hours, courses, tasks and next priorities are summarised.', 'Tap Copy report to share it anywhere.'], go: function () { if (W.asReportOpen) W.asReportOpen(); } },
-  { k: ['goal', 'milestone', 'target'], t: 'Goals and milestones', tag: 'Goals', steps: ['Tap the + button, then Goals.', 'Include a CGPA number and it is tracked against your real results automatically.'], go: function () { goSafe('goal'); } },
-  { k: ['admin', 'lecturer', 'pin'], t: 'Admin tools', tag: 'Admin', steps: ['Profile shows Open Admin Panel only for authorised accounts.', 'There you generate lecturer PINs and manage lecturer roles.'], go: function () { goSafe('prof'); } }
+  { id: 'upload', title: 'Upload your results', screen: 'results', keys: ['upload', 'import', 'results', 'portal', 'paste', 'scan', 'grades', 'add results', 'save results'],
+    what: 'Reads the results page from your school portal and saves each course and grade, so your CGPA, trajectory and target use your real records.',
+    where: 'Results, then Upload',
+    steps: ['Tap Results in the bottom bar.', 'Open the Upload tab.', 'Copy your results page from the school portal and paste it in.', 'Check the courses and grades it found, then confirm.'],
+    go: ['Results', 'Upload'], action: 'Open Upload' },
+  { id: 'trajectory', title: 'GPA trajectory', screen: 'results', keys: ['trajectory', 'graph', 'chart', 'gpa', 'progress', 'semester', 'line', 'plot'],
+    what: 'Shows how each course moved your GPA, with the all-A path as a dashed line so you can see where marks were lost.',
+    where: 'Results, then Trajectory (also the GPA trajectory button on Home)',
+    steps: ['Tap Results in the bottom bar.', 'Open the Trajectory tab.', 'Choose the level you want, such as 100L or 200L.', 'Tap a point to see the course and what it added.'],
+    go: ['Results', 'Trajectory'], action: 'Open GPA Trajectory' },
+  { id: 'cgpa', title: 'How your CGPA is calculated', screen: 'results', keys: ['calculate', 'cgpa', 'compute', 'average', 'work out', 'formula', 'how is'],
+    what: 'Each grade is worth points (A is 5 down to F which is 0). Points times course units are added up and divided by your total units. Everything comes from results you saved.',
+    where: 'The green card on Home, and Results, then Record',
+    steps: ['Save your results first: Results, then Upload.', 'Your CGPA appears on the green card on Home.', 'Open Results, then Record to see the grades behind it.'],
+    go: ['Results', 'Record'], action: 'Open Record' },
+  { id: 'attendance', title: 'Mark attendance', screen: 'attend', keys: ['attendance', 'mark', 'attend', 'present', 'lecturer code', 'class', 'roll'],
+    what: 'Records that you were in class, using the 5-digit code your lecturer calls out.',
+    where: 'Attend in the bottom bar',
+    steps: ['Tap Attend in the bottom bar.', 'Type the course code, for example POS 204.', 'Type the 5-digit code your lecturer calls out.', 'Tap Mark. Your record appears under My attendance.'],
+    go: ['Attend'], action: 'Open Attend' },
+  { id: 'course', title: 'See or add your courses', screen: 'study', keys: ['add', 'course', 'courses', 'register', 'registration', 'units', 'missing course'],
+    what: 'Your courses come from your course registration and from results you import.',
+    where: 'Study, then Courses',
+    steps: ['Tap Study in the bottom bar.', 'Open Courses to see every registered course.', 'If a course is missing, import your results in Results, then Upload.'],
+    go: ['Study', 'Courses'], action: 'Open Courses' },
+  { id: 'timetable', title: 'Your timetable and campus events', screen: 'study', keys: ['timetable', 'schedule', 'lecture', 'lectures', 'venue', 'campus', 'event', 'events', 'next class'],
+    what: 'Your weekly lecture timetable, a daily schedule, campus events and what is coming up.',
+    where: 'Study, then Timetable & campus',
+    steps: ['Tap Study in the bottom bar.', 'Open Timetable & campus.', 'Switch between Week and Day.', 'Tap Add a lecture to put a lecture on your timetable.'],
+    go: ['Study', 'Timetable & campus'], action: 'Open Timetable' },
+  { id: 'risk', title: 'Academic risk review', screen: 'home', keys: ['risk', 'warning', 'review', 'danger', 'neglect', 'threat', 'falling behind'],
+    what: 'Points out courses and targets that need attention. What your records confirm is separated from what is only a prediction.',
+    where: 'Home, under your CGPA card',
+    steps: ['Open Home.', 'Under the green CGPA card, tap Risk review.'],
+    go: ['Home', 'Risk review'], action: 'Open Risk review' },
+  { id: 'weekly', title: 'Weekly report', screen: 'home', keys: ['weekly', 'report', 'week', 'summary', 'this week'],
+    what: 'A summary of your week: sessions, study time, courses covered and what to focus on next.',
+    where: 'Home, under your CGPA card',
+    steps: ['Open Home.', 'Tap Weekly report.'],
+    go: ['Home', 'Weekly report'], action: 'Open Weekly report' },
+  { id: 'target', title: 'Set your target CGPA', screen: 'results', keys: ['target', 'goal', 'dream', 'aim', 'need', 'required', 'remaining'],
+    what: 'Sets the CGPA you are aiming for and shows the average you need across your remaining units.',
+    where: 'Results, then Target',
+    steps: ['Tap Results in the bottom bar.', 'Open the Target tab.', 'Enter your target CGPA.'],
+    go: ['Results', 'Target'], action: 'Open Target' },
+  { id: 'detective', title: 'Result Detective', screen: 'results', keys: ['detective', 'portal changed', 'results missing', 'cgpa changed', 'not showing', 'missing grades', 'why did'],
+    what: 'Works out what a changed portal CGPA means when your course grades are not showing yet.',
+    where: 'Results, then Detective',
+    steps: ['Tap Results in the bottom bar.', 'Open the Detective tab.', 'Enter your portal CGPA and follow the prompts.'],
+    go: ['Results', 'Detective'], action: 'Open Detective' },
+  { id: 'session', title: 'Start a study session', screen: 'study', keys: ['study', 'session', 'timer', 'focus', 'start', 'read', 'reading', 'revise', 'learn'],
+    what: 'A focused timer for one course and topic. Only time the app is open and running counts, and 5 focused minutes keep your streak alive.',
+    where: 'Study, then Today',
+    steps: ['Tap Study in the bottom bar.', 'On Today, choose a course, a topic and how long.', 'Tap Start session.', 'When you finish, say how it went and save it.'],
+    go: ['Study', 'Today'], action: 'Open Study' },
+  { id: 'streak', title: 'Your study streak', screen: 'home', keys: ['streak', 'calendar', 'flame', 'consecutive', 'days in a row', 'missed day'],
+    what: 'Counts the days in a row you studied. The streak calendar shows every active day, and a missed day can be made up.',
+    where: 'The streak badge at the top of Home',
+    steps: ['Open Home.', 'Tap the streak badge at the top, or the day streak chip.', 'In the calendar, tap a missed day from the last 7 days to make it up.'],
+    go: ['Home'], action: 'Open Home' },
+  { id: 'finance', title: 'Budget and spending', screen: 'finance', keys: ['budget', 'money', 'finance', 'expense', 'expenses', 'spending', 'allowance', 'cash'],
+    what: 'Set your allowance, log what you spend and see what is left.',
+    where: 'Finance in the bottom bar',
+    steps: ['Tap Finance in the bottom bar.', 'Set your budget.', 'Log each expense as it happens.'],
+    go: ['Finance'], action: 'Open Finance' },
+  { id: 'theme', title: 'Light and dark mode', screen: 'home', keys: ['dark', 'light', 'theme', 'mode', 'night', 'brightness'],
+    what: 'Switches the app between the warm light theme and the deep green dark theme.',
+    where: 'The moon or sun icon at the top',
+    steps: ['Tap the moon or sun icon at the top of any screen.'],
+    go: null, action: null },
+  { id: 'profile', title: 'Your profile', screen: 'home', keys: ['profile', 'avatar', 'name', 'account', 'initials', 'academic profile', 'log out', 'logout'],
+    what: 'Your details, your academic profile and account options.',
+    where: 'Your initials at the top right',
+    steps: ['Tap your initials at the top right of Home.'],
+    go: ['Home'], action: 'Open Home' }
 ];
-function match(q) {
-  q = norm(q); var best = null, bs = 0;
-  KB.forEach(function (e) {
-    var s = 0; e.k.forEach(function (k) { if (q.indexOf(k) > -1) s += k.length > 4 ? 2 : 1; });
-    if (q.indexOf(norm(e.t)) > -1) s += 2;
-    if (s > bs) { bs = s; best = e; }
-  });
-  return bs > 0 ? best : null;
-}
-var CONVO = [];
-function greetParts() {
-  var u = UU(), n = u ? String(u.name || '').split(' ')[0] : 'there';
-  var h = new Date().getHours(), g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : h < 21 ? 'Good evening' : 'Good night';
-  return { sal: g + ', ' + n + '!', rest: 'I\u2019m Zuma, your Academic Summit guide. I can help you find features, understand how things work and navigate your academic workspace. What would you like to know today?' };
-}
-function convoHtml() {
-  return CONVO.map(function (c) {
-    return '<div class="space-y-2"><div class="text-xs font-bold p-2.5 rounded-2xl ml-8" style="background:linear-gradient(135deg,#059669,#06b6d4);color:#fff">' + esc(c.q) + '</div>' +
-      '<div class="text-xs p-3 rounded-2xl mr-4 space-y-2" style="background:var(--sub)"><div class="flex gap-2 items-start">' + zuma('welcome', 40) +
-      '<div class="space-y-1"><div class="font-extrabold">Let\u2019s get you there. ' + esc(c.e.t) + ' lives in ' + esc(c.e.tag) + '.</div><ol style="padding-left:16px">' + c.e.steps.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ol></div></div>' +
-      (c.i >= 0 ? '<button class="btn w-full" onclick="zumaGo(' + c.i + ')">Take me there \u2192</button>' : '') + '</div></div>';
-  }).join('');
-}
-function paint() {
-  var el = document.getElementById('zuma-convo'); if (el) { el.innerHTML = convoHtml(); el.scrollTop = el.scrollHeight; }
-  var sug = document.getElementById('zuma-sug'); if (sug) sug.style.display = CONVO.length ? 'none' : 'flex';
-}
-W.zumaAsk = function (q) {
-  q = (q != null ? q : (document.getElementById('zuma-q') || {}).value || '').trim();
-  if (!q) return;
-  var inp = document.getElementById('zuma-q'); if (inp) inp.value = '';
-  var art = document.getElementById('zuma-art');
-  if (art) { art.classList.remove('zuma-bob'); art.classList.add('zuma-think'); setTimeout(function () { art.classList.remove('zuma-think'); }, 700); }
-  var e = match(q);
-  if (e) CONVO.push({ q: q, e: e, i: KB.indexOf(e) });
-  else CONVO.push({ q: q, e: { t: 'Here is what I can help with', tag: 'Academic Summit', steps: ['Home: your standing, streak, next class and priorities.', 'Study: sessions, courses, planner and trajectory.', 'Academics: results, GPA calculation and the Result Detective.', 'Attend: class codes and history. Finance: money.', 'Profile: settings, Summit Marks, backup and dashboard style.'], go: null }, i: -1 });
-  paint();
+var QUICK = {
+  home: ['How do I check my GPA trajectory?', 'Where is my risk review?', 'How do I mark attendance?'],
+  results: ['How do I upload my results?', 'How do I set a target CGPA?', 'What is the Result Detective?'],
+  study: ['How do I see my timetable?', 'How do I start a study session?', 'How do I add a course?'],
+  attend: ['How do I mark attendance?', 'Where is my streak?'],
+  finance: ['How do I track my spending?', 'Where is my weekly report?'],
+  any: ['How do I upload my results?', 'Where can I see my GPA trajectory?', 'How do I calculate my CGPA?', 'Where can I mark attendance?', 'How do I access my timetable?', 'Where can I see my academic risk report?']
 };
-W.zumaGo = function (i) {
-  var e = i >= 0 ? KB[i] : null;
-  zumaClose();
-  if (e && e.go) { try { e.go(); toast('Zuma: ' + e.t); } catch (err) {} }
-};
-W.zumaClear = function () { CONVO = []; paint(); };
-W.zumaClose = function () { var s = document.getElementById('zuma-sheet'); if (s && s.parentNode) s.parentNode.removeChild(s); };
-function openZuma() {
-  if (document.getElementById('zuma-sheet')) return;
-  var gp = greetParts();
-  var SUG = ['Help me calculate my CGPA.', 'How do I start studying?', 'Where are my semester results?', 'How do I update my profile?'];
-  var d = document.createElement('div');
-  d.id = 'zuma-sheet';
-  d.className = 'fixed inset-0 z-[85] bg-black/50 backdrop-blur-sm flex items-end zuma-fade';
-  d.onclick = function () { zumaClose(); };
-  d.innerHTML = '<div class="w-full rounded-t-3xl p-5 space-y-3 zuma-in" style="background:var(--card);border:1px solid var(--bd);max-height:84vh;display:flex;flex-direction:column;padding-bottom:max(1rem,env(safe-area-inset-bottom))" onclick="event.stopPropagation()">' +
-    '<div style="width:44px;height:5px;border-radius:99px;background:var(--bd);margin:0 auto"></div>' +
-    '<div class="flex items-center gap-3"><div id="zuma-art" class="zuma-bob shrink-0">' + zuma('welcome', 64) + '</div>' +
-    '<div class="flex-1 text-xs leading-relaxed"><b>' + esc(gp.sal) + '</b><br>' + esc(gp.rest) + '</div>' +
-    '<button class="p-2 shrink-0" style="color:var(--mut)" onclick="zumaClose()" aria-label="Close Zuma">\u2715</button></div>' +
-    '<div id="zuma-convo" class="space-y-3" style="overflow-y:auto;flex:1;min-height:48px"></div>' +
-    '<div id="zuma-sug" class="flex flex-wrap gap-2">' + SUG.map(function (s, i) { return '<button class="btn2" style="min-height:36px;padding:0 12px;font-size:11px" onclick="zumaAsk(SUGQ[' + i + '])">' + esc(s) + '</button>'; }).join('') + '</div>' +
-    '<div class="flex gap-2"><input id="zuma-q" class="inp" placeholder="What would you like help finding?" onkeydown="if(event.key===\'Enter\')zumaAsk()"><button class="btn shrink-0" onclick="zumaAsk()">Ask</button></div>' +
-    '<div class="flex justify-between"><button class="text-[11px]" style="color:var(--mut)" onclick="zumaClear()">Clear conversation</button><button class="text-[11px]" style="color:var(--mut)" onclick="zumaClose()">Close</button></div>' +
-    '</div>';
-  document.body.appendChild(d);
-  W.SUGQ = SUG;
-  paint();
-  setTimeout(function () { var i = document.getElementById('zuma-q'); if (i) i.focus(); }, 250);
-}
-try { if (typeof startTour === 'function') startTour = openZuma; } catch (e) {}
-var fab = document.getElementById('tour-fab'); if (fab) fab.onclick = openZuma;
+var STOP = { the: 1, a: 1, an: 1, i: 1, my: 1, me: 1, do: 1, does: 1, how: 1, where: 1, what: 1, can: 1, is: 1, are: 1, to: 1, of: 1, on: 1, in: 1, for: 1, and: 1, or: 1, it: 1, see: 1, find: 1, check: 1, get: 1, open: 1, show: 1, want: 1, need: 1, please: 1, zuma: 1 };
 
-/* GPA intro governor: separate experience, persisted dismissal, real CTA */
-function governTrajectory(node) {
-  var t = node.textContent || '';
-  if (!/GPA Trajectory/.test(t) || !/See my trajectory/.test(t)) return;
+/* ---------- helpers ---------- */
+function norm(s) { return String(s || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function vis(el) { var r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; }
+function firstName() { try { return ((U.name || (U.profile && U.profile.name) || '') + '').trim().split(/\s+/)[0] || ''; } catch (e) { return ''; } }
+function greet() { var h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; }
+function ctx() {
   try {
-    if (localStorage.getItem('as_traj_seen') === '1') { if (node.parentNode) node.parentNode.removeChild(node); return; }
-    W._trajN = (W._trajN || 0) + 1;
-    if (W._trajN > 1) { if (node.parentNode) node.parentNode.removeChild(node); return; }
-    Array.from(node.querySelectorAll('button,a')).forEach(function (b) {
-      var tx = (b.textContent || '').trim();
-      if (/See my trajectory/i.test(tx)) b.addEventListener('click', function () {
-        try { localStorage.setItem('as_traj_seen', '1'); localStorage.setItem('as_traj_opened', '1'); } catch (e) {}
-        setTimeout(function () { if (W.asGpaOpen) W.asGpaOpen(); }, 120);
-      }, true);
-      else if (/Skip|Next|already know|don.t show/i.test(tx)) b.addEventListener('click', function () { try { localStorage.setItem('as_traj_seen', '1'); } catch (e) {} }, true);
-    });
+    var m = document.getElementById('main'), t = ((m && (m.innerText || m.textContent)) || '').slice(0, 500);
+    if (/Results & Trajectory|GPA Trajectory|CGPA trajectory/i.test(t)) return 'results';
+    if (/Mark attendance/i.test(t) && /My attendance/i.test(t)) return 'attend';
+    if (/^\s*Study\b/.test(t) || /Timetable & campus/i.test(t)) return 'study';
+    if (/Cumulative GPA|Good (morning|afternoon|evening)/i.test(t)) return 'home';
+    if (/budget|expense|finance/i.test(t.slice(0, 120))) return 'finance';
   } catch (e) {}
+  return 'any';
 }
-function warmConsent() {
-  var leaf = Array.from(document.querySelectorAll('h1,h2,h3,div,b')).filter(function (n) { return n.children.length === 0 && (n.textContent || '').trim() === 'Before you scan'; })[0];
-  if (!leaf) return;
-  var c = leaf.closest ? leaf.closest('.card') : null; if (!c) c = leaf.parentNode;
-  if (!c || c.dataset.zloc) return;
-  c.dataset.zloc = '1';
-  c.insertAdjacentHTML('afterbegin', '<div class="flex items-center gap-3 pb-1">' + zuma('notice', 56) + '<div class="text-xs font-bold" style="color:#6ee7b7">One position reading per scan. Only the distance from your lecturer\u2019s phone and the time are kept - nothing else leaves your phone.</div></div>');
+function search(q) {
+  var text = norm(q).replace(/[^a-z0-9 &]/g, ' '), toks = text.split(' ').filter(function (w) { return w.length > 1 && !STOP[w]; }), c = ctx();
+  if (!toks.length) return [];
+  return KB.map(function (e) {
+    var sc = 0, title = norm(e.title);
+    e.keys.forEach(function (k) { if (k.indexOf(' ') > -1) { if (text.indexOf(k) > -1) sc += 4; } else if (toks.indexOf(k) > -1) sc += 3; else if (toks.some(function (t) { return t.length > 3 && k.length > 3 && (k.indexOf(t) === 0 || t.indexOf(k) === 0); })) sc += 2; });
+    toks.forEach(function (t) { if (title.indexOf(t) > -1) sc += 2; });
+    if (sc > 0 && e.screen === c) sc += 1;
+    return { e: e, score: sc };
+  }).filter(function (x) { return x.score > 0; }).sort(function (a, b) { return b.score - a.score; });
 }
-var tm2 = null;
-new MutationObserver(function (ms) {
-  clearTimeout(tm2);
-  tm2 = setTimeout(function () {
-    ms.forEach(function (m) { Array.from(m.addedNodes || []).forEach(function (n) { if (n.nodeType === 1) governTrajectory(n); }); });
-    warmConsent();
-  }, 160);
-}).observe(document.body, { childList: true, subtree: true });
-if (W.asGpaOpen) { var _g = W.asGpaOpen; W.asGpaOpen = function () { try { localStorage.setItem('as_traj_opened', '1'); } catch (e) {} return _g(); }; }
-var st = document.createElement('style');
-st.textContent = '@keyframes zumaIn{from{transform:translateY(100%)}to{transform:translateY(0)}}@keyframes zumaBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}@keyframes zumaThink{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}@keyframes zumaFade{from{opacity:0}to{opacity:1}}.zuma-in{animation:zumaIn .32s cubic-bezier(.16,1,.3,1)}.zuma-bob{animation:zumaBob 1.6s ease-in-out 2}.zuma-think{animation:zumaThink .7s ease-in-out}.zuma-fade{animation:zumaFade .2s}';
-document.head.appendChild(st);
-W.__zuma = { open: openZuma, KB: KB };
+
+/* ---------- going there: tap the real buttons, in order ---------- */
+function navBtn(label) {
+  var bs = document.querySelectorAll('button,a,[role=button]');
+  for (var i = 0; i < bs.length; i++) { var b = bs[i]; if (norm(b.textContent) === label && vis(b) && b.getBoundingClientRect().top > (W.innerHeight || 800) * 0.7) return b; }
+  return null;
+}
+function clickExact(t) {
+  t = norm(t); var els = document.querySelectorAll('button,[onclick],a,[role=button]'), exact = null, part = null, pl = 1e9;
+  for (var i = 0; i < els.length; i++) {
+    var el = els[i]; if (!vis(el) || (el.closest && el.closest('#zg-panel'))) continue; var x = norm(el.textContent);
+    if (x === t) { exact = el; break; } if (x.indexOf(t) > -1 && x.length < pl) { part = el; pl = x.length; }
+  }
+  var hit = exact || part; if (hit) { hit.click(); return true; } return false;
+}
+function navTo(steps) {
+  var i = 0, nb = navBtn(norm(steps[0]));
+  if (nb) { nb.click(); i = 1; }
+  (function next() { if (i >= steps.length) return; setTimeout(function () { if (!clickExact(steps[i - 0])) { /* the tab may already be showing */ } i++; next(); }, 280); })();
+}
+
+/* ---------- the panel ---------- */
+var open = false, lastFocus = null;
+function panelHtml(answerHtml) {
+  var c = ctx(), name = firstName(), chips = (QUICK[c] || QUICK.any).concat(c === 'any' ? [] : []);
+  var ctxLine = c === 'any' ? '' : '<div class="text-xs" style="color:var(--mut);margin:6px 0 2px">You are on ' + ({ home: 'Home', results: 'Results', study: 'Study', attend: 'Attend', finance: 'Finance' }[c]) + '. Popular here:</div>';
+  return '<div id="zg-back" onclick="zgClose()" style="position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,.45);z-index:99999"></div>' +
+    '<div id="zg-panel" role="dialog" aria-modal="true" aria-label="Zuma, your tour guide" style="position:fixed;left:0;right:0;bottom:0;z-index:100000;max-height:82vh;overflow-y:auto;-webkit-overflow-scrolling:touch;border-radius:24px 24px 0 0;background:var(--card,#fff);color:inherit;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 40px rgba(0,0,0,.35)">' +
+    '<div style="display:flex;align-items:flex-start;gap:10px"><div style="flex:none">' + (W.zumaImg ? W.zumaImg('welcome', 64) : '') + '</div>' +
+    '<div style="flex:1;min-width:0;padding-top:4px"><div class="font-extrabold" style="font-size:15px;line-height:1.4">' + greet() + (name ? ', ' + esc(name) : '') + '. I\'m Zuma, your Academic Summit tour guide. What would you like to know today?</div></div>' +
+    '<button onclick="zgClose()" aria-label="Close Zuma" style="flex:none;width:44px;height:44px;border-radius:50%;border:0;background:var(--sub);font-size:18px;font-weight:800;color:inherit">&times;</button></div>' +
+    '<form onsubmit="return zgSearch()" style="display:flex;gap:8px;margin-top:12px"><input id="zg-in" type="search" enterkeyhint="search" autocomplete="off" aria-label="Ask Zuma a question" placeholder="Ask about any feature" class="inp" style="flex:1;min-width:0"><button type="submit" class="btn" style="min-height:44px;padding:0 16px">Search</button></form>' +
+    '<div id="zg-out" aria-live="polite" style="margin-top:12px">' + (answerHtml || ctxLine + chipRow(chips)) + '</div></div>';
+}
+function chipRow(list) { return '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">' + list.map(function (q) { return '<button class="btn2" style="min-height:40px;padding:0 12px;font-size:13px;text-align:left" onclick="zgAsk(\'' + esc(q).replace(/'/g, '&#39;') + '\')">' + esc(q) + '</button>'; }).join('') + '</div>'; }
+function answerHtml(res, q) {
+  if (!res.length) return '<div class="font-extrabold">I could not find that one.</div><div class="text-xs" style="color:var(--mut);margin:4px 0">Try a feature name, like timetable, attendance, trajectory or target. Or tap a question:</div>' + chipRow(QUICK.any);
+  var e = res[0].e, rel = res.slice(1, 3).map(function (x) { return 'How do I use ' + x.e.title.toLowerCase() + '?'; });
+  return '<div class="font-extrabold" style="font-size:16px">' + esc(e.title) + '</div>' +
+    '<div class="text-sm" style="margin:6px 0">' + esc(e.what) + '</div>' +
+    '<div class="text-xs font-extrabold" style="color:#059669">Where to find it</div><div class="text-sm" style="margin-bottom:6px">' + esc(e.where) + '</div>' +
+    '<div class="text-xs font-extrabold" style="color:#059669">Steps</div><ol class="text-sm" style="margin:4px 0 10px;padding-left:20px">' + e.steps.map(function (s) { return '<li style="margin-bottom:4px">' + esc(s) + '</li>'; }).join('') + '</ol>' +
+    (e.go ? '<button class="btn w-full" onclick="zgGo(\'' + e.id + '\')">' + esc(e.action || 'Take me there') + '</button>' : '') +
+    (rel.length ? '<div class="text-xs" style="color:var(--mut);margin-top:10px">You might also ask:</div>' + chipRow(rel) : '');
+}
+function paintOut(html) { var o = document.getElementById('zg-out'); if (o) o.innerHTML = html; }
+function build() {
+  var host = document.getElementById('zg-host');
+  if (!host) { host = document.createElement('div'); host.id = 'zg-host'; document.body.appendChild(host); }
+  return host;
+}
+W.zgOpen = function () { if (open) return; open = true; lastFocus = document.activeElement; build().innerHTML = panelHtml(''); setTimeout(function () { var i = document.getElementById('zg-in'); if (i && i.focus) i.focus(); }, 60); };
+W.zgClose = function () { open = false; var h = document.getElementById('zg-host'); if (h) h.innerHTML = ''; try { if (lastFocus && lastFocus.focus) lastFocus.focus(); } catch (e) {} };
+W.zgSearch = function () { var i = document.getElementById('zg-in'), q = i ? i.value : ''; if (norm(q)) paintOut(answerHtml(search(q), q)); return false; };
+W.zgAsk = function (q) { var i = document.getElementById('zg-in'); if (i) i.value = q; paintOut(answerHtml(search(q), q)); };
+W.zgGo = function (id) { var e = KB.filter(function (x) { return x.id === id; })[0]; if (!e || !e.go) return; W.zgClose(); navTo(e.go); };
+W.__zg = { search: search, ctx: ctx, panelHtml: panelHtml, answerHtml: answerHtml, KB: KB };
+
+/* ---------- the "?" button: same place, now it opens Zuma, and it stays out of the way ---------- */
+document.addEventListener('click', function (e) {
+  try {
+    var b = e.target && e.target.closest ? e.target.closest('button') : null;
+    if (b && norm(b.textContent) === '?' && !(b.closest && b.closest('#zg-panel'))) { e.preventDefault(); e.stopImmediatePropagation(); W.zgOpen(); }
+  } catch (err) {}
+}, true);
+document.addEventListener('keydown', function (e) { if (open && (e.key === 'Escape' || e.key === 'Esc')) W.zgClose(); });
+try {
+  var st = document.createElement('style');
+  st.textContent = '.zg-fab{width:50px !important;height:50px !important;min-width:50px !important;font-size:20px !important;right:12px !important;bottom:calc(86px + env(safe-area-inset-bottom,0px)) !important;transition:opacity .25s}.zg-scrolling .zg-fab{opacity:.3}#main{padding-bottom:130px}';
+  document.head.appendChild(st);
+  var sc = null; window.addEventListener('scroll', function () { document.body.classList.add('zg-scrolling'); clearTimeout(sc); sc = setTimeout(function () { document.body.classList.remove('zg-scrolling'); }, 700); }, true);
+  setInterval(function () { var bs = document.querySelectorAll('button'); for (var i = 0; i < bs.length; i++) if (norm(bs[i].textContent) === '?' && !(bs[i].closest && bs[i].closest('#zg-panel')) && !bs[i].classList.contains('zg-fab')) { bs[i].classList.add('zg-fab'); bs[i].setAttribute('aria-label', 'Ask Zuma'); } }, 1500);
+} catch (e) {}
 })();
