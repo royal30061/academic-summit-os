@@ -104,8 +104,8 @@ body[data-role="lecturer"] #tour-fab{display:none!important}
 </style>
 </head>
 <body class="antialiased">
-
-<!-- Splash -->
+</style>
+  <!-- Splash -->
 <div id="splash" style="position:fixed;inset:0;z-index:99999;background:#02120c;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:0 32px;text-align:center">
   <svg viewBox="0 0 512 512" style="width:88px;height:88px"><rect width="512" height="512" rx="112" fill="#07271d"/><path d="M80 384 L224 140 L300 268 L352 192 L432 384 Z" fill="#10b981"/><path d="M256 64 l40 52 h-26 v40 h-28 v-40 h-26 z" fill="#6ee7b7"/></svg>
   <div style="color:#e7fff5;font-weight:800;font-size:19px;letter-spacing:.01em">Academic Summit</div>
@@ -128,7 +128,6 @@ body[data-role="lecturer"] #tour-fab{display:none!important}
 </div>
 <div id="sheet"></div>
 <button id="tour-fab" onclick="startTour()" class="fixed right-4 z-40 w-10 h-10 rounded-full grad text-white font-extrabold shadow-lg" style="bottom:calc(env(safe-area-inset-bottom,6px) + 76px)">?</button>
-
 <script>
 /* =====================================================================
    Academic Summit - single consolidated script (Parser Fixed)
@@ -199,6 +198,7 @@ const ic=(n,c='w-4 h-4')=>svg(IC[n],c);
 const si=n=>svg(SI[n],'w-4 h-4 text-violet-600 dark:text-violet-400');
 const pi=n=>svg(PI[n],'w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400');
 
+
 // ---------- State ----------
 let DB={users:{}};
 try{DB=JSON.parse(localStorage.getItem('as_v8'))||DB;}catch(e){}
@@ -244,8 +244,7 @@ function showToast(msg,type){
   $('toast-container').appendChild(t);
   setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),200);},3000);
 }
-
-// ---------- Splash ----------
+  // ---------- Splash ----------
 let splashDone=false,splashPct=0,tagI=0;
 const TAGS=['Academic success, within reach.','Your summit starts here.','Every grade. One climb.','Climb smart. Rise fast.'];
 const tagT=setInterval(()=>{tagI=(tagI+1)%TAGS.length;const el=$('splash-tag');if(el)el.textContent=TAGS[tagI];},1100);
@@ -3076,7 +3075,7 @@ const _start63=start;
 start=function(){_start63();setTimeout(function(){homeExtras();acadExtras();},250);};
 </script>
 
- HEAD
+  Head
 <script src="splash.js?v=111"></script>
 <script src="guard.js?v=110"></script>
 <script src="core.js?v=110"></script>
