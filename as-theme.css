@@ -13,3 +13,6 @@ body.dark .card .card, .dark .card .card, [data-theme="dark"] .card .card{ backg
 /* as-pad-fix: keep card breathing room even when padding utilities are absent */
 :where(.card){padding:14px 16px}
 :where(.card) .flex.justify-between{flex-wrap:wrap;column-gap:10px}
+/* as-pad-fix: keep card breathing room even when padding utilities are absent */
+:where(.card){padding:14px 16px}
+:where(.card) .flex.justify-between{flex-wrap:wrap;column-gap:10px}
