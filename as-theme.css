@@ -9,3 +9,7 @@ body.dark .card .card, .dark .card .card, [data-theme="dark"] .card .card{ backg
 /* compact feature discovery: no more full-height intro sheets */
 [class*="sheet"], [id*="sheet"]{ max-height:72vh; overflow:auto; }
 .btn, .btn2{ min-height:44px; }
+
+/* as-pad-fix: keep card breathing room even when padding utilities are absent */
+:where(.card){padding:14px 16px}
+:where(.card) .flex.justify-between{flex-wrap:wrap;column-gap:10px}

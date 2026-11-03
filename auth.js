@@ -76,19 +76,41 @@
   /* ---------- student: forgot password ---------- */
   W.forgotUI = function (msg, bad) {
     var sent = msg && !bad;
-    authCard('Reset Password', 'Enter your account email and we will send you a reset link.',
-      '<div class="space-y-3"><input id="f-email" type="email" class="inp" placeholder="Email address" value="' + esc(last.forgot) + '"><button class="btn w-full py-3" onclick="doForgot()">Send Reset Link</button>' +
+    authCard('Reset Password', 'Enter your account email and we will send you a reset code.',
+      '<div class="space-y-3"><input id="f-email" type="email" class="inp" placeholder="Email address" value="' + esc(last.forgot) + '"><button class="btn w-full py-3" onclick="doForgot()">Send Reset Code</button>' +
       (sent ? '<button class="btn2 w-full" onclick="resendForgot()">Resend reset link</button>' : '') + link('Back to login', "authUI('login')") + '</div>', msg, bad);
   };
-  var resetMail = function (em) { return sb.auth.resetPasswordForEmail(em, { redirectTo: location.origin + location.pathname }); };
+  var resetMail = function (em) { return sb.auth.resetPasswordForEmail(em); };
   W.doForgot = async function () {
     var em = val('f-email').toLowerCase(); last.forgot = em;
     if (!em) return forgotUI('Enter your email.', true);
     var r = await resetMail(em);
     if (r.error) return forgotUI(r.error.message, true);
-    forgotUI('If that email has an account, a reset link is on its way. Check your inbox and spam folder.', false);
+    forgotCodeUI('Code sent. Check your inbox and spam folder.', false);
   };
-  W.resendForgot = function () {
+  W.forgotCodeUI = function (msg, bad) {
+  authCard('Enter your code', 'We sent a 6-digit code to ' + esc(last.forgot) + '.',
+    '<div class="space-y-3"><input id="f-code" inputmode="numeric" maxlength="10" class="inp font-mono" placeholder="Code">' +
+    '<input id="f-p1" type="password" class="inp" placeholder="New password (8+ characters)">' +
+    '<input id="f-p2" type="password" class="inp" placeholder="Repeat new password">' +
+    '<button class="btn w-full py-3" onclick="forgotCodeGo(this)">Reset password</button>' +
+    '<button class="btn2 w-full" onclick="resendForgot()">Resend code</button>' +
+    link('Back to login', "authUI('login')") + '</div>', msg, bad);
+};
+W.forgotCodeGo = async function (b) {
+  var c = val('f-code'), p1 = ($('f-p1') || {}).value || '', p2 = ($('f-p2') || {}).value || '';
+  if (!c) return forgotCodeUI('Enter the code from your email.', true);
+  if (p1.length < 8) return forgotCodeUI('Use at least 8 characters.', true);
+  if (p1 !== p2) return forgotCodeUI('Passwords do not match.', true);
+  busy(b, true);
+  var v = await sb.auth.verifyOtp({ email: last.forgot, token: c, type: 'recovery' });
+  if (v.error) { busy(b, false); return forgotCodeUI('Wrong or expired code. Tap Resend code if needed.', true); }
+  var u = await sb.auth.updateUser({ password: p1 });
+  if (u.error) { busy(b, false); return forgotCodeUI(u.error.message, true); }
+  showToast('Password changed.');
+  after();
+};
+W.resendForgot = function () {
     if (!last.forgot) return showToast('Enter your email first', 'error');
     resetMail(last.forgot).then(function (r) { r.error ? showToast(r.error.message, 'error') : showToast('Reset link sent again to ' + last.forgot); });
   };
