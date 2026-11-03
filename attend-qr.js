@@ -339,3 +339,53 @@ W.go = function (v) {
 };
 setTimeout(function () { try { chip(); } catch (e) {} }, 1500);
 })();
+/* ---------- attend-loc v1: one-time location receipt for the CLASSIC 5-digit code too.
+   Same bounded reading as the QR flow, never stored raw. Wraps sb.rpc so the
+   existing attendance code needs zero changes. Respects an explicit "no". ---------- */
+(function () {
+'use strict';
+function oneFix(ms, good) {
+  return new Promise(function (done) {
+    if (!navigator.geolocation) return done(null);
+    var best = null, fin = false, id = null, tm = null;
+    function end() { if (fin) return; fin = true; clearTimeout(tm); if (id != null) { try { navigator.geolocation.clearWatch(id); } catch (e) {} } done(best); }
+    try {
+      id = navigator.geolocation.watchPosition(function (p) {
+        var c = p.coords;
+        if (!best || c.accuracy < best.acc) best = { lat: c.latitude, lng: c.longitude, acc: Math.round(c.accuracy) };
+        if (best.acc <= good) end();
+      }, function () { end(); }, { enableHighAccuracy: true, maximumAge: 0, timeout: ms });
+      tm = setTimeout(end, ms);
+    } catch (e) { end(); }
+  });
+}
+function consent() { try { return localStorage.getItem('as_qa_loc'); } catch (e) { return null; } }
+function withLoc(args, fx) {
+  var a2 = {}; for (var k in args) a2[k] = args[k];
+  if (fx) { a2.p_lat = fx.lat; a2.p_lng = fx.lng; a2.p_acc = fx.acc; }
+  return a2;
+}
+function safe(orig, name, args, a2) {
+  return orig(name, a2).then(function (r) {
+    if (r && r.error && /Could not find the function|does not exist/.test(r.error.message || '')) return orig(name, args);
+    return r;
+  });
+}
+function wrap() {
+  if (typeof sb === 'undefined' || !sb || !sb.rpc || sb.__locWrapped) return;
+  sb.__locWrapped = true;
+  var orig = sb.rpc.bind(sb);
+  sb.rpc = function (name, args) {
+    try {
+      if (name === 'mark_attendance' && args && args.p_lat == null && consent() !== 'no') {
+        return oneFix(6000, 30).then(function (fx) { return safe(orig, name, args, withLoc(args, fx)); });
+      }
+      if (name === 'start_session' && args && args.p_lat == null && consent() !== 'no') {
+        return oneFix(8000, 25).then(function (fx) { return safe(orig, name, args, withLoc(args, fx)); });
+      }
+    } catch (e) {}
+    return orig(name, args);
+  };
+}
+if (typeof sb !== 'undefined' && sb && sb.rpc) wrap(); else setTimeout(wrap, 900);
+})();
