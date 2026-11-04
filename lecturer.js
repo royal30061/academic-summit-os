@@ -173,12 +173,37 @@ LECTURER_VIEWS.records = function () {
   '</div>';
 };
 W.loadRecs = async function () {
-  var r = await sb.from('sessions').select('id, course, topic, created_at, code').eq('lecturer_id', uid).order('created_at', { ascending: false }).limit(20);
-  var list = $('rec-list'); if (!list) return;
-  if (r.error || !r.data || !r.data.length) { list.innerHTML = 'No sessions found.'; return; }
-  list.innerHTML = r.data.map(function (s) {
-    return '<div class="flex justify-between py-2" style="border-top:1px solid var(--bd)"><span><b>' + esc(s.course) + '</b> ' + esc(s.topic || '') + '</span><span>' + new Date(s.created_at).toLocaleDateString() + '</span></div>';
-  }).join('');
+  var list = $('rec-list');
+  if (!list) return;
+
+  list.textContent = 'Loading sessions...';
+
+  try {
+    var r = await sb
+      .from('sessions')
+      .select('id, course, topic, created_at, code')
+      .eq('lecturer_id', uid)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (r.error) throw r.error;
+
+    if (!r.data || !r.data.length) {
+      list.textContent = 'No attendance sessions found.';
+      return;
+    }
+
+    list.innerHTML = r.data.map(function (s) {
+      return '<div class="flex justify-between py-2" style="border-top:1px solid var(--bd)">' +
+        '<span><b>' + esc(s.course) + '</b> ' + esc(s.topic || '') + '</span>' +
+        '<span>' + new Date(s.created_at).toLocaleDateString() + '</span>' +
+      '</div>';
+    }).join('');
+
+  } catch (e) {
+    console.error('Records loading failed:', e);
+    list.textContent = 'Could not load records: ' + e.message;
+  }
 };
 W.exportRecordsCSV = async function () {
   var r = await sb.from('sessions').select('course, topic, code, created_at').eq('lecturer_id', uid).order('created_at', { ascending: false });
