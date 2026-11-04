@@ -93,26 +93,64 @@
         '</td><td class="p-3 text-xs">' + fmtD(r.marked_at || r.created_at || '') + '</td><td class="p-3 text-xs">' + (r.method === 'manual' ? 'M' : 'OTP') + '</td></tr>';
     }).join('') || '<tr><td class="p-3 text-slate-400" colspan="5">No attendance recorded yet.</td></tr>';
   };
-  async function currentSid() {                     // the class running now, else the latest one this lecturer started
-    var live = typeof liveGet === 'function' ? liveGet() : null;
-    if (live && live.id) return live.id;
-    if (W._rosterSid) return W._rosterSid;
-    var cols = ['lecturer_id', 'lecturer', 'user_id', 'owner'];
-    for (var i = 0; i < cols.length; i++) {
-      var r = await sb.from('sessions').select('id').eq(cols[i], uid).order('created_at', { ascending: false }).limit(1);
-      if (!r.error && r.data && r.data.length) return r.data[0].id;
-    }
+  async function currentSid() {
+  var live = typeof liveGet === 'function' ? liveGet() : null;
+
+  if (live && live.id) return live.id;
+  if (W._rosterSid) return W._rosterSid;
+
+  var r = await sb
+    .from('sessions')
+    .select('id')
+    .eq('lecturer_id', uid)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (r.error) {
+    console.error('Roster session lookup:', r.error);
+    showToast('Could not retrieve your attendance session: ' + r.error.message, 'error');
     return null;
   }
+
+  return r.data ? r.data.id : null;
+  }
   W.loadRoster = async function () {
-    var sid = await currentSid(); W._rosterSid = sid;
-    var q = sb.from('attendance').select('*, profiles(matric,name), sessions(course)');
-    if (sid) q = q.eq('session_id', sid);
-    var r = await q.order('marked_at', { ascending: true });
-    if (r.error) return showToast(r.error.message, 'error');
+  var body = $('roster-body');
+  if (body) {
+    body.innerHTML =
+      '<tr><td colspan="5" class="p-3">Loading attendance...</td></tr>';
+  }
+
+  try {
+    var sid = await currentSid();
+
+    if (!sid) {
+      W._rosterSid = null;
+      rosterRows = [];
+      W.paintRoster();
+      showToast('No attendance session found for this lecturer.', 'error');
+      return;
+    }
+
+    W._rosterSid = sid;
+
+    var r = await sb
+      .from('attendance')
+      .select('*, profiles(matric,name), sessions(course)')
+      .eq('session_id', sid)
+      .order('marked_at', { ascending: true });
+
+    if (r.error) throw r.error;
+
     rosterRows = rosterSort(r.data || []);
     W.paintRoster();
-  };
+
+  } catch (e) {
+    console.error('Roster loading failed:', e);
+    showToast('Roster could not load: ' + e.message, 'error');
+  }
+};
   W.exportRosterCSV = function () {
     var cell = function (v) { v = String(v == null ? '' : v); if (/^[=+\-@]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; };
     var rows = rosterSort(rosterRows).map(function (r, i) {
