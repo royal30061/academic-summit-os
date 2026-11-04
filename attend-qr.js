@@ -9,6 +9,7 @@ var JSQR_LIB = 'https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js';
 var L = { sid: null, course: '', timers: [], token: '', roster: [], radius: 150, refAcc: null };
 var S = { stream: null, raf: 0, busy: false, vid: null, read: null, fixP: null, fixAt: 0 };
 var bypass = false;
+function G() { return W.__attGuard || { geo: function () { return false; }, radius: function () { return 150; } }; }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 function lsg(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 function lss(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
@@ -71,6 +72,7 @@ V.qrl = function () {
     '<p class="text-xs" style="color:var(--mut)">Project this screen. The code changes every 20 seconds, so a photo of it is useless a minute later.</p>' +
     '<p class="text-xs" style="color:var(--mut)">Starting also takes one position reading from your phone, the reference point students are measured against. It’s kept only until you end the session, then wiped. Students’ positions are never stored, only their distance from you.</p>' +
     '<input id="qa-course" class="inp" placeholder="Course code, e.g. POS 204">' +
+    '<div id="att-rad-box"></div>' +
     '<button id="qa-go" class="btn w-full" onclick="qaStart()">Start session</button></div>';
 };
 /* v201: lecturers render from LECTURER_VIEWS, so without this go('qrl') silently showed the Attendance home */
@@ -84,9 +86,9 @@ W.qaStart = function () {
     return sb.rpc('qa_open', { p_course: course, p_lat: fx ? fx.lat : null, p_lng: fx ? fx.lng : null, p_acc: fx ? fx.acc : null })
       .then(function (r) {
         if (r.error || !r.data) { reset(); return showToast('Could not start: ' + ((r.error && r.error.message) || 'no session'), 'error'); }
-        L.sid = r.data; L.course = course; L.refAcc = fx ? fx.acc : null; L.radius = 150;
+        L.sid = r.data; L.course = course; L.refAcc = fx ? fx.acc : null; L.radius = G().radius();
         W.go('qrl');
-        if (!fx) showToast('No position reading, so distance is off for this session');
+        if (!fx) showToast('No position reading for this session' + (G().geo() ? '' : ', so distance is off'));
       });
   }).catch(function () { reset(); showToast('Network problem, try again', 'error'); });
 };
@@ -98,7 +100,8 @@ function refLabel() {
 }
 function drawRad() {
   var box = $('qa-rad'); if (!box) return;
-  box.innerHTML = '<span class="text-xs" style="align-self:center">Radius</span>' + [100, 150, 300, 500].map(function (r) {
+  if (G().geo()) { box.innerHTML = '<span class="text-xs">Range limit <b>' + L.radius + ' m</b>, checked by the server when each student marks.</span>'; return; }
+  box.innerHTML = '<span class="text-xs" style="align-self:center">Radius</span>' + [100, 150, 300, 500, 700].map(function (r) {
     return '<button class="' + (L.radius === r ? 'btn' : 'btn2') + '" style="padding:6px 10px;font-size:12px" onclick="qaRadius(' + r + ')">' + r + ' m</button>';
   }).join('');
 }
@@ -137,12 +140,13 @@ function renderList() {
   var rows = L.roster.map(function (m) { return { m: m, s: statusOf(m) }; });
   var cnt = { out: 0, edge: 0, none: 0, in: 0 };
   rows.forEach(function (x) { cnt[x.s.k]++; });
-  if (sum) sum.textContent = cnt.out + ' outside · ' + cnt.edge + ' borderline · ' + cnt.none + ' not checked · ' + cnt.in + ' inside';
+  var geo = G().geo();
+  if (sum) sum.textContent = geo ? 'Everyone listed passed the ' + L.radius + ' m range check.' : cnt.out + ' outside · ' + cnt.edge + ' borderline · ' + cnt.none + ' not checked · ' + cnt.in + ' inside';
   rows.sort(function (a, b) { return ORDER[a.s.k] - ORDER[b.s.k]; });
   l.innerHTML = rows.slice(0, 60).map(function (x) {
     var m = x.m, d = m.distance_m == null ? '' : m.distance_m + ' m' + (m.accuracy_m ? ' ±' + m.accuracy_m : '');
     return '<div class="card p-2 flex justify-between items-center text-xs"><span>' + esc(m.name || m.matric || 'Student') + (m.matric && m.name ? ' · ' + esc(m.matric) : '') + '</span>' +
-      '<span style="text-align:right"><b>' + d + '</b> <span style="color:' + x.s.c + ';font-weight:700">' + x.s.t + '</span></span></div>';
+      '<span style="text-align:right">' + (geo ? '<span style="color:var(--mut)">' + new Date(m.marked_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '</span>' : '<b>' + d + '</b> <span style="color:' + x.s.c + ';font-weight:700">' + x.s.t + '</span>') + '</span></div>';
   }).join('');
 }
 function poll() {
@@ -164,7 +168,7 @@ W.qaEnd = function () {
     var m = $('main');
     if (m) m.innerHTML = '<div class="space-y-4"><div class="font-extrabold text-2xl">' + esc(course) + ' · closed</div>' +
       '<div class="card p-4 text-center"><b class="text-2xl">' + rows.length + '</b><div class="lbl">present</div>' +
-      '<div class="text-xs mt-2" style="color:var(--mut)">' + out + ' outside the ' + L.radius + ' m radius</div></div>' +
+      (G().geo() ? '' : '<div class="text-xs mt-2" style="color:var(--mut)">' + out + ' outside the ' + L.radius + ' m radius</div>') + '</div>' +
       '<button class="btn w-full" onclick="qaCsv()">Download CSV</button><button class="btn2 w-full" onclick="go(\'home\')">Done</button></div>';
   }).catch(function () { showToast('Could not close, try again', 'error'); });
 };
@@ -181,7 +185,17 @@ W.qaCsv = function () {
 };
 
 /* ---------- student ---------- */
+function noticeGeo() {
+  return '<div class="space-y-4"><div class="font-extrabold text-2xl">Before you scan</div>' +
+    '<div class="card p-4 space-y-3 text-sm">' +
+    '<p><b>Your lecturer has turned on the class range.</b> You can only mark attendance from inside the room or hall.</p>' +
+    '<p>When you scan, your phone takes one position reading. The server checks it against the range and drops it. Nothing about where you are is kept.</p>' +
+    '<p class="text-xs" style="color:var(--mut)">Your phone will show its own permission pop-up next. Allow it.</p></div>' +
+    '<button class="btn w-full py-3" onclick="qaLoc(\'yes\')">Allow and continue</button>' +
+    '<button class="btn2 w-full" onclick="go(\'home\')">Cancel</button></div>';
+}
 function noticeView() {
+  if (G().geo()) return noticeGeo();
   return '<div class="space-y-4"><div class="font-extrabold text-2xl">Before you scan</div>' +
     '<div class="card p-4 space-y-3 text-sm">' +
     '<p><b>A code that travels by WhatsApp stops proving you were in the room.</b> A distance is much harder to forward.</p>' +
@@ -195,11 +209,11 @@ function noticeView() {
 }
 V.qrs = function () {
   var ch = lsg('as_qa_loc');
-  if (!ch) return noticeView();
+  if (!ch || (G().geo() && ch !== 'yes')) return noticeView();
   return '<div class="space-y-3"><div class="font-extrabold text-2xl">Scan to mark attendance</div>' +
     '<div class="card p-2"><video id="qa-vid" playsinline muted style="width:100%;border-radius:14px;background:#000;min-height:240px"></video></div>' +
     '<p id="qa-msg" class="text-xs text-center" style="color:var(--mut)">Point the camera at the QR on the projector.</p>' +
-    '<div class="text-center" style="font-size:11px;color:var(--mut)">Distance check: ' + (ch === 'yes' ? 'on' : 'off') + ' · <a onclick="qaLocReset()" style="text-decoration:underline">Change</a></div>' +
+    '<div class="text-center" style="font-size:11px;color:var(--mut)">' + (G().geo() ? 'Range check is on' : 'Distance check: ' + (ch === 'yes' ? 'on' : 'off') + ' · <a onclick="qaLocReset()" style="text-decoration:underline">Change</a>') + '</div>' +
     '<div class="card p-3 space-y-2"><div class="lbl">Camera not working? Type the code</div>' +
     '<input id="qa-typed" class="inp" placeholder="e.g. A3F9 1C7E" autocapitalize="characters">' +
     '<button class="btn w-full" onclick="qaTyped()">Mark me present</button></div>' +
@@ -257,10 +271,13 @@ function scanInit() {
     .then(function (read) { S.vid = vid; S.read = read; loop(); })
     .catch(function () { say('Scanner unavailable. Allow the camera or type the code below'); });
 }
-var WHY = { expired: 'That code just changed. Scan the screen again', invalid: 'Not a valid attendance code', closed: 'This session has ended', signin: 'Please sign in again' };
+var WHY = { expired: 'That code just changed. Scan the screen again', invalid: 'Not a valid attendance code', closed: 'This session has ended', signin: 'Please sign in again',
+  outside: 'You are outside the class range set by your lecturer', no_location: 'Location is required. Allow it, then scan again',
+  imprecise: 'Your location is too imprecise. Step near a window and scan again', device_used: 'This phone has already marked for this class. Each student needs their own phone',
+  device: 'Device check failed. Refresh the app and try again', not_student: 'Lecturers cannot mark attendance' };
 function mark(tok) {
   say('Checking...');
-  var m = me(), useLoc = lsg('as_qa_loc') === 'yes';
+  var m = me(), useLoc = lsg('as_qa_loc') === 'yes' || G().geo();
   (useLoc ? getFix() : Promise.resolve(null)).then(function (fx) {
     return sb.rpc('qa_mark', { p_token: tok, p_name: m.name, p_matric: m.matric, p_lat: fx ? fx.lat : null, p_lng: fx ? fx.lng : null, p_acc: fx ? fx.acc : null });
   }).then(function (r) {
@@ -268,11 +285,12 @@ function mark(tok) {
     if (r.error) { say('Network problem. Try again'); S.busy = false; return loop(); }
     if (d.ok) return success(d);
     say(WHY[d.reason] || 'Could not mark attendance');
-    if (d.reason === 'closed') { stopCam(); return; }
-    S.busy = false; loop();
+    if (/^(closed|device_used|not_student)$/.test(d.reason)) { stopCam(); return; }
+    S.busy = false; setTimeout(loop, /^(outside|imprecise|no_location)$/.test(d.reason) ? 2500 : 0);
   }).catch(function () { say('Network problem. Try again'); S.busy = false; loop(); });
 }
 function receiptLine(d) {
+  if (d.geo) return 'Inside the class range.';
   if (d.distance != null) return d.distance + ' m from your lecturer' + (d.accuracy ? ' (±' + d.accuracy + ' m)' : '');
   if (d.ref_acc == null) return 'Distance not checked: your lecturer’s position wasn’t set for this session.';
   if (lsg('as_qa_loc') !== 'yes') return 'Distance not checked: you chose to skip it.';
@@ -341,53 +359,4 @@ W.go = function (v) {
 };
 setTimeout(function () { try { chip(); } catch (e) {} }, 1500);
 })();
-/* ---------- attend-loc v1: one-time location receipt for the CLASSIC 5-digit code too.
-   Same bounded reading as the QR flow, never stored raw. Wraps sb.rpc so the
-   existing attendance code needs zero changes. Respects an explicit "no". ---------- */
-(function () {
-'use strict';
-function oneFix(ms, good) {
-  return new Promise(function (done) {
-    if (!navigator.geolocation) return done(null);
-    var best = null, fin = false, id = null, tm = null;
-    function end() { if (fin) return; fin = true; clearTimeout(tm); if (id != null) { try { navigator.geolocation.clearWatch(id); } catch (e) {} } done(best); }
-    try {
-      id = navigator.geolocation.watchPosition(function (p) {
-        var c = p.coords;
-        if (!best || c.accuracy < best.acc) best = { lat: c.latitude, lng: c.longitude, acc: Math.round(c.accuracy) };
-        if (best.acc <= good) end();
-      }, function () { end(); }, { enableHighAccuracy: true, maximumAge: 0, timeout: ms });
-      tm = setTimeout(end, ms);
-    } catch (e) { end(); }
-  });
-}
-function consent() { try { return localStorage.getItem('as_qa_loc'); } catch (e) { return null; } }
-function withLoc(args, fx) {
-  var a2 = {}; for (var k in args) a2[k] = args[k];
-  if (fx) { a2.p_lat = fx.lat; a2.p_lng = fx.lng; a2.p_acc = fx.acc; }
-  return a2;
-}
-function safe(orig, name, args, a2) {
-  return orig(name, a2).then(function (r) {
-    if (r && r.error && /Could not find the function|does not exist|schema cache|best candidate/i.test(r.error.message || '')) return orig(name, args);
-    return r;
-  });
-}
-function wrap() {
-  if (typeof sb === 'undefined' || !sb || !sb.rpc || sb.__locWrapped) return;
-  sb.__locWrapped = true;
-  var orig = sb.rpc.bind(sb);
-  sb.rpc = function (name, args) {
-    try {
-      if (name === 'mark_attendance' && args && args.p_lat == null && consent() !== 'no') {
-        return oneFix(6000, 30).then(function (fx) { return safe(orig, name, args, withLoc(args, fx)); });
-      }
-      if (name === 'start_session' && args && args.p_lat == null && consent() !== 'no') {
-        return oneFix(4000, 60).then(function (fx) { return safe(orig, name, args, withLoc(args, fx)); });   /* v201: was 8s at 25 m, which made Generate look dead indoors */
-      }
-    } catch (e) {}
-    return orig(name, args);
-  };
-}
-if (typeof sb !== 'undefined' && sb && sb.rpc) wrap(); else setTimeout(wrap, 900);
-})();
+/* The 5-digit location/device wrapper that used to live here is now attend-guard.js. */
