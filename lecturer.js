@@ -159,4 +159,30 @@
       '<div class="card p-5 space-y-2"><div class="lbl">App</div><button class="btn w-full" onclick="installApp()">Download Lecturer App</button><p class="text-[11px] text-slate-400">Installs to home screen, works offline, opens full-screen.</p></div>' +
       '<button class="btn2 w-full !text-rose-500" onclick="deleteLecAccount()">Delete Account</button><button class="btn2 w-full !text-rose-500" onclick="logout()">Log Out Console</button></div>';
   };
+   /* ---------- Lecturer Records View (Attendance History) ---------- */
+LECTURER_VIEWS.records = function () {
+  return '<div class="space-y-4">' +
+    '<div class="flex justify-between items-center"><div class="font-extrabold text-xl">Attendance Records</div>' +
+    '<button class="btn2" onclick="exportRecordsCSV()">Export CSV</button></div>' +
+    '<div class="card p-4 space-y-2"><div class="font-bold">Recent Sessions</div>' +
+    '<div id="rec-list" class="text-xs" style="color:var(--mut)">Loading...</div></div>' +
+    '<script>loadRecs();<\/script></div>';
+};
+W.loadRecs = async function () {
+  var r = await sb.from('sessions').select('id, course, topic, created_at, code').eq('lecturer_id', uid).order('created_at', { ascending: false }).limit(20);
+  var list = $('rec-list'); if (!list) return;
+  if (r.error || !r.data || !r.data.length) { list.innerHTML = 'No sessions found.'; return; }
+  list.innerHTML = r.data.map(function (s) {
+    return '<div class="flex justify-between py-2" style="border-top:1px solid var(--bd)"><span><b>' + esc(s.course) + '</b> ' + esc(s.topic || '') + '</span><span>' + new Date(s.created_at).toLocaleDateString() + '</span></div>';
+  }).join('');
+};
+W.exportRecordsCSV = async function () {
+  var r = await sb.from('sessions').select('course, topic, code, created_at').eq('lecturer_id', uid).order('created_at', { ascending: false });
+  if (r.error || !r.data) return showToast('No records to export', 'error');
+  var csv = 'Course,Topic,Code,Date\n' + r.data.map(function (s) {
+    return [s.course, s.topic, s.code, new Date(s.created_at).toLocaleString()].map(function (x) { return '"' + String(x || '').replace(/"/g, '""') + '"'; }).join(',');
+  }).join('\n');
+  var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = 'lecturer-records.csv'; a.click();
+};
 })();
