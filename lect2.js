@@ -26,10 +26,11 @@ var GL = {
   home: S0 + '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M9 16l2 2 4-4"/></svg>',
   roster: S0 + '<path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
   plan: S0 + '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>',
+  records: S0 + '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/></svg>',
   prof: S0 + '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
 };
-var OR = ['home', 'roster', 'plan', 'prof'];
-var LB = { home: 'Attendance', roster: 'Roster', plan: 'Planner', prof: 'Profile' };
+var OR = ['home', 'roster', 'records', 'prof'];
+var LB = { home: 'Attendance', roster: 'Roster', records: 'Records', prof: 'Profile' };
 function paintLec() {
   if (!isLec()) return;
   var probe = document.querySelector('[data-n="home"].bn'); if (!probe) return;
@@ -37,7 +38,7 @@ function paintLec() {
   bar.innerHTML = OR.map(function (v) {
     return '<button type="button" data-n="' + v + '" onclick="go(\'' + v + '\')" class="bn flex-1 flex flex-col items-center gap-1 py-2 ' +
       (v === view ? 'text-violet-600 dark:text-violet-400' : 'text-slate-500') + '" style="background:none;border:none;cursor:pointer">' +
-      GL[v] + '<span class="text-[10px] font-bold">' + LB[v] + '</span></button>';
+      (GL[v] || '') + '<span class="text-[10px] font-bold">' + LB[v] + '</span></button>';
   }).join('');
 }
 if (typeof W.liveStart === 'function') {

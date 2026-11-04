@@ -96,7 +96,7 @@ if (typeof g0 === 'function') {
 /* ---------- Profile: study door, data export, health line ---------- */
 function profileCard() {
   var hl = probe(), good = !hl.bad.length;
-  return '<div class="card space-y-3 mt-5"><div class="font-extrabold">Study engine</div><button class="btn w-full" onclick="asStudy()">Open the Study engine</button>' +
+  return '<div class="card p-5 space-y-3 mt-5"><div class="font-extrabold">Study engine</div><button class="btn w-full" onclick="asStudy()">Open the Study engine</button>' +
     '<div class="font-extrabold pt-2">Your data</div><button class="btn2 w-full" onclick="asExport()">Download my data</button>' +
     '<div class="text-xs font-extrabold" style="color:' + (good ? '#059669' : '#dc2626') + '">' + (good ? 'System check: all parts loaded' : 'System check: ' + esc(hl.bad.join(', ')) + ' not working') + '</div></div>';
 }

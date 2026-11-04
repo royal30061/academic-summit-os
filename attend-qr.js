@@ -73,6 +73,8 @@ V.qrl = function () {
     '<input id="qa-course" class="inp" placeholder="Course code, e.g. POS 204">' +
     '<button id="qa-go" class="btn w-full" onclick="qaStart()">Start session</button></div>';
 };
+/* v201: lecturers render from LECTURER_VIEWS, so without this go('qrl') silently showed the Attendance home */
+try { if (typeof LECTURER_VIEWS !== 'undefined') LECTURER_VIEWS.qrl = V.qrl; } catch (e) {}
 W.qaStart = function () {
   var course = ((($('qa-course') || {}).value) || '').trim();
   if (!course) return showToast('Enter the course code', 'error');
@@ -367,7 +369,7 @@ function withLoc(args, fx) {
 }
 function safe(orig, name, args, a2) {
   return orig(name, a2).then(function (r) {
-    if (r && r.error && /Could not find the function|does not exist/.test(r.error.message || '')) return orig(name, args);
+    if (r && r.error && /Could not find the function|does not exist|schema cache|best candidate/i.test(r.error.message || '')) return orig(name, args);
     return r;
   });
 }
@@ -381,55 +383,7 @@ function wrap() {
         return oneFix(6000, 30).then(function (fx) { return safe(orig, name, args, withLoc(args, fx)); });
       }
       if (name === 'start_session' && args && args.p_lat == null && consent() !== 'no') {
-        return oneFix(8000, 25).then(function (fx) { return safe(orig, name, args, withLoc(args, fx)); });
-      }
-    } catch (e) {}
-    return orig(name, args);
-  };
-}
-if (typeof sb !== 'undefined' && sb && sb.rpc) wrap(); else setTimeout(wrap, 900);
-})();
-/* ---------- attend-loc v1: one-time location receipt for the CLASSIC 5-digit code too. ---------- */
-(function () {
-'use strict';
-function oneFix(ms, good) {
-  return new Promise(function (done) {
-    if (!navigator.geolocation) return done(null);
-    var best = null, fin = false, id = null, tm = null;
-    function end() { if (fin) return; fin = true; clearTimeout(tm); if (id != null) { try { navigator.geolocation.clearWatch(id); } catch (e) {} } done(best); }
-    try {
-      id = navigator.geolocation.watchPosition(function (p) {
-        var c = p.coords;
-        if (!best || c.accuracy < best.acc) best = { lat: c.latitude, lng: c.longitude, acc: Math.round(c.accuracy) };
-        if (best.acc <= good) end();
-      }, function () { end(); }, { enableHighAccuracy: true, maximumAge: 0, timeout: ms });
-      tm = setTimeout(end, ms);
-    } catch (e) { end(); }
-  });
-}
-function consent() { try { return localStorage.getItem('as_qa_loc'); } catch (e) { return null; } }
-function withLoc(args, fx) {
-  var a2 = {}; for (var k in args) a2[k] = args[k];
-  if (fx) { a2.p_lat = fx.lat; a2.p_lng = fx.lng; a2.p_acc = fx.acc; }
-  return a2;
-}
-function safe(orig, name, args, a2) {
-  return orig(name, a2).then(function (r) {
-    if (r && r.error && /Could not find the function|does not exist/.test(r.error.message || '')) return orig(name, args);
-    return r;
-  });
-}
-function wrap() {
-  if (typeof sb === 'undefined' || !sb || !sb.rpc || sb.__locWrapped) return;
-  sb.__locWrapped = true;
-  var orig = sb.rpc.bind(sb);
-  sb.rpc = function (name, args) {
-    try {
-      if (name === 'mark_attendance' && args && args.p_lat == null && consent() !== 'no') {
-        return oneFix(6000, 30).then(function (fx) { return safe(orig, name, args, withLoc(args, fx)); });
-      }
-      if (name === 'start_session' && args && args.p_lat == null && consent() !== 'no') {
-        return oneFix(8000, 25).then(function (fx) { return safe(orig, name, args, withLoc(args, fx)); });
+        return oneFix(4000, 60).then(function (fx) { return safe(orig, name, args, withLoc(args, fx)); });   /* v201: was 8s at 25 m, which made Generate look dead indoors */
       }
     } catch (e) {}
     return orig(name, args);

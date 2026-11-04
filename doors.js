@@ -9,6 +9,7 @@ var S0 = S;
 var ICONX = {
   roster: S + '<path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
   reps: S + '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M9 10l2 2 4-4"/></svg>',
+  records: S + '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/></svg>',
   prof: S + '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
 };
 var ICONS = {
@@ -19,8 +20,8 @@ var ICONS = {
   fin: S + '<path d="M20 7H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/><path d="M2 9V5a2 2 0 0 1 2-2h12"/></svg>'
 };
 var CHART = ICONS.traj;
-function orderFor() { return (U && U.role === 'lecturer') ? ['home', 'roster', 'reps', 'prof'] : ['home', 'study', 'traj', 'att', 'fin']; }
-var LABEL = { home: 'Home', study: 'Study', traj: 'Results', att: 'Attend', fin: 'Finance', roster: 'Roster', reps: 'Records', prof: 'Profile' };
+function orderFor() { return (U && U.role === 'lecturer') ? ['home', 'roster', 'records', 'prof'] : ['home', 'study', 'traj', 'att', 'fin']; }
+var LABEL = { home: 'Home', study: 'Study', traj: 'Results', att: 'Attend', fin: 'Finance', roster: 'Roster', reps: 'Records', records: 'Records', prof: 'Profile' };
 var goB = W.go;
 W.go = function (v) {
   if (v === 'acad') {
@@ -32,9 +33,11 @@ W.go = function (v) {
   return r;
 };
 W.lectGo = function (k) {
-  var m = { home: ['home'], roster: ['roster'], reps: ['reps', 'req', 'home'], prof: ['prof', 'profile', 'home'] };
+  /* v201: lecturer screens live in LECTURER_VIEWS, not V. Checking V sent Roster and Records straight back to Home. */
+  var m = { home: ['home'], roster: ['roster'], reps: ['records'], records: ['records'], prof: ['prof'] };
   var c = m[k] || ['home'];
-  for (var i = 0; i < c.length; i++) if (V[c[i]]) { W.go(c[i]); return; }
+  var LV = (typeof LECTURER_VIEWS !== 'undefined') ? LECTURER_VIEWS : {};
+  for (var i = 0; i < c.length; i++) if (LV[c[i]] || V[c[i]]) { W.go(c[i]); return; }
   W.go('home');
 };
 function paint() {
@@ -43,7 +46,7 @@ function paint() {
   if (!probe) return;
   var bar = probe.parentNode;
   bar.innerHTML = orderFor().map(function (v) {
-    var on = v === view;
+    var on = v === view || (v === 'reps' && view === 'records');
     return '<button type="button" data-n="' + v + '" onclick="' + ((U && U.role === 'lecturer') ? 'lectGo(\'' + v + '\')' : 'go(\'' + v + '\')') + '" class="bn flex-1 flex flex-col items-center gap-1 py-2 ' + (on ? 'text-violet-600 dark:text-violet-400' : 'text-slate-500') + '" style="background:none;border:none;cursor:pointer">' +
       (ICONX[v] || ICONS[v] || CHART) + '<span class="text-[10px] font-bold">' + LABEL[v] + '</span></button>';
   }).join('');

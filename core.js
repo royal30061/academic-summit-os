@@ -36,6 +36,7 @@
     $('main').innerHTML = lec ? (LECTURER_VIEWS[v] || LECTURER_VIEWS.home)() : (V[v] || V.home)();
     if (!lec && v === 'acad') ACAD[aTab]();
     if (lec && v === 'roster') loadRoster();
+    if (lec && v === 'records' && typeof W.loadRecs === 'function') W.loadRecs();
     if (v === 'home') onHomeShown();
     if (noResults && v === 'acad' && aTab === 'calc') { try { gateCard(); } catch (e) {} }
     hideInstall();

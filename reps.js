@@ -82,7 +82,7 @@
         box.innerHTML = ''; return;
       }
       var left = r.r_code ? Math.max(0, Math.round((new Date(r.r_expires) - Date.now()) / 1000)) : 0;
-      live.innerHTML = '<div class="text-center p-4 rounded-2xl space-y-1" style="background:var(--sub)"><div class="text-5xl font-extrabold tracking-widest font-mono" style="color:#10b981">' + (left > 0 ? esc(r.r_code) : 'EXPIRED') + '</div>' +
+      live.innerHTML = '<div class="text-center p-4 rounded-2xl space-y-1" style="background:var(--sub)"><div class="text-5xl font-extrabold tracking-widest font-mono max-w-full overflow-hidden" style="color:#10b981' + (left > 0 ? '' : ';font-size:1.75rem') + '">' + (left > 0 ? esc(r.r_code) : 'EXPIRED') + '</div>' +
         '<div class="text-xs font-bold text-slate-500">' + (left > 0 ? 'Expires in ' + left + 's' : 'Re-issue to get a new code') + ' - ' + r.r_present + ' present</div></div><button class="btn2 w-full" onclick="repReissue(' + i + ')">Re-issue code</button>';
       rpc('rep_my_requests', { p_session_id: r.r_session_id }).then(function (list) {
         box.innerHTML = (list || []).map(function (q) {

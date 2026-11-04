@@ -1020,8 +1020,10 @@ function liveStop(){clearInterval(liveTick);clearInterval(livePoll);liveTick=liv
 function livePaint(){
   const s=liveGet(),o=$('otp-display'),t=$('timer-display');
   if(!s||!o||!t)return;
+  if(!isFinite(s.end)){o.textContent='-----';o.style.fontSize='';t.textContent='Tap Generate for a new code';return;}
   const left=Math.max(0,Math.round((s.end-Date.now())/1000));
   o.textContent=left?s.code:'EXPIRED';
+  o.style.fontSize=left?'':'2rem';            /* EXPIRED is wider than five digits: shrink it so it stays inside the card */
   t.textContent=left?'Expires in '+left+'s':'Session closed';
   const c=$('sub-count');if(c)c.textContent=(s.count||0)+' Present';
 }
@@ -1041,7 +1043,7 @@ function liveRun(){
 }
 function liveRestore(){
   const s=liveGet();if(!s)return;
-  if(Date.now()>s.end+120000){localStorage.removeItem(liveKey());return;}
+  if(!isFinite(s.end)||!s.id||Date.now()>s.end+120000){localStorage.removeItem(liveKey());return;}
   const put=(id,v)=>{
     const e=$(id);if(!e||!v)return;
     if(e.tagName==='SELECT'){if(Array.from(e.options).some(o=>o.value===v))e.value=v;}else e.value=v;
@@ -1050,24 +1052,74 @@ function liveRestore(){
   const lp=$('live-panel');if(lp)lp.classList.remove('hidden');
   liveRun();
 }
+/* ---- v201: tolerant reading of start_session / reissue_session replies ---- */
+function normSession(data){
+  let row=Array.isArray(data)?data[0]:data;
+  if(row!=null&&typeof row!=='object')row={id:row};
+  row=row||{};
+  const pick=(...ks)=>{for(const k of ks){const v=row[k];if(v!=null&&v!=='')return v;}return null;};
+  const id=pick('s_id','session_id','id','sid');
+  const code=pick('s_code','code','otp','pin','s_otp','s_pin');
+  const raw=pick('s_expires','expires_at','expires','s_expires_at','expiry','s_expiry','ends_at','end');
+  let end=NaN;
+  if(raw!=null){
+    if(typeof raw==='number')end=raw<1e12?raw*1000:raw;
+    else{
+      let t=String(raw).trim();
+      // a timestamp with no zone is UTC on Supabase; without this the phone reads it as local time and the code is "already expired"
+      if(/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(t)&&!/(Z|[+-]\d{2}(:?\d{2})?)$/i.test(t))t=t.replace(' ','T')+'Z';
+      end=new Date(t).getTime();
+    }
+  }
+  const now=Date.now();
+  if(!isFinite(end)||end-now<5000||end-now>600000)end=now+90000;   // it is a 90-second code: never show a dead one
+  return{id,code:code!=null?String(code):null,end,keys:Object.keys(row)};
+}
+async function sessionFromTable(s,sid){
+  try{
+    let q=sb.from('sessions').select('*');
+    q=sid?q.eq('id',sid):q.eq('lecturer_id',uid).order('created_at',{ascending:false}).limit(1);
+    const r=await q.maybeSingle();
+    if(r&&r.data){s.id=s.id||r.data.id;if(!s.code&&r.data.code!=null)s.code=String(r.data.code);}
+  }catch(e){}
+  return s;
+}
+function genBtn(){return document.querySelector('button[onclick="startAttendanceSession()"]');}
 async function startAttendanceSession(){
-  const course=$('lec-course').value.trim()||'POS 204',topic=$('lec-topic').value.trim(),level=($('lec-level')||{}).value||'';
-  const{data,error}=await sb.rpc('start_session',{p_course:course,p_topic:topic});
-  if(error)return showToast(error.message,'error');
-  const s=data[0];
-  liveSet({id:s.s_id,code:s.s_code,end:new Date(s.s_expires).getTime(),course,topic,level,count:0});
-  $('live-panel').classList.remove('hidden');
-  liveRun();
+  if(window._genBusy)return;
+  window._genBusy=true;
+  const btn=genBtn(),label=btn?btn.textContent:'';
+  if(btn){btn.disabled=true;btn.textContent='Starting class...';}
+  try{
+    const course=$('lec-course').value.trim()||'POS 204',topic=$('lec-topic').value.trim(),level=($('lec-level')||{}).value||'';
+    const{data,error}=await sb.rpc('start_session',{p_course:course,p_topic:topic});
+    if(error)return showToast(error.message,'error');
+    let s=normSession(data);
+    if(!s.id||!s.code)s=await sessionFromTable(s,s.id);
+    if(!s.id||!s.code){console.error('start_session reply',data);return showToast('Server reply not understood (fields: '+(s.keys.join(', ')||'none')+')','error');}
+    liveSet({id:s.id,code:s.code,end:s.end,course,topic,level,count:0});
+    const lp=$('live-panel');if(lp)lp.classList.remove('hidden');
+    liveRun();
+  }catch(e){
+    console.error('startAttendanceSession',e);showToast('Could not start the class: '+(e&&e.message||e),'error');
+  }finally{
+    window._genBusy=false;
+    const b2=genBtn();if(b2){b2.disabled=false;b2.textContent=label||'Generate 90-Second Code';}
+  }
 }
 async function reissueCode(){
   const s=liveGet();
-  if(!s)return showToast('Generate a session first','error');
-  const{data,error}=await sb.rpc('reissue_session',{p_session_id:s.id});
-  if(error)return showToast(error.message,'error');
-  const n=data[0];
-  liveSet({...s,code:n.s_code,end:new Date(n.s_expires).getTime()});
-  liveRun();
-  showToast('New code broadcast - SAME class list');
+  if(!s||!s.id){try{localStorage.removeItem(liveKey());}catch(e){}return showToast('Generate a session first','error');}
+  try{
+    const{data,error}=await sb.rpc('reissue_session',{p_session_id:s.id});
+    if(error)return showToast(error.message,'error');
+    let n=normSession(data);
+    if(!n.code)n=await sessionFromTable(n,s.id);
+    if(!n.code)return showToast('Server reply not understood (fields: '+(n.keys.join(', ')||'none')+')','error');
+    liveSet({...s,code:n.code,end:n.end});
+    liveRun();
+    showToast('New code broadcast - SAME class list');
+  }catch(e){showToast('Could not re-issue: '+(e&&e.message||e),'error');}
 }
 async function manualAdd(){
   const m=$('man-matric').value.trim(),s=liveGet();
@@ -1124,7 +1176,7 @@ home(){
   h+='<div><label class="lbl block mb-1">Course</label>'+((L.courses&&L.courses.length)?'<select id="lec-course" class="inp uppercase font-mono font-bold">'+L.courses.map(c=>'<option'+(slot&&slot.code===c.code?' selected':'')+'>'+esc(c.code)+'</option>').join('')+'</select>':'<input id="lec-course" class="inp uppercase font-mono font-bold" value="'+(slot?esc(slot.code):'POS 204')+'">')+'</div>';
   h+='<div><label class="lbl block mb-1">Level</label><input id="lec-level" class="inp" value="'+esc(slotCourse?slotCourse.level:'')+'" placeholder="e.g. 200"></div>';
   h+='<div class="sm:col-span-2"><label class="lbl block mb-1">Topic</label><input id="lec-topic" class="inp" placeholder="Class Session"></div></div>';
-  h+='<div class="text-center p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl space-y-3"><div class="lbl">Broadcast 5-Digit OTP</div><div id="otp-display" class="text-6xl font-extrabold tracking-widest font-mono text-emerald-600 dark:text-emerald-400">-----</div><div id="timer-display" class="text-xs font-bold text-slate-400">Tap below to broadcast</div></div>';
+  h+='<div class="text-center p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl space-y-3"><div class="lbl">Broadcast 5-Digit OTP</div><div id="otp-display" class="text-6xl font-extrabold tracking-widest font-mono max-w-full overflow-hidden text-emerald-600 dark:text-emerald-400">-----</div><div id="timer-display" class="text-xs font-bold text-slate-400">Tap below to broadcast</div></div>';
   h+='<button class="btn w-full py-3 text-base" onclick="startAttendanceSession()">Generate 90-Second Code</button>';
   h+='<div id="live-panel" class="hidden space-y-2"><button class="btn2 w-full" onclick="reissueCode()">Re-issue code (same class list)</button><div class="flex gap-2"><input id="man-matric" class="inp font-mono uppercase" placeholder="Matric to add manually"><button class="btn shrink-0" onclick="manualAdd()">Add</button></div></div>';
   h+='</div>';
@@ -3093,93 +3145,60 @@ start=function(){_start63();setTimeout(function(){homeExtras();acadExtras();},25
 </script>
 
   
-<script src="splash.js?v=111"></script>
-<script src="guard.js?v=110"></script>
-<script src="core.js?v=110"></script>
-<script src="academics.js?v=110"></script>
-<script src="ocr.js?v=110"></script>
-<script src="home.js?v=110"></script>
-<script src="tt.js?v=110"></script>
-<script src="streak.js?v=110"></script>
-<script src="extras.js?v=110"></script>
-<script src="reps.js?v=110"></script>
-<script src="lecturer.js?v=110"></script>
-<script src="auth.js?v=111"></script>
-<script src="fixes.js?v=110"></script>
-<script src="zuma-art.js?v=110"></script>
-<script src="zuma.js?v=110"></script>
-<script src="coach.js?v=117"></script>
-<script src="ui.js?v=110"></script>
-<script src="polish.js?v=110"></script>
-<script src="home2.js?v=121"></script>
-<script src="homefix.js?v=107"></script>
-<script src="delights.js?v=110"></script></script>
-<script src="pulse.js?v=110"></script>
-<script src="plan.js?v=121"></script>
-<script src="read.js?v=121"></script>
-<script src="events.js?v=110"></script>
-<script src="results-hub.js?v=111"></script>
-<script src="study-core.js?v=111"></script>
-<script src="study.js?v=110"></script>
-<script src="doors.js?v=120"></script>
-<script src="hometune.js?v=121"></script>
-<script src="tune.js?v=121"></script>
-<script src="study-sessions.js?v=121"></script>
-<script src="reg2.js?v=127"></script>
-<script src="homeflow.js?v=127"></script>
-<script src="lect2.js?v=121"></script>
-<script src="hfdelegate.js?v=124"></script>
-<script src="acad2.js?v=3"></script>
-<script src="bridge.js?v=1"></script>
-<script src="shield.js?v=1"></script>
-<script src="timertick.js?v=1"></script>
-<script src="attend-qr.js?v=3"></script>
-<script src="chartfix.js?v=1"></script>
-<script src="resit.js?v=2"></script>
-<script src="navback.js?v=1"></script>
-<script src="streakzuma.js?v=1"></script>
-
-<script src="splash.js?v=105"></script>
-<script src="guard.js?v=81"></script>
-<script src="core.js?v=81"></script>
-<script src="academics.js?v=81"></script>
-<script src="ocr.js?v=81"></script>
-<script src="home.js?v=94"></script>
-<script src="tt.js?v=86"></script>
-<script src="streak.js?v=92"></script>
-<script src="extras.js?v=81"></script>
-<script src="reps.js?v=81"></script>
-<script src="lecturer.js?v=81"></script>
-<script src="auth.js?v=82"></script>
-<script src="fixes.js?v=81"></script>
-<script src="zuma-art.js?v=525966"></script>
-<script src="zuma.js?v=107"></script>
-<script src="coach.js?v=102"></script>
-<script src="ui.js?v=105"></script>
-<script src="home2.js?v=107"></script>
-<script src="homefix.js?v=107"></script></script>
-<script src="delights.js?v=99"></script></script>
-<script src="pulse.js?v=96"></script>
-<script src="plan.js?v=99"></script>
-<script src="read.js?v=99"></script>
-<script src="events.js?v=104"></script>
-<script src="results-hub.js?v=104"></script>
-<script src="study.js?v=107"></script>
-<script src="doors.js?v=107"></script>
- 
-<script src="repair.js?v=1"></script>
- 
-<script src="repair.js?v=1"></script>
-<script src="insights.js?v=1"></script>
-<script src="homehub.js?v=1"></script>
-<script src="marks.js?v=1"></script>
-<script src="zumaguide.js?v=1"></script>
-<script src="homeswitch.js?v=1"></script>
-
-<script src="repair.js?v=2"></script>
-<script src="target2.js?v=1"></script>
-<script src="studyhub.js?v=1"></script>
-<script src="announce.js"></script>
+<script src="splash.js?v=201"></script>
+<script src="guard.js?v=201"></script>
+<script src="core.js?v=201"></script>
+<script src="academics.js?v=201"></script>
+<script src="ocr.js?v=201"></script>
+<script src="home.js?v=201"></script>
+<script src="tt.js?v=201"></script>
+<script src="streak.js?v=201"></script>
+<script src="extras.js?v=201"></script>
+<script src="reps.js?v=201"></script>
+<script src="lecturer.js?v=201"></script>
+<script src="auth.js?v=201"></script>
+<script src="fixes.js?v=201"></script>
+<script src="zuma-art.js?v=201"></script>
+<script src="zuma.js?v=201"></script>
+<script src="coach.js?v=201"></script>
+<script src="ui.js?v=201"></script>
+<script src="polish.js?v=201"></script>
+<script src="home2.js?v=201"></script>
+<script src="homefix.js?v=201"></script>
+<script src="delights.js?v=201"></script>
+<script src="pulse.js?v=201"></script>
+<script src="plan.js?v=201"></script>
+<script src="read.js?v=201"></script>
+<script src="events.js?v=201"></script>
+<script src="results-hub.js?v=201"></script>
+<script src="study-core.js?v=201"></script>
+<script src="study.js?v=201"></script>
+<script src="doors.js?v=201"></script>
+<script src="hometune.js?v=201"></script>
+<script src="tune.js?v=201"></script>
+<script src="study-sessions.js?v=201"></script>
+<script src="reg2.js?v=201"></script>
+<script src="homeflow.js?v=201"></script>
+<script src="lect2.js?v=201"></script>
+<script src="hfdelegate.js?v=201"></script>
+<script src="acad2.js?v=201"></script>
+<script src="bridge.js?v=201"></script>
+<script src="shield.js?v=201"></script>
+<script src="timertick.js?v=201"></script>
+<script src="attend-qr.js?v=201"></script>
+<script src="chartfix.js?v=201"></script>
+<script src="resit.js?v=201"></script>
+<script src="navback.js?v=201"></script>
+<script src="streakzuma.js?v=201"></script>
+<script src="repair.js?v=201"></script>
+<script src="insights.js?v=201"></script>
+<script src="homehub.js?v=201"></script>
+<script src="marks.js?v=201"></script>
+<script src="zumaguide.js?v=201"></script>
+<script src="homeswitch.js?v=201"></script>
+<script src="target2.js?v=201"></script>
+<script src="studyhub.js?v=201"></script>
+<script src="announce.js?v=201"></script>
 </body>
 </html>
 
