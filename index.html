@@ -497,6 +497,11 @@ function go(v){
   document.querySelectorAll('.nv').forEach(b=>b.className='nv w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-3 '+(b.dataset.n===v?'nav-on':'text-slate-300 hover:bg-violet-900/40'));
   document.querySelectorAll('.bn').forEach(b=>b.className='bn flex-1 py-2 text-[10px] font-semibold flex flex-col items-center gap-1 '+(b.dataset.n===v?'text-violet-600 dark:text-violet-400':'text-slate-400'));
   $('main').innerHTML=lec?(LECTURER_VIEWS[v]||LECTURER_VIEWS.home)():(V[v]||V.home)();
+  if (lec && v === 'records') {
+  if (typeof window.loadRecs === 'function') {
+    window.loadRecs();
+  }
+  }
   if(!lec&&v==='acad')ACAD[aTab]();
   if(lec&&v==='roster')loadRoster();
   if(v==='home')onHomeShown();
