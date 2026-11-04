@@ -469,9 +469,6 @@ async function boot(user){
     start();
   }catch(e){console.error(e);showRecover(e);}
 }
-  if(lec && v==='records' && typeof loadRecs==='function') {
-  setTimeout(loadRecs, 0);
-             }
 function startSession(){sb.auth.getSession().then(({data})=>data.session?(RECOVERY?resetUI(data.session.user):boot(data.session.user)):authUI('login'));}
 document.addEventListener('DOMContentLoaded',startSession);
 
