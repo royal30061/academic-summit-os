@@ -15,6 +15,100 @@ try {
   if (/[?&]newstudy=1/.test(location.search)) { sessionStorage.removeItem('as_sh_classic'); localStorage.removeItem('as_sh_off'); }
 } catch (e) {}
 
+  /* ---------- Study Hub layout repair ---------- */
+  var shStyle = document.createElement('style');
+  shStyle.id = 'studyhub-layout-fix';
+  shStyle.textContent = `
+    [data-sh],
+    [data-sh] * {
+      box-sizing: border-box;
+    }
+
+    [data-sh] {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      overflow-x: hidden;
+    }
+
+    [data-sh] .card {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      padding: 16px !important;
+      border-radius: 20px;
+      line-height: 1.5;
+      overflow: hidden;
+    }
+
+    [data-sh] button.card {
+      display: block;
+      text-align: left;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    [data-sh] .card.flex {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    [data-sh] .card .flex {
+      min-width: 0;
+    }
+
+    [data-sh] .card span,
+    [data-sh] .card div {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    [data-sh] [role="tablist"] {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      width: 100%;
+    }
+
+    [data-sh] [role="tab"] {
+      min-width: 0;
+      min-height: 76px !important;
+      padding: 10px 5px !important;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      line-height: 1.3;
+    }
+
+    [data-sh] .inp {
+      display: block;
+      width: 100%;
+      min-width: 0;
+      min-height: 48px;
+    }
+
+    [data-sh] .space-y-2 > * + *,
+    [data-sh] .space-y-3 > * + * {
+      margin-top: 12px;
+    }
+
+    [data-sh] .card > button {
+      max-width: 100%;
+    }
+
+    @media (max-width: 380px) {
+      [data-sh] .card {
+        padding: 13px !important;
+      }
+
+      [data-sh] [role="tab"] {
+        font-size: 11px !important;
+      }
+    }
+  `;
+  document.head.appendChild(shStyle);
+  /* ---------- End Study Hub layout repair ---------- */
+
 /* ---------- helpers ---------- */
 var CODE = /^[A-Z]{2,4}[- ]?\d{3}[A-Z]?$/;
 var METHODS = ['Reading and comprehension', 'Active recall', 'Question and answer', 'Oral explanation', 'Practice examination', 'Revision'];
