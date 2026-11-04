@@ -162,11 +162,15 @@
    /* ---------- Lecturer Records View (Attendance History) ---------- */
 LECTURER_VIEWS.records = function () {
   return '<div class="space-y-4">' +
-    '<div class="flex justify-between items-center"><div class="font-extrabold text-xl">Attendance Records</div>' +
-    '<button class="btn2" onclick="exportRecordsCSV()">Export CSV</button></div>' +
-    '<div class="card p-4 space-y-2"><div class="font-bold">Recent Sessions</div>' +
-    '<div id="rec-list" class="text-xs" style="color:var(--mut)">Loading...</div></div>' +
-    '<script>loadRecs();<\/script></div>';
+    '<div class="flex justify-between items-center">' +
+      '<div class="font-extrabold text-xl">Attendance Records</div>' +
+      '<button class="btn2" onclick="exportRecordsCSV()">Export CSV</button>' +
+    '</div>' +
+    '<div class="card p-4 space-y-2">' +
+      '<div class="font-bold">Recent Sessions</div>' +
+      '<div id="rec-list" class="text-xs" style="color:var(--mut)">Loading...</div>' +
+    '</div>' +
+  '</div>';
 };
 W.loadRecs = async function () {
   var r = await sb.from('sessions').select('id, course, topic, created_at, code').eq('lecturer_id', uid).order('created_at', { ascending: false }).limit(20);
