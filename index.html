@@ -473,8 +473,13 @@ function startSession(){sb.auth.getSession().then(({data})=>data.session?(RECOVE
 document.addEventListener('DOMContentLoaded',startSession);
 
 // ---------- Shell ----------
-const STUDENT_NAV=[['home','Dashboard','home'],['acad','Academics','acad'],['plan','Planner','plan'],['fin','Finance','fin'],['mat','Materials','mat'],['att','Attendance','att'],['goal','Goals','goal'],['car','Career & Portfolio','car'],['prof','Profile & Settings','prof']];
-const LECTURER_NAV=[['home','Attendance Hub','att'],['plan','Calendar','plan'],['roster','Student Rosters','prof'],['prof','Account Settings','prof']];
+const LECTURER_NAV=[
+  ['home','Attendance Hub','att'],
+  ['plan','Calendar','plan'],
+  ['roster','Student Rosters','prof'],
+  ['records','Attendance Records','acad'],
+  ['prof','Account Settings','prof']
+];
 function start(){
   $('auth').innerHTML='';$('app').classList.remove('hidden');
   document.body.dataset.role=U.role||'student';
