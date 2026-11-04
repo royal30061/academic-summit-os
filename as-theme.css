@@ -10,9 +10,6 @@ body.dark .card .card, .dark .card .card, [data-theme="dark"] .card .card{ backg
 [class*="sheet"], [id*="sheet"]{ max-height:72vh; overflow:auto; }
 .btn, .btn2{ min-height:44px; }
 
-/* as-pad-fix: keep card breathing room even when padding utilities are absent */
-:where(.card){padding:14px 16px}
-:where(.card) .flex.justify-between{flex-wrap:wrap;column-gap:10px}
-/* as-pad-fix: keep card breathing room even when padding utilities are absent */
-:where(.card){padding:14px 16px}
-:where(.card) .flex.justify-between{flex-wrap:wrap;column-gap:10px}
+/* as-pad-fix: force card breathing room */
+:where(.card) { padding: 14px 16px !important; }
+:where(.card) .flex.justify-between { flex-wrap: wrap; column-gap: 10px; }
