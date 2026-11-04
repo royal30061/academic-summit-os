@@ -476,6 +476,13 @@ function startSession(){sb.auth.getSession().then(({data})=>data.session?(RECOVE
 document.addEventListener('DOMContentLoaded',startSession);
 
 // ---------- Shell ----------
+const STUDENT_NAV=[
+  ['home','Home','home'],
+  ['acad','Academics','acad'],
+  ['plan','Planner','plan'],
+  ['fin','Finance','fin'],
+  ['prof','Profile','prof']
+];
 const LECTURER_NAV=[
   ['home','Attendance Hub','att'],
   ['plan','Calendar','plan'],
@@ -483,10 +490,6 @@ const LECTURER_NAV=[
   ['records','Attendance Records','acad'],
   ['prof','Account Settings','prof']
 ];
-
-if(lec && v==='records' && typeof loadRecs==='function') {
-  setTimeout(loadRecs, 0);
-  }
 function start(){
   $('auth').innerHTML='';$('app').classList.remove('hidden');
   document.body.dataset.role=U.role||'student';
