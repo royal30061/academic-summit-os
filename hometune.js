@@ -21,7 +21,7 @@ function targetLine() {
 }
 function tune() {
   var m = $('main'); if (!m) return;
-  if (view === 'home' && !m.querySelector('[data-tline]')) {
+  if (false && view === 'home' && !m.querySelector('[data-tline]')) {   /* v203: removed from Home */
     var grad = m.querySelector('.grad');
     if (grad && grad.parentNode) {
       var d = document.createElement('div');

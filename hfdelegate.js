@@ -28,7 +28,7 @@ document.addEventListener('click', function (e) {
   if (!hit && up(t, function (x) { return x.getBoundingClientRect().top < 110 && /^[A-Z]{2,3}$/.test(txt(x)); }, 3)) hit = function () { W.go('aprof'); };
   var m = $('main');
   if (!hit && m && m.contains(t)) {
-    if (up(t, function (x) { var s = txt(x); return s.length < 40 && /^Good (morning|afternoon|evening),/.test(s); }, 3)) hit = function () { W.go('aprof'); };
+    if (up(t, function (x) { var s = txt(x); return s.length < 40 && /^Good (morning|afternoon|evening|night)\b/.test(s); }, 3)) hit = function () { W.go('aprof'); };
     else if ((n = up(t, function (x) { var s = txt(x); return s.length < 220 && !x.querySelector('.grad') && (x.hasAttribute('data-hf-banner') || s.indexOf('not a figure') > -1); }, 4)))
       hit = function () { if (W.hfBannerSheet) W.hfBannerSheet(txt(n).replace(/\s*›\s*$/, '')); };
     else if (up(t, function (x) { return x.classList && x.classList.contains('grad'); }, 6))

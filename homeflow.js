@@ -50,6 +50,10 @@ function bannerLine() {
   var t = targetVal(); return POOL[i].split('{T}').join(t != null ? t.toFixed(2) : 'your target');
 }
 function applyBanner() {
+  /* v203: the rotating "You do not chase 4.86..." line under the CGPA card is removed. Any copy already on screen is cleared. */
+  var mm = $('main'); if (mm) Array.prototype.forEach.call(mm.querySelectorAll('[data-hf-banner]'), function (n) { n.remove(); });
+  return;
+  if (typeof U !== 'undefined' && U && U.role === 'lecturer') return;   /* v201: student-only feature */
   var m = $('main'); if (!m) return;
   var cands = Array.from(m.querySelectorAll('div,button,p')).filter(function (n) {
     var tx = (n.textContent || '').trim();
@@ -126,6 +130,7 @@ function fillChist() {
   });
 }
 function tagHome() {
+  if (typeof U !== 'undefined' && U && U.role === 'lecturer') return;   /* v201: student-only feature */
   var m = $('main'); if (!m) return;
   Array.from(m.querySelectorAll('.space-y-2 > div')).forEach(function (row) {
     var b = row.querySelector('b'); if (!b || row.dataset.hf) return;
@@ -139,8 +144,8 @@ function tagHome() {
     grad.dataset.hfDone = '1'; grad.style.cursor = 'pointer';
     grad.addEventListener('click', function () { W.courseTap(code2); });
   }
-  var greet = Array.from(m.querySelectorAll('div')).find(function (d) {
-    return /^(Good (morning|afternoon|evening),)/.test((d.textContent || '').trim()) && d.children.length === 0;
+  var greet = Array.from(m.querySelectorAll('h1,div')).find(function (d) {
+    return /^Good (morning|afternoon|evening|night)\b/.test((d.textContent || '').trim()) && d.children.length === 0;
   });
   if (greet && !greet.dataset.hf) { greet.dataset.hf = '1'; greet.style.cursor = 'pointer'; greet.onclick = function () { W.go('aprof'); }; }
 }
