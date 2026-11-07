@@ -135,3 +135,13 @@ drop function if exists public.att_stamp_in_range();
 drop trigger if exists qa_stamp_in_range on public.qa_marks;
 drop function if exists public.qa_stamp_in_range();
 -- (the in_range columns are harmless; drop them only if you want: alter table ... drop column in_range;)
+
+-- ---- rollback of 06_class_notices.sql ----
+drop function if exists public.my_class_notices(text[]);
+drop function if exists public.delete_class_notice(uuid);
+drop function if exists public.send_class_notice(text, integer[], text[], timestamptz, text, text, text);
+drop function if exists public.sync_my_courses(jsonb);
+drop function if exists public.admin_set_class_notices(boolean);
+drop function if exists public.class_notices_on();
+-- tables kept on purpose (drop table public.class_notices; drop table public.lecturer_courses; to remove data)
+delete from public.app_settings where key = 'class_notices';

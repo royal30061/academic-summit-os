@@ -1,4 +1,4 @@
-(function(){if(window.__asUpgrade)return;window.__asUpgrade='3';try{console.log('Academic Summit attendance upgrade v3 loaded')}catch(e){}
+(function(){if(window.__asUpgrade)return;window.__asUpgrade='4';try{console.log('Academic Summit attendance upgrade v4 loaded')}catch(e){}
 /* Academic Summit - session-min.js v1
    Ghost-session fix. A class that never reached the minimum head-count is hidden from the lecturer's
    records, and the admin sets that minimum / cleans up from the Admin Panel. The SERVER decides
@@ -437,6 +437,206 @@ W.paintRoster = function () {
         '</td><td class="p-3 text-xs">' + E(T(r.marked_at || r.created_at)) + (r.in_range === true ? ' <span style="color:#16a34a">\u2713</span>' : '') + (r.method === 'manual' ? ' (M)' : '') + '</td></tr>';
     }).join('') || '<tr><td class="p-3" colspan="4" style="color:var(--mut)">No attendance recorded yet.</td></tr>';
   } catch (e) { if (typeof paintBase === 'function') paintBase.apply(this, arguments); }
+};
+})();
+/* Academic Summit - lec-planner.js v1
+   1) Lecturer Planner is back (bottom-nav tab + screen): weekly slots, dated classes / no-class days.
+   2) Class notices: a lecturer sends a notice for a course they registered, to chosen levels (and optionally
+      departments). Students only see it if the course is in their uploaded registration and the level matches.
+   3) Admin Panel switch to turn class notices on/off.
+   The server decides who receives what (sql/06_class_notices.sql); this file only asks and displays. */
+(function () {
+'use strict';
+var W = window, ON = null, SYNCED = '', DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], LV = [100, 200, 300, 400, 500];
+function E(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function toast(m, t) { try { showToast(m, t); } catch (e) {} }
+function norm(c) { return String(c || '').toUpperCase().replace(/\s+/g, ''); }
+function isLec() { return typeof U !== 'undefined' && U && U.role === 'lecturer'; }
+function L() { U.lec = U.lec || {}; U.lec.plan2 = U.lec.plan2 || []; U.lec.sched = U.lec.sched || []; return U.lec; }
+function courses() { return ((U.lec && U.lec.courses) || []).filter(function (c) { return c && c.code; }); }
+function whenTxt(iso) { try { var d = new Date(iso); return d.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }) + ' \u00b7 ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } }
+function noticesOn() {
+  return Promise.resolve(sb.rpc('class_notices_on')).then(function (r) { if (r && !r.error && typeof r.data === 'boolean') ON = r.data; return ON; }, function () { return ON; });
+}
+function syncCourses() {
+  var cs = courses(), key = JSON.stringify(cs.map(function (c) { return [c.code, c.level, c.dept]; }));
+  if (!cs.length || key === SYNCED) return Promise.resolve(true);
+  return Promise.resolve(sb.rpc('sync_my_courses', { p_courses: cs })).then(function (r) { if (r && !r.error) { SYNCED = key; return true; } return false; }, function () { return false; });
+}
+
+/* ================= lecturer: planner ================= */
+var draft = { kind: 'class', levels: [] };
+LECTURER_VIEWS.plan = function () { return '<div id="lp-root" class="space-y-4"></div>'; };
+
+function paintPlan() {
+  var root = document.getElementById('lp-root'); if (!root) return;
+  var cs = courses(), l = L(), h = '<div class="font-extrabold text-xl">Class planner</div>';
+  if (!cs.length) {
+    root.innerHTML = h + '<div class="card p-5 space-y-2"><div class="font-bold text-sm">Register the courses you teach first</div>' +
+      '<p class="text-xs" style="color:var(--mut)">Notices can only go out for courses in your teaching profile, so students in other departments never see a class that is not theirs.</p>' +
+      '<button class="btn w-full" onclick="ls2Open()">Open teaching profile</button></div>';
+    return;
+  }
+  var today = (new Date().getDay() + 6) % 7;
+  /* weekly timetable */
+  h += '<div class="card p-4 space-y-2"><div class="font-bold">Weekly timetable</div>' + (l.sched.length ? l.sched.slice().sort(function (a, b) { return a.day - b.day || (a.start > b.start ? 1 : -1); }).map(function (s, i) {
+    return '<div class="flex justify-between items-center text-xs py-1" style="border-top:1px solid var(--bd)"><span><b>' + DAYS[s.day] + '</b> ' + E(s.start) + '-' + E(s.end) + ' \u00b7 ' + E(s.code) +
+      (s.day === today ? ' <span style="color:#16a34a;font-weight:700">today</span>' : '') + '</span><button class="text-rose-500 font-bold" onclick="lpSlotDel(' + l.sched.indexOf(s) + ')">Remove</button></div>';
+  }).join('') : '<div class="text-xs" style="color:var(--mut)">No weekly slots yet.</div>') +
+    '<div class="grid grid-cols-4 gap-2 pt-2"><select id="lp-sd" class="inp">' + DAYS.map(function (d, i) { return '<option value="' + i + '">' + d + '</option>'; }).join('') + '</select>' +
+    '<input id="lp-ss" type="time" class="inp" value="08:00"><input id="lp-se" type="time" class="inp" value="10:00">' +
+    '<select id="lp-sc" class="inp">' + cs.map(function (c) { return '<option>' + E(c.code) + '</option>'; }).join('') + '</select></div>' +
+    '<button class="btn2 w-full" onclick="lpSlotAdd()">Add weekly slot</button></div>';
+  /* new dated entry */
+  var cur = draft.course || cs[0].code, cobj = cs.filter(function (c) { return c.code === cur; })[0] || cs[0];
+  if (!draft.levels.length && parseInt(cobj.level, 10)) draft.levels = [parseInt(cobj.level, 10)];
+  h += '<div class="card p-4 space-y-3"><div class="font-bold">Plan a class or a no-class day</div>' +
+    '<div class="grid grid-cols-2 gap-2"><button class="' + (draft.kind === 'class' ? 'btn' : 'btn2') + '" onclick="lpKind(\'class\')">Class holds</button><button class="' + (draft.kind === 'noclass' ? 'btn' : 'btn2') + '" onclick="lpKind(\'noclass\')">No class</button></div>' +
+    '<select id="lp-c" class="inp uppercase font-mono font-bold" onchange="lpCourse(this.value)">' + cs.map(function (c) { return '<option' + (c.code === cur ? ' selected' : '') + '>' + E(c.code) + '</option>'; }).join('') + '</select>' +
+    '<div class="grid grid-cols-2 gap-2"><input id="lp-d" type="date" class="inp" value="' + E(draft.date || '') + '"><input id="lp-t" type="time" class="inp" value="' + E(draft.time || '10:00') + '"></div>' +
+    '<input id="lp-v" class="inp" placeholder="Venue (e.g. LT2)" value="' + E(draft.venue || '') + '">' +
+    '<div><div class="lbl mb-1">Levels this affects</div><div class="flex flex-wrap gap-2">' + LV.map(function (v) {
+      var on = draft.levels.indexOf(v) > -1; return '<button type="button" class="' + (on ? 'btn' : 'btn2') + '" style="padding:6px 12px" onclick="lpLevel(' + v + ')">' + v + '</button>'; }).join('') + '</div></div>' +
+    '<div><div class="lbl mb-1">Departments (optional)</div><input id="lp-dp" class="inp" placeholder="e.g. Economics, Sociology, Political Science" value="' + E(draft.depts || '') + '">' +
+    '<p class="text-[11px] pt-1" style="color:var(--mut)">Leave blank for a shared course (like GST): every student who registered it at the chosen levels is told.</p></div>' +
+    '<input id="lp-n" class="inp" placeholder="Note (optional)" value="' + E(draft.note || '') + '">' +
+    '<button class="btn w-full" onclick="lpAdd()">Save to planner</button></div>';
+  /* upcoming list */
+  var up = l.plan2.slice().sort(function (a, b) { return a.at > b.at ? 1 : -1; });
+  h += '<div class="card p-4 space-y-2"><div class="font-bold">Upcoming</div>' + (up.length ? up.map(function (e) {
+    var idx = l.plan2.indexOf(e), no = e.kind === 'noclass';
+    return '<div class="py-2 space-y-1" style="border-top:1px solid var(--bd)"><div class="flex justify-between"><b class="text-sm">' + E(e.course) + '</b><span class="text-xs font-bold" style="color:' + (no ? '#dc2626' : '#16a34a') + '">' + (no ? 'No class' : 'Class') + '</span></div>' +
+      '<div class="text-[11px]" style="color:var(--mut)">' + E(whenTxt(e.at)) + (e.venue ? ' \u00b7 ' + E(e.venue) : '') + ' \u00b7 ' + e.levels.join('/') + 'L' + (e.depts ? ' \u00b7 ' + E(e.depts) : '') + (e.note ? '<br>' + E(e.note) : '') + '</div>' +
+      '<div class="flex gap-2">' + (ON === false ? '<span class="text-[11px]" style="color:var(--mut)">Notices are switched off</span>' :
+        '<button class="btn2" onclick="lpSend(' + idx + ')">' + (e.noticeId ? 'Resend notice' : 'Send notice to students') + '</button>') +
+      '<button class="btn2" style="color:#e11d48" onclick="lpDel(' + idx + ')">Delete</button></div>' + (e.noticeId ? '<div class="text-[11px]" style="color:#16a34a">Notice sent</div>' : '') + '</div>';
+  }).join('') : '<div class="text-xs" style="color:var(--mut)">Nothing planned yet.</div>') + '</div>';
+  root.innerHTML = h;
+}
+function keep() {            // keep what was typed when the form repaints
+  var g = function (id) { var x = document.getElementById(id); return x ? x.value : ''; };
+  if (!document.getElementById('lp-d')) return;
+  draft.date = g('lp-d'); draft.time = g('lp-t'); draft.venue = g('lp-v'); draft.depts = g('lp-dp'); draft.note = g('lp-n');
+}
+W.lpKind = function (k) { keep(); draft.kind = k; paintPlan(); };
+W.lpCourse = function (c) { keep(); draft.course = c; draft.levels = []; paintPlan(); };
+W.lpLevel = function (v) { keep(); var i = draft.levels.indexOf(v); if (i > -1) draft.levels.splice(i, 1); else draft.levels.push(v); paintPlan(); };
+W.lpSlotAdd = function () {
+  var g = function (id) { return document.getElementById(id).value; };
+  if (g('lp-ss') >= g('lp-se')) return toast('End time must be after start time', 'error');
+  L().sched.push({ day: +g('lp-sd'), start: g('lp-ss'), end: g('lp-se'), code: g('lp-sc') }); save(); paintPlan();
+};
+W.lpSlotDel = function (i) { L().sched.splice(i, 1); save(); paintPlan(); };
+W.lpAdd = function () {
+  keep(); var course = (document.getElementById('lp-c') || {}).value;
+  if (!draft.date) return toast('Choose the date', 'error');
+  if (!draft.levels.length) return toast('Choose at least one level', 'error');
+  var at = new Date(draft.date + 'T' + (draft.time || '10:00'));
+  if (isNaN(at)) return toast('Check the date and time', 'error');
+  L().plan2.push({ id: Date.now().toString(36), kind: draft.kind, course: course, at: at.toISOString(), venue: draft.venue.trim(), levels: draft.levels.slice().sort(), depts: draft.depts.trim(), note: draft.note.trim() });
+  draft = { kind: draft.kind, course: course, levels: draft.levels.slice() }; save(); paintPlan(); toast('Saved to your planner');
+};
+W.lpDel = function (i) {
+  var e = L().plan2[i]; if (!e) return;
+  if (!confirm('Delete this entry' + (e.noticeId ? ' and withdraw its notice from students' : '') + '?')) return;
+  if (e.noticeId) sb.rpc('delete_class_notice', { p_id: e.noticeId });
+  L().plan2.splice(i, 1); save(); paintPlan();
+};
+W.lpSend = async function (i) {
+  var e = L().plan2[i]; if (!e) return;
+  if (!(await syncCourses())) return toast('Could not check your registered courses. Check your connection and try again.', 'error');
+  var r = await sb.rpc('send_class_notice', {
+    p_course: e.course, p_levels: e.levels, p_depts: e.depts ? e.depts.split(',').map(function (x) { return x.trim(); }).filter(Boolean) : [],
+    p_starts: e.at, p_venue: e.venue || null, p_note: e.note || null, p_kind: e.kind });
+  if (r.error) return toast(r.error.message, 'error');
+  if (e.noticeId) sb.rpc('delete_class_notice', { p_id: e.noticeId });   // a resend replaces the old notice
+  e.noticeId = r.data; save(); paintPlan(); toast('Notice sent to ' + e.levels.join('/') + 'L students registered for ' + e.course);
+};
+
+/* lecturer bottom bar: Attendance | Roster | Records | Planner | Profile */
+var S0 = '<svg viewBox="0 0 24 24" style="width:20px;height:20px" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">';
+var GL = {
+  home: S0 + '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M9 16l2 2 4-4"/></svg>',
+  roster: S0 + '<path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  records: S0 + '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/></svg>',
+  plan: S0 + '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M8 2v4M16 2v4M3 10h18M8 14h3"/></svg>',
+  prof: S0 + '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
+};
+var OR = ['home', 'roster', 'records', 'plan', 'prof'], LB = { home: 'Attendance', roster: 'Roster', records: 'Records', plan: 'Planner', prof: 'Profile' };
+function paintNav() {
+  if (!isLec()) return;
+  var probe = document.querySelector('[data-n="home"].bn'); if (!probe) return;
+  probe.parentNode.innerHTML = OR.map(function (v) {
+    return '<button type="button" data-n="' + v + '" onclick="go(\'' + v + '\')" class="bn flex-1 flex flex-col items-center gap-1 py-2 ' +
+      (v === view ? 'text-violet-600 dark:text-violet-400' : 'text-slate-500') + '" style="background:none;border:none;cursor:pointer">' + GL[v] + '<span class="text-[10px] font-bold">' + LB[v] + '</span></button>';
+  }).join('');
+}
+
+/* ================= student: notices card ================= */
+var cache = { at: 0, key: '', rows: [] };
+function myCourses() {
+  try { var h = U.curHalf || 0, d = (U.dec && U.dec[h]) || []; return d.map(function (c) { return c.code; }).filter(Boolean); } catch (e) { return []; }
+}
+function paintNotices() {
+  if (isLec() || (view !== 'home' && view !== 'att')) return;
+  var main = document.getElementById('main'); if (!main) return;
+  var mine = myCourses(); if (!mine.length) return;
+  var key = mine.join(','), fresh = cache.key === key && Date.now() - cache.at < 60000;
+  var put = function (rows) {
+    var old = document.getElementById('as-notices'); if (old) old.remove();
+    if (!rows.length || view === 'prof') return;
+    var box = document.createElement('div'); box.id = 'as-notices'; box.className = 'space-y-2 mb-4';
+    box.innerHTML = rows.slice(0, 4).map(function (n) {
+      var no = n.kind === 'noclass';
+      return '<div class="card p-3" style="border-left:4px solid ' + (no ? '#dc2626' : '#16a34a') + '"><div class="flex justify-between items-baseline"><b class="text-sm">' + E(n.label || n.course) + '</b>' +
+        '<span class="text-[11px] font-bold" style="color:' + (no ? '#dc2626' : '#16a34a') + '">' + (no ? 'No class' : 'Class notice') + '</span></div>' +
+        '<div class="text-xs">' + E(whenTxt(n.starts_at)) + (n.venue ? ' \u00b7 ' + E(n.venue) : '') + '</div>' +
+        (n.note ? '<div class="text-xs" style="color:var(--mut)">' + E(n.note) + '</div>' : '') +
+        '<div class="text-[11px]" style="color:var(--mut)">From ' + E(n.lecturer || 'your lecturer') + '</div></div>';
+    }).join('');
+    main.insertBefore(box, main.firstChild);
+  };
+  if (fresh) return put(cache.rows);
+  Promise.resolve(sb.rpc('my_class_notices', { p_courses: mine })).then(function (r) {
+    if (!r || r.error) return;
+    cache = { at: Date.now(), key: key, rows: r.data || [] }; if (document.getElementById('main') === main) put(cache.rows);
+  }, function () {});
+}
+
+/* ================= admin: on/off ================= */
+function paintAdmin() {
+  var main = document.getElementById('main'); if (!main) return;
+  if (typeof isAdmin === 'function' && !isAdmin()) return;
+  var box = document.getElementById('as-notice-box');
+  if (!box) {
+    box = document.createElement('div'); box.id = 'as-notice-box';
+    var anchor = document.getElementById('att-min-box') || document.getElementById('att-prot-box');
+    if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(box, anchor.nextSibling); else if (main.firstElementChild) main.firstElementChild.appendChild(box); else return;
+  }
+  box.className = 'card p-6 space-y-3';
+  box.innerHTML = '<div class="font-extrabold">Class notices</div><p class="text-xs" style="color:var(--mut)">Lets lecturers tell students when a class holds or is cancelled. Students only see notices for courses in their registration and their level.</p>' +
+    '<div class="flex items-center justify-between"><b class="text-sm" style="color:' + (ON ? '#16a34a' : '#dc2626') + '">' + (ON == null ? 'Checking...' : (ON ? 'ON' : 'OFF')) + '</b>' +
+    '<button class="btn2" onclick="asNoticeToggle()"' + (ON == null ? ' disabled' : '') + '>' + (ON ? 'Turn off' : 'Turn on') + '</button></div>';
+}
+W.asNoticeToggle = function () {
+  sb.rpc('admin_set_class_notices', { p_on: !ON }).then(function (r) {
+    if (r.error) return toast(r.error.message, 'error');
+    ON = r.data; cache.at = 0; toast('Class notices are now ' + (ON ? 'ON' : 'OFF')); paintAdmin();
+  });
+};
+
+var goB = W.go;
+W.go = function (v) {
+  var r = goB.apply(this, arguments);
+  if (isLec() && v === 'plan') paintPlan();
+  setTimeout(function () { if (!isLec() && !document.getElementById('as-notices')) paintNotices(); }, 1600);
+  setTimeout(function () {
+    paintNav();
+    if (isLec() && v === 'plan') { paintPlan(); noticesOn().then(function () { paintPlan(); }); syncCourses(); }
+    if (!isLec()) paintNotices();
+  }, 300);
+  if (v === 'admin') setTimeout(function () { noticesOn().then(paintAdmin); paintAdmin(); }, 600);
+  return r;
 };
 })();
 /* Academic Summit - guards.js v1
