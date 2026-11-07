@@ -117,3 +117,21 @@ end $function$;
 
 commit;
 notify pgrst, 'reload schema';
+
+-- ---- rollback of 03_min_session_size.sql (does not restore purged sessions) ----
+drop function if exists public.admin_purge_thin_sessions(boolean);
+drop function if exists public.my_kept_sessions(integer);
+drop function if exists public.admin_set_min_session(integer);
+drop function if exists public.att_min_size();
+delete from public.app_settings where key = 'min_session_size';
+
+-- ---- rollback of 04_student_attendance_report.sql ----
+drop function if exists public.my_attendance_report(text[]);
+delete from public.app_settings where key = 'attendance_pass_pct';
+
+-- ---- rollback of 05_in_range_flag.sql ----
+drop trigger if exists att_stamp_in_range on public.attendance;
+drop function if exists public.att_stamp_in_range();
+drop trigger if exists qa_stamp_in_range on public.qa_marks;
+drop function if exists public.qa_stamp_in_range();
+-- (the in_range columns are harmless; drop them only if you want: alter table ... drop column in_range;)
