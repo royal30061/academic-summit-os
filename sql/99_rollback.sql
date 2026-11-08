@@ -145,3 +145,8 @@ drop function if exists public.admin_set_class_notices(boolean);
 drop function if exists public.class_notices_on();
 -- tables kept on purpose (drop table public.class_notices; drop table public.lecturer_courses; to remove data)
 delete from public.app_settings where key = 'class_notices';
+
+-- ---- rollback of 08_cohort_courses.sql ----
+drop function if exists public.cohort_courses(integer);
+drop function if exists public.sync_my_registration(text[]);
+-- table kept on purpose: drop table public.student_courses; to remove the data

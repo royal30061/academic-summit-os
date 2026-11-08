@@ -1,4 +1,4 @@
-(function(){if(window.__asUpgrade)return;window.__asUpgrade='4';try{console.log('Academic Summit attendance upgrade v4 loaded')}catch(e){}
+(function(){if(window.__asUpgrade)return;window.__asUpgrade='6';try{console.log('Academic Summit attendance upgrade v6 loaded')}catch(e){}
 /* Academic Summit - session-min.js v1
    Ghost-session fix. A class that never reached the minimum head-count is hidden from the lecturer's
    records, and the admin sets that minimum / cleans up from the Admin Panel. The SERVER decides
@@ -636,6 +636,178 @@ W.go = function (v) {
     if (!isLec()) paintNotices();
   }, 300);
   if (v === 'admin') setTimeout(function () { noticesOn().then(paintAdmin); paintAdmin(); }, 600);
+  return r;
+};
+})();
+/* Academic Summit - student-reg.js v2
+   Registration-first student flow, for every department.
+   - Identity before marking: a matric number (200L and above) or a JAMB registration number (100L before a matric exists).
+   - The course typed is checked against the student's registration; if they have none, or it lacks the course,
+     the student's classmates (same school, department, level) are used to infer it ("did you mean ...?").
+   - Uploading a registration also reads the matric number and shares the course codes (codes only) with the server.
+   Guidance only: the server still decides whether the code is live. */
+(function () {
+'use strict';
+var W = window;
+function E(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function norm(c) { return String(c || '').toUpperCase().replace(/\s+/g, ''); }
+function pretty(c) { return String(c || '').replace(/^([A-Z]{2,4})(\d)/, '$1 $2'); }
+function lev(a, b) {            // edit distance; swapping two neighbouring characters counts as one edit
+  var m = [], i, j;
+  for (i = 0; i <= a.length; i++) m[i] = [i];
+  for (j = 1; j <= b.length; j++) m[0][j] = j;
+  for (i = 1; i <= a.length; i++) for (j = 1; j <= b.length; j++) {
+    m[i][j] = Math.min(m[i - 1][j] + 1, m[i][j - 1] + 1, m[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) m[i][j] = Math.min(m[i][j], m[i - 2][j - 2] + 1);
+  }
+  return m[a.length][b.length];
+}
+/* pure: typed course against a reference list (own registration and/or classmates' courses) */
+function judge(typed, ref) {
+  var t = norm(typed), list = ref.map(norm);
+  if (!t) return { kind: 'empty' };
+  if (!list.length) return { kind: 'noref' };
+  if (list.indexOf(t) > -1) return { kind: 'ok', code: t };
+  var near = list.filter(function (r) { return lev(t, r) <= 1; });          // one slip only: never guess wildly
+  return near.length ? { kind: 'suggest', codes: near.slice(0, 3), typed: t } : { kind: 'unknown', typed: t };
+}
+/* pure: is this a usable identification number? (formats differ by department and year, so the check is lenient) */
+var JAMB = /^\d{7,12}[A-Z]{2}$/;
+function idCheck(raw, level) {
+  var v = String(raw || '').trim().toUpperCase().replace(/\s+/g, '');
+  var lvl = parseInt(level, 10) || 0;
+  if (!/^[A-Z0-9\/-]+$/.test(v) || v.length < 6 || v.length > 24 || (v.match(/\d/g) || []).length < 4)
+    return { ok: false, msg: 'That does not look right. Type the number exactly as it is on your school ID or registration slip.' };
+  if (JAMB.test(v)) {
+    if (lvl >= 200) return { ok: false, msg: 'At 200 level and above, use your matric number, not your JAMB registration number.' };
+    return { ok: true, kind: 'jamb', value: v };
+  }
+  var slashes = (v.match(/\//g) || []).length;
+  if (slashes >= 1 || /^[A-Z]{0,4}\d{6,12}$/.test(v)) return { ok: true, kind: 'matric', value: v };
+  return { ok: false, msg: 'That does not look like a matric number. Example: 25/209POS/2056' };
+}
+function needsId(profile) {
+  var m = profile && profile.matric, lvl = parseInt(profile && profile.level, 10) || 0;
+  return !m || (JAMB.test(String(m).toUpperCase()) && lvl >= 200);        // a JAMB number is only fine until the matric arrives
+}
+var MAT = /\b(\d{2}\/[A-Z0-9]{2,8}\/[A-Z0-9]{2,8})\b/i;
+function findMatric(text) {
+  var t = String(text || '').replace(/\b(\d{2}\/\d{2,3})([A-Z0-9]{2,6})(\/\d{3,5})\b/gi, function (m, a, b, c) { return a + b.replace(/0/g, 'O').replace(/1/g, 'I') + c; });
+  var m = t.match(MAT); return m ? m[1].toUpperCase() : null;
+}
+W.__asReg = { judge: judge, idCheck: idCheck, needsId: needsId, findMatric: findMatric };
+if (typeof document === 'undefined') return;
+
+function regCourses() {
+  try { var d = (U.dec && U.dec[U.curHalf || 0]) || []; return d.map(function (c) { return c.code; }).filter(Boolean); } catch (e) { return []; }
+}
+function toast(m, t) { try { showToast(m, t); } catch (e) {} }
+function modal(html) {
+  var old = document.getElementById('sr-ov'); if (old) old.remove();
+  var ov = document.createElement('div'); ov.id = 'sr-ov';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;padding:12px';
+  ov.innerHTML = '<div class="card p-5 space-y-3" style="width:100%;max-width:420px">' + html + '</div>';
+  ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
+  document.body.appendChild(ov); return ov;
+}
+function close() { var o = document.getElementById('sr-ov'); if (o) o.remove(); }
+function on(id, fn) { var b = document.getElementById(id); if (b) b.onclick = fn; }
+
+/* ---- server: share course codes, read classmates' courses (counts only) ---- */
+var synced = '', coh = { at: 0, key: '', rows: [] };
+function syncReg() {
+  var cs = regCourses().map(norm).sort(), key = cs.join(',');
+  if (!cs.length || key === synced) return;
+  Promise.resolve(sb.rpc('sync_my_registration', { p_courses: cs })).then(function (r) { if (r && !r.error) synced = key; }, function () {});
+}
+function cohort() {
+  var p = U.profile || {}, key = [p.uni, p.program, p.level].join('|');
+  if (coh.key === key && Date.now() - coh.at < 300000) return Promise.resolve(coh.rows);
+  return Promise.resolve(sb.rpc('cohort_courses', { p_min: 3 })).then(function (r) {
+    coh = { at: Date.now(), key: key, rows: (r && !r.error && r.data) ? r.data.map(function (x) { return x.code; }) : [] }; return coh.rows;
+  }, function () { return []; });
+}
+
+/* ---- identification ---- */
+W.srMatricAsk = function (then) {
+  var lvl = parseInt((U.profile || {}).level, 10) || 0, first = lvl <= 100;
+  modal('<div class="font-extrabold">Add your ' + (first ? 'matric or JAMB number' : 'matric number') + '</div><p class="text-xs" style="color:var(--mut)">Your lecturer\'s list shows you by this number. ' +
+    (first ? 'If you have not received a matric number yet, use your JAMB registration number. You can replace it later.' : 'Type it exactly as it is on your school ID or registration slip.') + ' Example: 25/209POS/2056</p>' +
+    '<input id="sr-m" class="inp font-mono uppercase" placeholder="' + (first ? 'Matric / JAMB number' : '25/209POS/2056') + '"><button class="btn w-full" id="sr-m-ok">Save and continue</button><button class="btn2 w-full" id="sr-m-x">Cancel</button>');
+  on('sr-m-x', close);
+  on('sr-m-ok', function () {
+    var c = idCheck((document.getElementById('sr-m') || {}).value, (U.profile || {}).level);
+    if (!c.ok) return toast(c.msg, 'error');
+    U.profile = U.profile || {}; U.profile.matric = c.value; save();
+    sb.from('profiles').update({ matric: c.value }).eq('id', uid).then(function () {}, function () {});
+    close(); toast((c.kind === 'jamb' ? 'JAMB number linked: ' : 'Matric number linked: ') + c.value); if (then) then();
+  });
+};
+
+/* ---- before marking ---- */
+async function guard(course, proceed) {
+  if (needsId(U.profile)) return W.srMatricAsk(function () { guard(course, proceed); });
+  var typed = norm(course); if (!typed) return proceed();
+  var own = regCourses();
+  if (own.map(norm).indexOf(typed) > -1) return proceed();
+  syncReg();
+  var co = await cohort();
+  if (co.map(norm).indexOf(typed) > -1) return proceed();          // classmates at this level and department offer it: inferred
+  var ref = own.concat(co), j = judge(course, ref), noOwn = !own.length;
+  if (j.kind === 'noref') {
+    modal('<div class="font-extrabold">Upload your course registration</div><p class="text-xs" style="color:var(--mut)">It tells the app which classes are yours, so a mark can never land on the wrong course.</p>' +
+      '<button class="btn w-full" id="sr-up">Upload registration</button><button class="btn2 w-full" id="sr-go">Mark anyway this time</button>');
+    on('sr-up', function () { close(); if (typeof W.regOpen === 'function') W.regOpen(); });
+    on('sr-go', function () { close(); proceed(); });
+    return;
+  }
+  if (j.kind === 'suggest') {
+    var one = j.codes.length === 1;
+    modal('<div class="font-extrabold">' + (one ? 'Did you mean ' + E(pretty(j.codes[0])) + '?' : 'Which course did you mean?') + '</div><p class="text-xs" style="color:var(--mut)">' + E(pretty(j.typed)) +
+      ' is not ' + (noOwn ? 'one of your level\'s courses' : 'on your registration') + '. ' + (one ? E(pretty(j.codes[0])) + ' is.' : 'These are close:') + '</p>' +
+      j.codes.map(function (c) { return '<button class="btn w-full" data-c="' + E(c) + '">Use ' + E(pretty(c)) + '</button>'; }).join('') +
+      '<button class="btn2 w-full" id="sr-n">No, keep ' + E(pretty(j.typed)) + '</button>');
+    Array.prototype.forEach.call(document.querySelectorAll('#sr-ov [data-c]'), function (b) {
+      b.onclick = function () { var c = b.getAttribute('data-c'); close(); var f = document.getElementById('ha-course'); if (f) f.value = pretty(c); proceed(); };
+    });
+    on('sr-n', function () { close(); proceed(); });
+    return;
+  }
+  if (j.kind === 'unknown') {
+    modal('<div class="font-extrabold">' + E(pretty(j.typed)) + ' is not on your list</div><p class="text-xs" style="color:var(--mut)">' +
+      (noOwn ? 'You have not uploaded a registration, and it is not one of the courses students in your level and department offer.' : 'You are registered for: ' + E(own.map(pretty).join(', ')) + '.') +
+      ' Check the code, or mark anyway if this class is correct.</p><button class="btn w-full" id="sr-b">Check the code</button>' +
+      (noOwn ? '<button class="btn2 w-full" id="sr-up">Upload registration</button>' : '') + '<button class="btn2 w-full" id="sr-go">Mark anyway</button>');
+    on('sr-b', close); on('sr-up', function () { close(); if (typeof W.regOpen === 'function') W.regOpen(); }); on('sr-go', function () { close(); proceed(); });
+    return;
+  }
+  proceed();
+}
+var mfh = W.markFromHome;
+W.markFromHome = function () {
+  var f = document.getElementById('ha-course');
+  guard(f ? f.value : '', function () { if (typeof mfh === 'function') mfh(); });
+};
+
+/* the Attend screen shows the student's own courses as tap-to-fill chips */
+function chips() {
+  var f = document.getElementById('ha-course'); if (!f || document.getElementById('sr-chips')) return;
+  var cs = regCourses(); if (!cs.length) return;
+  var box = document.createElement('div'); box.id = 'sr-chips'; box.className = 'flex flex-wrap gap-2';
+  box.innerHTML = cs.map(function (c) { return '<button type="button" class="btn2" style="padding:5px 10px;font-size:12px" data-c="' + E(pretty(c)) + '">' + E(pretty(c)) + '</button>'; }).join('');
+  box.addEventListener('click', function (e) { var c = e.target && e.target.getAttribute && e.target.getAttribute('data-c'); if (c) { f.value = c; var p = document.getElementById('ha-pin'); if (p) p.focus(); } });
+  f.parentNode.insertBefore(box, f.nextSibling);
+}
+var goB = W.go;
+W.go = function (v) { var r = goB.apply(this, arguments); if (v === 'att') setTimeout(chips, 150); if (v === 'home' || v === 'att') setTimeout(syncReg, 2500); return r; };
+
+/* registration upload also reads the matric number, and shares the course codes */
+var rs = W.regSave;
+W.regSave = function () {
+  var ta = document.getElementById('rg-paste'), m = ta ? findMatric(ta.value) : null;
+  var r = typeof rs === 'function' ? rs.apply(this, arguments) : undefined;
+  setTimeout(syncReg, 1200);
+  try { if (m && (!U.profile || U.profile.matric !== m) && typeof askMatric === 'function') setTimeout(function () { askMatric(m); }, 700); } catch (e) {}
   return r;
 };
 })();
