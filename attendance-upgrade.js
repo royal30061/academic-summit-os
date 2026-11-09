@@ -1,4 +1,4 @@
-(function(){if(window.__asUpgrade)return;window.__asUpgrade='6';try{console.log('Academic Summit attendance upgrade v6 loaded')}catch(e){}
+(function(){if(window.__asUpgrade)return;window.__asUpgrade='7';try{console.log('Academic Summit attendance upgrade v7 loaded')}catch(e){}
 /* Academic Summit - session-min.js v1
    Ghost-session fix. A class that never reached the minimum head-count is hidden from the lecturer's
    records, and the admin sets that minimum / cleans up from the Admin Panel. The SERVER decides
@@ -808,6 +808,142 @@ W.regSave = function () {
   var r = typeof rs === 'function' ? rs.apply(this, arguments) : undefined;
   setTimeout(syncReg, 1200);
   try { if (m && (!U.profile || U.profile.matric !== m) && typeof askMatric === 'function') setTimeout(function () { askMatric(m); }, 700); } catch (e) {}
+  return r;
+};
+})();
+/* Academic Summit - att-rules.js v1
+   1) Weak-GPS warning: before a code mark, a student whose location error is over 20 m is asked to step closer and retry
+      (not locked out). Only while the admin's range check is ON. Fresh, high-accuracy readings only (no cached positions).
+   2) Wrong-code lock-out countdown on the Mark button (the real limit is enforced by the database).
+   3) Admin Panel card: range radius, worst GPS error, attempts per minute, pass mark.
+   The server decides every pass/fail (sql/09_hardening.sql); this file only guides the student and lets admins set the rules. */
+(function () {
+'use strict';
+var W = window, GOOD = 20, cache = null, fixImpl = null, askImpl = null;
+function toast(m, t) { try { showToast(m, t); } catch (e) {} }
+function E(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+function settings() {
+  if (cache && Date.now() - cache.at < 60000) return Promise.resolve(cache);
+  return Promise.resolve(sb.from('app_settings').select('key,value,num_value')).then(function (r) {
+    var m = {}; ((r && r.data) || []).forEach(function (x) { m[x.key] = x; });
+    cache = { at: Date.now(), geo: !!(m.geofence_enforced && m.geofence_enforced.value), accmax: (m.geo_max_accuracy_m && m.geo_max_accuracy_m.num_value) || 50 };
+    return cache;
+  }, function () { return { geo: false, accmax: 50 }; });
+}
+
+/* one fresh, high-accuracy reading; stops early once it is good enough */
+function fix(ms) {
+  if (fixImpl) return fixImpl(ms);
+  return new Promise(function (done) {
+    if (!navigator.geolocation) return done(null);
+    var best = null, fin = false, id = null, tm = null;
+    function end() { if (fin) return; fin = true; clearTimeout(tm); if (id != null) { try { navigator.geolocation.clearWatch(id); } catch (e) {} } done(best); }
+    try {
+      id = navigator.geolocation.watchPosition(function (p) {
+        if (Date.now() - p.timestamp > 15000) return;                       // stale reading: ignore
+        var c = p.coords; if (!best || c.accuracy < best.acc) best = { lat: c.latitude, lng: c.longitude, acc: Math.round(c.accuracy) };
+        if (best.acc <= GOOD) end();
+      }, function () { end(); }, { enableHighAccuracy: true, maximumAge: 0, timeout: ms });
+      tm = setTimeout(end, ms);
+    } catch (e) { end(); }
+  });
+}
+function ask(opts) {            // opts: {title, body, retry, cont, cancel} -> resolves 'retry' | 'continue' | 'cancel'
+  if (askImpl) return askImpl(opts);
+  return new Promise(function (res) {
+    var old = document.getElementById('ar-ov'); if (old) old.remove();
+    var ov = document.createElement('div'); ov.id = 'ar-ov';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;padding:12px';
+    ov.innerHTML = '<div class="card p-5 space-y-3" style="width:100%;max-width:420px"><div class="font-extrabold">' + E(opts.title) + '</div><p class="text-xs" style="color:var(--mut)">' + E(opts.body) + '</p>' +
+      '<button class="btn w-full" data-k="retry">Retry location</button>' + (opts.cont ? '<button class="btn2 w-full" data-k="continue">Continue anyway</button>' : '') + '<button class="btn2 w-full" data-k="cancel">Cancel</button></div>';
+    ov.addEventListener('click', function (e) { var k = e.target && e.target.getAttribute && e.target.getAttribute('data-k'); if (e.target === ov) k = 'cancel'; if (!k) return; ov.remove(); res(k); });
+    document.body.appendChild(ov);
+  });
+}
+/* pure-ish: get a usable fix, warning the student when the signal is weak */
+async function locate(args, st) {
+  var fx = args.p_lat != null ? { lat: args.p_lat, lng: args.p_lng, acc: Math.round(args.p_acc == null ? 9999 : args.p_acc) } : await fix(8000);
+  for (var tries = 0; tries < 5; tries++) {
+    if (fx && fx.acc <= GOOD) return fx;
+    var usable = fx && fx.acc <= st.accmax;
+    var k = await ask(fx ? { title: 'Weak GPS signal', body: 'Your location is only accurate to about ' + fx.acc + ' m. Step closer to the centre of the room or near a window, then retry.', cont: usable }
+                         : { title: 'No location yet', body: 'Allow location for this site, turn on high-accuracy location, then retry.', cont: false });
+    if (k === 'cancel') return null;
+    if (k === 'continue' && usable) return fx;
+    var again = await fix(8000);
+    if (again && (!fx || again.acc < fx.acc)) fx = again;
+  }
+  return fx && fx.acc <= st.accmax ? fx : null;
+}
+
+/* wrong-code lock-out countdown (cosmetic: the database enforces it) */
+var locked = false;
+function lockUI(sec) {
+  if (locked) return; var btn = document.querySelector('button[onclick*="markFromHome"]'), pin = document.getElementById('ha-pin');
+  if (!btn) return; locked = true; var txt = btn.textContent; btn.disabled = true; if (pin) pin.disabled = true;
+  (function tick(n) {
+    if (n <= 0) { btn.disabled = false; btn.textContent = txt; if (pin) pin.disabled = false; locked = false; return; }
+    btn.textContent = 'Wait ' + n + 's'; setTimeout(function () { tick(n - 1); }, 1000);
+  })(Math.min(sec, 120));
+}
+W.__asGeo = { locate: locate, _fix: function (f) { fixImpl = f; }, _ask: function (f) { askImpl = f; } };
+if (typeof document === 'undefined') return;
+
+if (typeof sb === 'undefined' || !sb || !sb.rpc) return;
+var prev = sb.rpc;
+sb.rpc = function (name, args) {
+  if (name !== 'mark_attendance') return prev.apply(sb, arguments);
+  return settings().then(function (st) {
+    var go = function (a) {
+      return Promise.resolve(prev.call(sb, name, a)).then(function (r) {
+        var m = r && r.error && String(r.error.message || ''), w = m && (m.match(/try again in (\d+) seconds/i) || (/wait a minute/i.test(m) ? [0, 60] : null));
+        if (w) lockUI(+w[1]);
+        return r;
+      });
+    };
+    if (!st.geo) return go(args);
+    return locate(args || {}, st).then(function (fx) {
+      if (!fx) return { data: null, error: { message: 'Cancelled. Marking needs a good location reading.' } };
+      return go(Object.assign({}, args, { p_lat: fx.lat, p_lng: fx.lng, p_acc: fx.acc }));
+    });
+  });
+};
+
+/* admin card */
+var RULES = [['geo_radius_m', 'Class range (metres)', 10, 700], ['geo_max_accuracy_m', 'Worst GPS error accepted (m)', 10, 100], ['att_max_attempts', 'Code attempts per minute', 1, 10], ['attendance_pass_pct', 'Pass mark (%)', 50, 100]];
+function paintAdmin(vals) {
+  var main = document.getElementById('main'); if (!main) return;
+  if (typeof isAdmin === 'function' && !isAdmin()) return;
+  var box = document.getElementById('as-rules-box');
+  if (!box) {
+    box = document.createElement('div'); box.id = 'as-rules-box';
+    var anchor = document.getElementById('as-notice-box') || document.getElementById('att-min-box') || document.getElementById('att-prot-box');
+    if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(box, anchor.nextSibling); else if (main.firstElementChild) main.firstElementChild.appendChild(box); else return;
+  }
+  vals = vals || W.__asRules || {};
+  box.className = 'card p-6 space-y-3';
+  box.innerHTML = '<div class="font-extrabold">Attendance rules</div><p class="text-xs" style="color:var(--mut)">Range and GPS limits apply while the range check is ON. Indoor GPS is often off by 20 m or more, so test a tight range in a real hall before relying on it.</p>' +
+    RULES.map(function (r) {
+      return '<div class="flex items-center justify-between gap-3 text-sm"><span>' + E(r[1]) + '</span><input id="ar-' + r[0] + '" type="number" class="inp" style="max-width:90px" min="' + r[2] + '" max="' + r[3] + '" value="' + E(vals[r[0]] == null ? '' : vals[r[0]]) + '"></div>';
+    }).join('') + '<button class="btn w-full" onclick="asRulesSave()">Save rules</button>';
+}
+W.asRulesSave = function () {
+  Promise.all(RULES.map(function (r) {
+    var n = parseInt((document.getElementById('ar-' + r[0]) || {}).value, 10);
+    return isNaN(n) ? null : sb.rpc('admin_set_att_rule', { p_key: r[0], p_n: n });
+  }).filter(Boolean)).then(function (rs) {
+    var bad = rs.filter(function (x) { return x && x.error; })[0];
+    if (bad) return toast(bad.error.message, 'error');
+    cache = null; toast('Attendance rules saved'); W.go('admin');
+  });
+};
+var goB = W.go;
+W.go = function (v) {
+  var r = goB.apply(this, arguments);
+  if (v === 'admin') setTimeout(function () {
+    Promise.resolve(sb.rpc('att_rules')).then(function (x) { if (x && !x.error && x.data) { W.__asRules = x.data; paintAdmin(x.data); } }, function () {});
+  }, 800);
   return r;
 };
 })();

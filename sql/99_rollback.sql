@@ -150,3 +150,9 @@ delete from public.app_settings where key = 'class_notices';
 drop function if exists public.cohort_courses(integer);
 drop function if exists public.sync_my_registration(text[]);
 -- table kept on purpose: drop table public.student_courses; to remove the data
+
+-- ---- rollback of 09_hardening.sql ----
+-- Re-run section 3 (att_geo_reason) and section 4 (mark_attendance) from 01_attendance_protections.sql to restore the originals, then:
+drop function if exists public.admin_set_att_rule(text, integer);
+drop function if exists public.att_rules();
+-- (att_num and the three settings rows are harmless to keep)
