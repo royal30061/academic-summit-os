@@ -1,4 +1,4 @@
-(function(){if(window.__asUpgrade)return;window.__asUpgrade='11';try{console.log('Academic Summit attendance upgrade v11 loaded')}catch(e){}
+(function(){if(window.__asUpgrade)return;window.__asUpgrade='12';try{console.log('Academic Summit attendance upgrade v12 loaded')}catch(e){}
 /* Academic Summit - session-min.js v1
    Ghost-session fix. A class that never reached the minimum head-count is hidden from the lecturer's
    records, and the admin sets that minimum / cleans up from the Admin Panel. The SERVER decides
@@ -1185,6 +1185,46 @@ W.lecSignupGo = async function (b) {
   if (typeof oldReg1Go === 'function') { say('Email confirmation is on, so a code is needed'); return oldReg1(); }
   say('Could not finish sign-up. Try again');
 };
+})();
+/* Academic Summit - install-prompt.js v1
+   Shows a friendly "Install Academic Summit" bar (like other web apps) instead of relying on the browser's own banner,
+   which the app switches off. Android Chrome: one tap installs. iPhone: shows the Add to Home Screen steps.
+   Shown only to signed-in users, only if not already installed, and not again for 7 days after "Not now". */
+(function () {
+'use strict';
+var W = window, ev = null, timer = null;
+if (typeof document === 'undefined') return;
+function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) {} return null; }
+function standalone() { try { return W.matchMedia('(display-mode: standalone)').matches || W.navigator.standalone === true; } catch (e) { return false; } }
+function dismissed() { return Date.now() - (+ls('as_install_dismissed') || 0) < 7 * 864e5; }
+function isIos() { return /iphone|ipad|ipod/i.test(navigator.userAgent) && !W.MSStream; }
+function signedIn() { try { return typeof U !== 'undefined' && !!U && typeof uid !== 'undefined' && !!uid; } catch (e) { return false; } }
+function hide() { var b = document.getElementById('as-install'); if (b) b.remove(); }
+function show(ios) {
+  if (document.getElementById('as-install') || standalone() || ls('as_installed') === '1' || dismissed()) return;
+  var b = document.createElement('div'); b.id = 'as-install';
+  b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:84px;z-index:9000;background:#0b2a21;color:#e8fff6;border:1px solid #14532d;border-radius:16px;padding:14px;box-shadow:0 8px 30px rgba(0,0,0,.45);font-family:system-ui,sans-serif;display:flex;gap:12px;align-items:center';
+  b.innerHTML = '<img src="icons/icon-192.png" alt="" width="44" height="44" style="border-radius:10px;flex:none">' +
+    '<div style="flex:1;min-width:0"><div style="font-weight:800;font-size:14px">Install Academic Summit</div>' +
+    '<div style="font-size:12px;opacity:.8">' + (ios ? 'Tap Share, then Add to Home Screen.' : 'Opens like an app and loads faster.') + '</div></div>' +
+    (ios ? '' : '<button id="as-inst-go" style="background:linear-gradient(90deg,#10b981,#06b6d4);color:#00130d;font-weight:800;border:0;border-radius:10px;padding:9px 14px;font-size:13px">Install</button>') +
+    '<button id="as-inst-x" aria-label="Not now" style="background:none;border:0;color:#9fbcae;font-size:20px;line-height:1;padding:4px 6px">&times;</button>';
+  document.body.appendChild(b);
+  document.getElementById('as-inst-x').onclick = function () { ls('as_install_dismissed', String(Date.now())); hide(); };
+  var go = document.getElementById('as-inst-go');
+  if (go) go.onclick = function () {
+    hide();
+    if (ev) { try { ev.prompt(); ev.userChoice.then(function (c) { if (c && c.outcome === 'accepted') ls('as_installed', '1'); else ls('as_install_dismissed', String(Date.now())); ev = null; }); } catch (e) { try { installApp(); } catch (e2) {} } }
+    else { try { installApp(); } catch (e) {} }
+  };
+}
+function later(ios, ms) {
+  clearTimeout(timer);
+  timer = setTimeout(function () { if (signedIn()) show(ios); else later(ios, 8000); }, ms);
+}
+W.addEventListener('beforeinstallprompt', function (e) { ev = e; if (!standalone() && !dismissed()) later(false, 7000); });   // index.html stores it too; we never cancel its handling
+W.addEventListener('appinstalled', function () { ls('as_installed', '1'); hide(); });
+if (isIos() && !standalone() && !dismissed()) later(true, 12000);
 })();
 /* Academic Summit - guards.js v1
    1) The student "Target ... not a figure, a habit" sheet never opens for lecturers.
