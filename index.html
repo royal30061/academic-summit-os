@@ -1748,7 +1748,7 @@ runTarget=function(){try{track('target_calculated',{});}catch(e){}return _tgtPH.
 
 <script>
 const ADMIN_EMAILS=['royal30061@gmail.com'];
-const isAdmin=()=>U&&ADMIN_EMAILS.indexOf(email.toLowerCase())>-1;
+const isAdmin=()=>U&&(ADMIN_EMAILS.indexOf(email.toLowerCase())>-1||window.__asAdmin===true);
 let adminLecturers=[];
 let adminLastPin='';
 async function adminLoadLecturers(){
@@ -3188,7 +3188,7 @@ start=function(){_start63();setTimeout(function(){homeExtras();acadExtras();},25
 <script src="timertick.js?v=201"></script>
 <script src="attend-qr.js?v=201"></script>
 <script src="attend-guard.js?v=202"></script>
-<script src="attendance-upgrade.js?v=7"></script>
+<script src="attendance-upgrade.js?v=8"></script>
 <script src="chartfix.js?v=201"></script>
 <script src="resit.js?v=201"></script>
 <script src="navback.js?v=201"></script>

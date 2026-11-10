@@ -1,4 +1,4 @@
-(function(){if(window.__asUpgrade)return;window.__asUpgrade='7';try{console.log('Academic Summit attendance upgrade v7 loaded')}catch(e){}
+(function(){if(window.__asUpgrade)return;window.__asUpgrade='8';try{console.log('Academic Summit attendance upgrade v8 loaded')}catch(e){}
 /* Academic Summit - session-min.js v1
    Ghost-session fix. A class that never reached the minimum head-count is hidden from the lecturer's
    records, and the admin sets that minimum / cleans up from the Admin Panel. The SERVER decides
@@ -946,6 +946,61 @@ W.go = function (v) {
   }, 800);
   return r;
 };
+})();
+/* Academic Summit - admin-team.js v1
+   Co-founders get the Admin Panel; the owner manages who they are.
+   The server decides who is an admin (sql/11_admin_team.sql). This file only (a) asks the server once per sign-in so the
+   app's own screens show the panel, and (b) adds an "Admin team" card for the owner. */
+(function () {
+'use strict';
+var W = window, checked = null;
+function E(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function toast(m, t) { try { showToast(m, t); } catch (e) {} }
+function check() {
+  if (typeof sb === 'undefined' || typeof uid === 'undefined' || !uid || checked === uid) return;
+  checked = uid;
+  Promise.resolve(sb.rpc('is_app_admin')).then(function (r) { W.__asAdmin = !!(r && !r.error && r.data === true); }, function () { checked = null; });
+}
+function paint(t) {
+  var main = document.getElementById('main'); if (!main || !t) return;
+  var box = document.getElementById('as-team-box');
+  if (!box) {
+    box = document.createElement('div'); box.id = 'as-team-box';
+    var anchor = document.getElementById('as-rules-box') || document.getElementById('as-notice-box') || document.getElementById('att-min-box');
+    if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(box, anchor.nextSibling); else if (main.firstElementChild) main.firstElementChild.appendChild(box); else return;
+  }
+  box.className = 'card p-6 space-y-3';
+  box.innerHTML = '<div class="font-extrabold">Admin team</div>' + (t.admins || []).map(function (a) {
+    return '<div class="flex items-center justify-between text-sm"><span>' + E(a.email) + (a.owner ? ' <b style="color:#16a34a">(owner)</b>' : (a.note ? ' <span style="color:var(--mut)">' + E(a.note) + '</span>' : '')) + '</span>' +
+      (t.me_owner && !a.owner ? '<button class="text-rose-500 font-bold text-xs" data-rm="' + E(a.email) + '">Remove</button>' : '') + '</div>';
+  }).join('') + (t.me_owner ?
+    '<input id="tm-e" class="inp" type="email" placeholder="Co-founder\'s account email"><input id="tm-n" class="inp" placeholder="Note (e.g. Co-founder, Finance)"><button class="btn w-full" id="tm-add">Add admin</button>' +
+    '<p class="text-[11px]" style="color:var(--mut)">Create their account yourself first (Supabase, Authentication, Add user) so nobody can register that address before them. They then see the Admin Panel under Profile.</p>'
+    : '<p class="text-[11px]" style="color:var(--mut)">Only the owner can add or remove admins.</p>');
+  var add = document.getElementById('tm-add');
+  if (add) add.onclick = function () {
+    var e = (document.getElementById('tm-e').value || '').trim(), n = (document.getElementById('tm-n').value || '').trim();
+    if (!e) return toast('Enter their email', 'error');
+    sb.rpc('admin_add_admin', { p_email: e, p_note: n || null }).then(function (r) { if (r.error) return toast(r.error.message, 'error'); toast('Admin added: ' + e); load(); });
+  };
+  Array.prototype.forEach.call(box.querySelectorAll('[data-rm]'), function (b) {
+    b.onclick = function () {
+      var e = b.getAttribute('data-rm'); if (!confirm('Remove admin access for ' + e + '?')) return;
+      sb.rpc('admin_remove_admin', { p_email: e }).then(function (r) { if (r.error) return toast(r.error.message, 'error'); toast('Removed ' + e); load(); });
+    };
+  });
+}
+function load() { Promise.resolve(sb.rpc('admin_team')).then(function (r) { if (r && !r.error) paint(r.data); }, function () {}); }
+W.__asTeam = { paint: paint };
+if (typeof document === 'undefined') return;
+var goB = W.go;
+W.go = function (v) {
+  var r = goB.apply(this, arguments);
+  check();
+  if (v === 'admin') setTimeout(load, 1000);
+  return r;
+};
+setTimeout(check, 2000);
 })();
 /* Academic Summit - guards.js v1
    1) The student "Target ... not a figure, a habit" sheet never opens for lecturers.

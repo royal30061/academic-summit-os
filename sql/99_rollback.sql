@@ -156,3 +156,13 @@ drop function if exists public.sync_my_registration(text[]);
 drop function if exists public.admin_set_att_rule(text, integer);
 drop function if exists public.att_rules();
 -- (att_num and the three settings rows are harmless to keep)
+
+-- ---- rollback of 11_admin_team.sql ----
+-- Restore the original email-only check, then optionally drop the team table and functions:
+create or replace function public.is_app_admin() returns boolean language sql stable set search_path to 'public' as
+$$ select lower(coalesce(auth.jwt()->>'email','')) = 'royal30061@gmail.com' $$;
+drop function if exists public.admin_team();
+drop function if exists public.admin_add_admin(text, text);
+drop function if exists public.admin_remove_admin(text);
+-- (policies on lecturer_pins and app_flags may stay: is_app_admin() still returns true for the owner)
+-- ---- 12_privilege_cleanup.sql: re-grant a privilege with, for example: grant insert on public.sessions to authenticated;
