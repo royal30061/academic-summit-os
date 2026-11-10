@@ -178,3 +178,8 @@ drop function if exists public.request_lecturer_pin(text);
 drop function if exists public.admin_set_onboard_rule(boolean);
 drop function if exists public.onboard_rule();
 drop function if exists public.mint_pin();
+
+-- ---- rollback of 09a_geo_tuning.sql ----
+-- Re-run section 3 (att_geo_reason) of 01_attendance_protections.sql to restore the fixed 100 m accuracy limit, then:
+drop function if exists public.admin_set_att_rule(text, integer);
+drop function if exists public.att_rules();

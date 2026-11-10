@@ -7,7 +7,7 @@
 (function () {
 'use strict';
 var W = window;
-var RADII = [50, 100, 200, 500, 700], DEF_R = 100;
+var RADII = [50, 100, 150, 200, 300], DEF_R = 100;
 function lsg(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 function lss(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }

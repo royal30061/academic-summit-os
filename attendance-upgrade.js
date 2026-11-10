@@ -1,4 +1,4 @@
-(function(){if(window.__asUpgrade)return;window.__asUpgrade='9';try{console.log('Academic Summit attendance upgrade v9 loaded')}catch(e){}
+(function(){if(window.__asUpgrade)return;window.__asUpgrade='10';try{console.log('Academic Summit attendance upgrade v10 loaded')}catch(e){}
 /* Academic Summit - session-min.js v1
    Ghost-session fix. A class that never reached the minimum head-count is hidden from the lecturer's
    records, and the admin sets that minimum / cleans up from the Admin Panel. The SERVER decides
@@ -812,14 +812,14 @@ W.regSave = function () {
 };
 })();
 /* Academic Summit - att-rules.js v1
-   1) Weak-GPS warning: before a code mark, a student whose location error is over 20 m is asked to step closer and retry
+   1) Weak-GPS warning: before a code mark, a student whose location error is over the admin's warning level (default 50 m) is asked to step closer and retry
       (not locked out). Only while the admin's range check is ON. Fresh, high-accuracy readings only (no cached positions).
    2) Wrong-code lock-out countdown on the Mark button (the real limit is enforced by the database).
    3) Admin Panel card: range radius, worst GPS error, attempts per minute, pass mark.
    The server decides every pass/fail (sql/09_hardening.sql); this file only guides the student and lets admins set the rules. */
 (function () {
 'use strict';
-var W = window, GOOD = 20, cache = null, fixImpl = null, askImpl = null;
+var W = window, GOOD = 50, cache = null, fixImpl = null, askImpl = null;
 function toast(m, t) { try { showToast(m, t); } catch (e) {} }
 function E(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
@@ -827,9 +827,9 @@ function settings() {
   if (cache && Date.now() - cache.at < 60000) return Promise.resolve(cache);
   return Promise.resolve(sb.from('app_settings').select('key,value,num_value')).then(function (r) {
     var m = {}; ((r && r.data) || []).forEach(function (x) { m[x.key] = x; });
-    cache = { at: Date.now(), geo: !!(m.geofence_enforced && m.geofence_enforced.value), accmax: (m.geo_max_accuracy_m && m.geo_max_accuracy_m.num_value) || 50 };
+    cache = { at: Date.now(), geo: !!(m.geofence_enforced && m.geofence_enforced.value), accmax: (m.geo_max_accuracy_m && m.geo_max_accuracy_m.num_value) || 150, warn: (m.geo_warn_accuracy_m && m.geo_warn_accuracy_m.num_value) || 50 };
     return cache;
-  }, function () { return { geo: false, accmax: 50 }; });
+  }, function () { return { geo: false, accmax: 150, warn: 50 }; });
 }
 
 /* one fresh, high-accuracy reading; stops early once it is good enough */
@@ -863,6 +863,7 @@ function ask(opts) {            // opts: {title, body, retry, cont, cancel} -> r
 }
 /* pure-ish: get a usable fix, warning the student when the signal is weak */
 async function locate(args, st) {
+  GOOD = st.warn || GOOD;
   var fx = args.p_lat != null ? { lat: args.p_lat, lng: args.p_lng, acc: Math.round(args.p_acc == null ? 9999 : args.p_acc) } : await fix(8000);
   for (var tries = 0; tries < 5; tries++) {
     if (fx && fx.acc <= GOOD) return fx;
@@ -911,7 +912,7 @@ sb.rpc = function (name, args) {
 };
 
 /* admin card */
-var RULES = [['geo_radius_m', 'Class range (metres)', 10, 700], ['geo_max_accuracy_m', 'Worst GPS error accepted (m)', 10, 100], ['att_max_attempts', 'Code attempts per minute', 1, 10], ['attendance_pass_pct', 'Pass mark (%)', 50, 100]];
+var RULES = [['geo_radius_m', 'Widest class range a lecturer can pick (m)', 50, 300], ['geo_max_accuracy_m', 'Worst GPS error accepted (m)', 20, 200], ['geo_warn_accuracy_m', 'Ask student to retry above (m)', 10, 150], ['att_max_attempts', 'Code attempts per minute', 1, 10], ['attendance_pass_pct', 'Pass mark (%)', 50, 100]];
 function paintAdmin(vals) {
   var main = document.getElementById('main'); if (!main) return;
   if (typeof isAdmin === 'function' && !isAdmin()) return;
@@ -923,14 +924,14 @@ function paintAdmin(vals) {
   }
   vals = vals || W.__asRules || {};
   box.className = 'card p-6 space-y-3';
-  box.innerHTML = '<div class="font-extrabold">Attendance rules</div><p class="text-xs" style="color:var(--mut)">Range and GPS limits apply while the range check is ON. Indoor GPS is often off by 20 m or more, so test a tight range in a real hall before relying on it.</p>' +
-    RULES.map(function (r) {
+  box.innerHTML = '<div class="font-extrabold">Attendance rules</div><p class="text-xs" style="color:var(--mut)">Range and GPS limits apply while the range check is ON. Indoor GPS is often off by 20 to 60 m, so check what real phones report in your hall before tightening these.</p>' +
+    RULES.filter(function (r) { return vals[r[0]] != null; }).map(function (r) {
       return '<div class="flex items-center justify-between gap-3 text-sm"><span>' + E(r[1]) + '</span><input id="ar-' + r[0] + '" type="number" class="inp" style="max-width:90px" min="' + r[2] + '" max="' + r[3] + '" value="' + E(vals[r[0]] == null ? '' : vals[r[0]]) + '"></div>';
     }).join('') + '<button class="btn w-full" onclick="asRulesSave()">Save rules</button>';
 }
 W.asRulesSave = function () {
   Promise.all(RULES.map(function (r) {
-    var n = parseInt((document.getElementById('ar-' + r[0]) || {}).value, 10);
+    var el = document.getElementById('ar-' + r[0]), n = el ? parseInt(el.value, 10) : NaN;
     return isNaN(n) ? null : sb.rpc('admin_set_att_rule', { p_key: r[0], p_n: n });
   }).filter(Boolean)).then(function (rs) {
     var bad = rs.filter(function (x) { return x && x.error; })[0];
