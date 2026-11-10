@@ -1,4 +1,4 @@
-(function(){if(window.__asUpgrade)return;window.__asUpgrade='10';try{console.log('Academic Summit attendance upgrade v10 loaded')}catch(e){}
+(function(){if(window.__asUpgrade)return;window.__asUpgrade='11';try{console.log('Academic Summit attendance upgrade v11 loaded')}catch(e){}
 /* Academic Summit - session-min.js v1
    Ghost-session fix. A class that never reached the minimum head-count is hidden from the lecturer's
    records, and the admin sets that minimum / cleans up from the Admin Panel. The SERVER decides
@@ -893,7 +893,30 @@ if (typeof document === 'undefined') return;
 
 if (typeof sb === 'undefined' || !sb || !sb.rpc) return;
 var prev = sb.rpc;
+/* lecturer starting a class with the range check ON: wait up to 20 s for a real fix and explain what to do if there is none */
+async function lecLocate(args) {
+  W.showToast && toast('Getting your location. This can take up to 20 seconds...');
+  var fx = await fix(20000);
+  for (var i = 0; i < 4; i++) {
+    if (fx && fx.acc <= 100) return fx;                                 // the server needs the lecturer's own reading within 100 m
+    var k = await ask(fx ? { title: 'GPS is too weak to set the class range', body: 'Your location is only accurate to about ' + fx.acc + ' m. Step near a window or outside the door, then retry.', cont: false }
+                         : { title: 'No location received', body: 'Turn on location, and allow this site to use it: Browser menu, Settings, Site settings, Location, then allow academic-summit.com.ng. Then retry.', cont: false });
+    if (k === 'cancel') return null;
+    var again = await fix(20000); if (again && (!fx || again.acc < fx.acc)) fx = again;
+  }
+  return fx && fx.acc <= 100 ? fx : null;
+}
 sb.rpc = function (name, args) {
+  if (name === 'start_session' || name === 'qa_open') {
+    if (args && args.p_lat != null) return prev.apply(sb, arguments);
+    return settings().then(function (st) {
+      if (!st.geo) return prev.call(sb, name, args);
+      return lecLocate(args || {}).then(function (fx) {
+        if (!fx) return { data: null, error: { message: 'Cancelled. A class needs a location while the range check is on.' } };
+        return prev.call(sb, name, Object.assign({}, args, { p_lat: fx.lat, p_lng: fx.lng, p_acc: fx.acc }));
+      });
+    });
+  }
   if (name !== 'mark_attendance') return prev.apply(sb, arguments);
   return settings().then(function (st) {
     var go = function (a) {
@@ -1077,7 +1100,7 @@ W.go = function (v) { var r = goB.apply(this, arguments); if (v === 'admin') set
    button keeps working. Which sections are open is remembered while the app stays open. */
 (function () {
 'use strict';
-var W = window, OPEN = {};
+var W = window, OPEN = { onb: true };
 function byId(id) { return document.getElementById(id); }
 function cardByTitle(starts) {
   var cs = document.querySelectorAll('#main .card');
@@ -1114,6 +1137,53 @@ W.go = function (v) {
   var r = goB.apply(this, arguments);
   if (v === 'admin') [1500, 2600, 4200].forEach(function (ms) { setTimeout(tidy, ms); });
   return r;
+};
+})();
+/* Academic Summit - lec-signup.js v1
+   One-code lecturer sign-up. The old flow emailed a code, then asked for the admin PIN: two codes. Now the lecturer
+   enters name, email and password once, and the only code is the PIN from the administrator (the existing PIN screen).
+   The PIN is what makes someone a lecturer, so the emailed code is no longer needed for that.
+   Trade-off: the email address is not confirmed by a code, so the lecturer must type it correctly (password reset uses it).
+   If the project ever switches email confirmation ON, this falls back to the old emailed-code flow. */
+(function () {
+'use strict';
+var W = window;
+if (typeof document === 'undefined') return;
+var LA = { n: '', e: '' };
+function say(m) { try { showToast(m, 'error'); } catch (e) {} }
+function val(id) { return ((document.getElementById(id) || {}).value || '').trim(); }
+function busy(b, on) { if (b) { b.disabled = on; b.style.opacity = on ? 0.6 : 1; } }
+function card(title, body) {
+  document.getElementById('sheet').innerHTML = '';
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('auth').innerHTML = '<div class="min-h-screen grid place-items-center p-5" style="background:#021812"><div class="card p-6 w-full max-w-md space-y-3"><div class="text-xs font-extrabold uppercase tracking-widest text-emerald-500">Lecturer console</div><h2 class="text-xl font-extrabold">' + title + '</h2>' + body + '</div></div>';
+}
+var oldReg1 = W.lecReg1, oldReg1Go = W.lecReg1Go;
+W.lecReg1 = function () {
+  card('Create lecturer account',
+    '<p class="text-xs text-slate-500">One step here, then the access PIN from your administrator.</p>' +
+    '<input id="ls-n" class="inp" placeholder="Full name" value="' + esc(LA.n) + '"><input id="ls-e" type="email" class="inp" placeholder="Email" value="' + esc(LA.e) + '">' +
+    '<input id="ls-1" type="password" class="inp" placeholder="Password (8+ characters)"><input id="ls-2" type="password" class="inp" placeholder="Repeat password">' +
+    '<button class="btn w-full" onclick="lecSignupGo(this)">Create account</button><button class="btn2 w-full" onclick="lecAuthOpen()">Back</button>');
+};
+W.lecSignupGo = async function (b) {
+  var n = val('ls-n'), e = val('ls-e').toLowerCase(), p1 = (document.getElementById('ls-1') || {}).value || '', p2 = (document.getElementById('ls-2') || {}).value || '';
+  LA.n = n; LA.e = e;
+  if (!n || !e) return say('Enter your name and email');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return say('That email does not look right. Check it and try again');
+  if (p1.length < 8) return say('Use at least 8 characters for the password');
+  if (p1 !== p2) return say('Passwords do not match');
+  busy(b, true);
+  var r = await sb.auth.signUp({ email: e, password: p1, options: { data: { name: n } } });
+  busy(b, false);
+  if (r.error) {
+    if (/already|registered/i.test(r.error.message || '')) return say('This email already has an account. Go back and log in.');
+    return say(r.error.message);
+  }
+  if (r.data && r.data.session) return location.reload();           // boot() then shows the PIN screen
+  if (r.data && r.data.user && r.data.user.identities && !r.data.user.identities.length) return say('This email already has an account. Go back and log in.');
+  if (typeof oldReg1Go === 'function') { say('Email confirmation is on, so a code is needed'); return oldReg1(); }
+  say('Could not finish sign-up. Try again');
 };
 })();
 /* Academic Summit - guards.js v1
