@@ -166,3 +166,15 @@ drop function if exists public.admin_add_admin(text, text);
 drop function if exists public.admin_remove_admin(text);
 -- (policies on lecturer_pins and app_flags may stay: is_app_admin() still returns true for the owner)
 -- ---- 12_privilege_cleanup.sql: re-grant a privilege with, for example: grant insert on public.sessions to authenticated;
+
+-- ---- rollback of 13_onboarding_approval.sql ----
+drop policy if exists pins_admin_insert on public.lecturer_pins;
+create policy pins_admin_insert on public.lecturer_pins for insert to authenticated with check (public.is_app_admin());
+drop policy if exists pins_admin_read on public.lecturer_pins;
+create policy pins_admin_read on public.lecturer_pins for select to authenticated using (public.is_app_admin());
+drop function if exists public.my_pin_requests();
+drop function if exists public.decide_pin_request(uuid, boolean);
+drop function if exists public.request_lecturer_pin(text);
+drop function if exists public.admin_set_onboard_rule(boolean);
+drop function if exists public.onboard_rule();
+drop function if exists public.mint_pin();

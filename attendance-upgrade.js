@@ -1,4 +1,4 @@
-(function(){if(window.__asUpgrade)return;window.__asUpgrade='8';try{console.log('Academic Summit attendance upgrade v8 loaded')}catch(e){}
+(function(){if(window.__asUpgrade)return;window.__asUpgrade='9';try{console.log('Academic Summit attendance upgrade v9 loaded')}catch(e){}
 /* Academic Summit - session-min.js v1
    Ghost-session fix. A class that never reached the minimum head-count is hidden from the lecturer's
    records, and the admin sets that minimum / cleans up from the Admin Panel. The SERVER decides
@@ -1001,6 +1001,119 @@ W.go = function (v) {
   return r;
 };
 setTimeout(check, 2000);
+})();
+/* Academic Summit - admin-onboard.js v1
+   Lecturer onboarding with owner approval. The owner issues PINs instantly and sees a card with the approval switch and
+   waiting requests. A co-founder's "Generate PIN" becomes a request that the owner approves; the PIN then shows up in
+   the co-founder's own list. The server enforces all of it (sql/13_onboarding_approval.sql). */
+(function () {
+'use strict';
+var W = window;
+function E(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function toast(m, t) { try { showToast(m, t); } catch (e) {} }
+function ago(iso) { try { var m = Math.max(0, Math.round((Date.now() - new Date(iso)) / 60000)); return m < 60 ? m + ' min ago' : (m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'); } catch (e) { return ''; } }
+
+/* the existing "Generate PIN" button now goes through the server rule */
+W.adminGeneratePin = async function () {
+  var r = await sb.rpc('request_lecturer_pin', { p_note: null });
+  if (r.error) return toast(r.error.message, 'error');
+  if (r.data && r.data.status === 'approved') {
+    try { adminLastPin = r.data.pin; } catch (e) {}
+    toast('PIN generated: ' + r.data.pin); W.go('admin');
+  } else { toast('Sent to the owner for approval'); load(); }
+};
+
+function paint(st) {
+  var main = document.getElementById('main'); if (!main) return;
+  var box = document.getElementById('as-onboard-box');
+  if (!box) {
+    box = document.createElement('div'); box.id = 'as-onboard-box';
+    if (main.firstElementChild) main.firstElementChild.appendChild(box); else return;
+  }
+  box.className = 'card p-6 space-y-3';
+  var rows = st.rows || [], owner = st.owner;
+  var h = '<div class="font-extrabold">' + (owner ? 'Owner controls: lecturer onboarding' : 'My PIN requests') + '</div>';
+  if (owner) {
+    var pend = rows.filter(function (r) { return r.status === 'pending'; });
+    h += '<div class="flex items-center justify-between text-sm"><span>Co-founders need my approval</span><b style="color:' + (st.rule ? '#16a34a' : '#dc2626') + '">' + (st.rule ? 'ON' : 'OFF') + '</b></div>' +
+      '<button class="btn2 w-full" id="ob-rule">' + (st.rule ? 'Turn off (co-founders issue PINs instantly)' : 'Turn on approval') + '</button>' +
+      '<div class="font-bold text-sm pt-2">Waiting for you (' + pend.length + ')</div>' +
+      (pend.length ? pend.map(function (r) {
+        return '<div class="py-2 space-y-1" style="border-top:1px solid var(--bd)"><div class="text-xs"><b>' + E(r.requester) + '</b> <span style="color:var(--mut)">' + E(ago(r.created_at)) + (r.note ? ' - ' + E(r.note) : '') + '</span></div>' +
+          '<div class="flex gap-2"><button class="btn" data-ok="' + E(r.id) + '">Approve</button><button class="btn2" data-no="' + E(r.id) + '">Reject</button></div></div>';
+      }).join('') : '<div class="text-xs" style="color:var(--mut)">Nothing waiting.</div>');
+  } else {
+    h += '<p class="text-xs" style="color:var(--mut)">' + (st.rule ? 'New PINs need the owner\'s approval. Tap Generate PIN under Onboarding Kit to ask.' : 'Approval is switched off: Generate PIN issues a PIN at once.') + '</p>' +
+      (rows.length ? rows.slice(0, 8).map(function (r) {
+        return '<div class="flex items-center justify-between text-xs py-1" style="border-top:1px solid var(--bd)"><span>' + E(ago(r.created_at)) + ' - <b>' + E(r.status) + '</b></span>' +
+          (r.pin ? '<span class="font-mono">' + E(r.pin) + ' <button class="btn2" style="padding:3px 8px" data-cp="' + E(r.pin) + '">Copy</button></span>' : '') + '</div>';
+      }).join('') : '<div class="text-xs" style="color:var(--mut)">No requests yet.</div>');
+  }
+  box.innerHTML = h;
+  var rule = document.getElementById('ob-rule');
+  if (rule) rule.onclick = function () { sb.rpc('admin_set_onboard_rule', { p_on: !st.rule }).then(function (r) { if (r.error) return toast(r.error.message, 'error'); toast('Approval is now ' + (r.data ? 'ON' : 'OFF')); load(); }); };
+  Array.prototype.forEach.call(box.querySelectorAll('[data-ok],[data-no]'), function (b) {
+    b.onclick = function () {
+      var ok = b.hasAttribute('data-ok'), id = b.getAttribute(ok ? 'data-ok' : 'data-no');
+      sb.rpc('decide_pin_request', { p_id: id, p_ok: ok }).then(function (r) { if (r.error) return toast(r.error.message, 'error'); toast(ok ? 'Approved. The PIN is now with the co-founder.' : 'Rejected'); load(); });
+    };
+  });
+  Array.prototype.forEach.call(box.querySelectorAll('[data-cp]'), function (b) { b.onclick = function () { try { navigator.clipboard.writeText(b.getAttribute('data-cp')).then(function () { toast('Copied'); }); } catch (e) {} }; });
+}
+function load() {
+  Promise.all([Promise.resolve(sb.rpc('admin_team')), Promise.resolve(sb.rpc('my_pin_requests')), Promise.resolve(sb.rpc('onboard_rule'))]).then(function (x) {
+    if (!x[0] || x[0].error || !x[0].data) return;
+    paint({ owner: !!x[0].data.me_owner, rows: (x[1] && !x[1].error && x[1].data) || [], rule: x[2] && !x[2].error ? x[2].data !== false : true });
+  }, function () {});
+}
+if (typeof document === 'undefined') return;
+var goB = W.go;
+W.go = function (v) { var r = goB.apply(this, arguments); if (v === 'admin') setTimeout(load, 1100); return r; };
+})();
+/* Academic Summit - admin-tidy.js v1
+   Declutters the Admin Panel: related cards are folded into collapsible sections (Announcements, Lecturer onboarding,
+   Attendance rules, Class notices, Admin team). Nothing is removed or rewritten: the original cards are moved, so every
+   button keeps working. Which sections are open is remembered while the app stays open. */
+(function () {
+'use strict';
+var W = window, OPEN = {};
+function byId(id) { return document.getElementById(id); }
+function cardByTitle(starts) {
+  var cs = document.querySelectorAll('#main .card');
+  for (var i = 0; i < cs.length; i++) { var f = cs[i].firstElementChild; if (f && (f.textContent || '').trim().indexOf(starts) === 0 && !cs[i].closest('details.as-acc')) return cs[i]; }
+  return null;
+}
+var GROUPS = [
+  ['ann', 'Announcements', function () { return [byId('ann-admin')]; }],
+  ['onb', 'Lecturer onboarding', function () { return [cardByTitle('Onboarding Kit'), cardByTitle('Active Lecturers'), byId('as-onboard-box')]; }],
+  ['rules', 'Attendance rules and switches', function () { return [byId('att-prot-box'), byId('att-min-box'), byId('as-rules-box')]; }],
+  ['notice', 'Class notices', function () { return [byId('as-notice-box')]; }],
+  ['team', 'Admin team', function () { return [byId('as-team-box')]; }]
+];
+function tidy() {
+  var main = byId('main'); if (!main || !byId('as-acc-probe') && !(main.textContent || '').match(/Admin Panel/)) return;
+  GROUPS.forEach(function (g) {
+    var els = g[2]().filter(function (e) { return e && !e.closest('details.as-acc'); });
+    var det = main.querySelector('details.as-acc[data-k="' + g[0] + '"]');
+    if (!els.length) return;
+    if (!det) {
+      det = document.createElement('details'); det.className = 'as-acc card'; det.setAttribute('data-k', g[0]);
+      det.style.cssText = 'padding:0;overflow:hidden'; if (OPEN[g[0]]) det.open = true;
+      det.innerHTML = '<summary style="cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;padding:16px 18px;font-weight:800;font-size:15px">' + g[1] + '<span style="color:var(--mut);font-size:12px">tap to open</span></summary><div class="as-acc-body" style="display:flex;flex-direction:column;gap:12px;padding:0 12px 14px"></div>';
+      det.addEventListener('toggle', function () { OPEN[g[0]] = det.open; });
+      els[0].parentNode.insertBefore(det, els[0]);
+    }
+    var body = det.querySelector('.as-acc-body');
+    els.forEach(function (e) { body.appendChild(e); });
+  });
+}
+if (typeof document === 'undefined') return;
+var goB = W.go;
+W.go = function (v) {
+  var r = goB.apply(this, arguments);
+  if (v === 'admin') [1500, 2600, 4200].forEach(function (ms) { setTimeout(tidy, ms); });
+  return r;
+};
 })();
 /* Academic Summit - guards.js v1
    1) The student "Target ... not a figure, a habit" sheet never opens for lecturers.
