@@ -1,4 +1,4 @@
-(function(){if(window.__asUpgrade)return;window.__asUpgrade='15';try{console.log('Academic Summit attendance upgrade v15 loaded')}catch(e){}
+(function(){if(window.__asUpgrade)return;window.__asUpgrade='16';try{console.log('Academic Summit attendance upgrade v16 loaded')}catch(e){}
 /* Academic Summit - session-min.js v1
    Ghost-session fix. A class that never reached the minimum head-count is hidden from the lecturer's
    records, and the admin sets that minimum / cleans up from the Admin Panel. The SERVER decides
@@ -821,6 +821,7 @@ W.regSave = function () {
 'use strict';
 var W = window, GOOD = 50, OKACC = 150, cache = null, fixImpl = null, askImpl = null, skipUntil = 0;
 function toast(m, t) { try { showToast(m, t); } catch (e) {} }
+function debugOn() { try { return localStorage.getItem('as_debug') === '1'; } catch (e) { return false; } }
 function E(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
 function settings() {
@@ -862,7 +863,7 @@ function ask(opts) {            // opts: {title, body, retry, cont, cancel} -> r
     var old = document.getElementById('ar-ov'); if (old) old.remove();
     var ov = document.createElement('div'); ov.id = 'ar-ov';
     ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;padding:12px';
-    ov.innerHTML = '<div class="card p-5 space-y-3" style="width:100%;max-width:420px"><div class="font-extrabold">' + E(opts.title) + '</div><p class="text-xs" style="color:var(--mut)">' + E(opts.body) + '</p>' +
+    ov.innerHTML = '<div class="card p-5 space-y-3" style="width:100%;max-width:420px"><div class="font-extrabold">' + E(opts.title) + '</div><p class="text-xs" style="color:var(--mut)">' + E(opts.body) + '</p>' + (opts.detail && debugOn() ? '<p class="text-[10px]" style="color:var(--mut)">' + E(opts.detail) + '</p>' : '') +
       '<button class="btn w-full" data-k="retry">Retry location</button>' + (opts.cont ? '<button class="btn2 w-full" data-k="continue">Continue anyway</button>' : '') + '<button class="btn2 w-full" data-k="cancel">Cancel</button></div>';
     ov.addEventListener('click', function (e) { var k = e.target && e.target.getAttribute && e.target.getAttribute('data-k'); if (e.target === ov) k = 'cancel'; if (!k) return; ov.remove(); res(k); });
     document.body.appendChild(ov);
@@ -1121,7 +1122,7 @@ var GROUPS = [
   ['onb', 'Lecturer onboarding', function () { return [cardByTitle('Onboarding Kit'), cardByTitle('Active Lecturers'), byId('as-onboard-box')]; }],
   ['rules', 'Attendance rules and switches', function () { return [byId('att-prot-box'), byId('att-min-box'), byId('as-rules-box')]; }],
   ['notice', 'Class notices', function () { return [byId('as-notice-box')]; }],
-  ['team', 'Admin team', function () { return [byId('as-team-box')]; }]
+  ['team', 'Admin team and tools', function () { return [byId('as-team-box'), byId('as-instdiag-box')]; }]
 ];
 function tidy() {
   var main = byId('main'); if (!main || !byId('as-acc-probe') && !(main.textContent || '').match(/Admin Panel/)) return;
@@ -1244,12 +1245,13 @@ if (isIos() && !standalone() && !dismissed()) later(true, 12000);
 var W = window;
 if (typeof document === 'undefined') return;
 function standalone() { try { return W.matchMedia('(display-mode: standalone)').matches || W.navigator.standalone === true; } catch (e) { return false; } }
-function out(h) { var o = document.getElementById('as-inst-out'); if (o) o.innerHTML = h; }
+var OUT = 'as-inst-out';
+function out(h) { var o = document.getElementById(OUT); if (o) o.innerHTML = h; }
 function cardHtml() {
+  if (standalone()) return '';                                   // already installed: show nothing
   return '<div class="card p-5 space-y-2 mt-5" id="as-inst-card"><div class="lbl">Install the app</div>' +
     '<button class="btn w-full" onclick="asInstallNow()">Install Academic Summit</button>' +
-    '<button class="btn2 w-full" onclick="asInstallCheck()">Why is it not offering to install?</button>' +
-    '<div id="as-inst-out" class="text-[11px]" style="color:var(--mut)">Installs to your home screen, opens full-screen and keeps working with a weak connection.</div></div>';
+    '<div id="as-inst-out" class="text-[11px]" style="color:var(--mut)">Opens like an app from your home screen and loads faster.</div></div>';
 }
 function wrapView(obj, key) {
   if (!obj || typeof obj[key] !== 'function' || obj[key].__asInst) return;
@@ -1264,10 +1266,12 @@ W.asInstallNow = function () {
   if (standalone()) return out('The app is already installed on this phone.');
   if (W.__asInstall && W.__asInstall.ready() && W.__asInstall.prompt()) return;
   var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  out(ios ? '<b>iPhone:</b> tap the Share button, then <b>Add to Home Screen</b>.'
-          : '<b>Chrome:</b> tap the three dots at the top right, then <b>Install app</b> (or <b>Add to Home screen</b>), then <b>Install</b>.<br>If you only see a shortcut option, tap the button below to find out why.');
+  OUT = 'as-inst-out';
+  out(ios ? 'On iPhone: tap the Share button, then <b>Add to Home Screen</b>.'
+          : 'In Chrome: tap the three dots at the top right, then <b>Install app</b> (or <b>Add to Home screen</b>).');
 };
 W.asInstallCheck = async function () {
+  OUT = 'as-instdiag-out';
   var L = [], ok = function (b, t) { L.push((b ? '\u2713 ' : '\u2717 ') + t); };
   out('Checking...');
   try {
@@ -1295,8 +1299,27 @@ W.asInstallCheck = async function () {
     ok(!standalone(), 'Running in the browser (not already installed)');
     ok(!!(W.__asInstall && W.__asInstall.ready()), 'Browser has offered the install prompt');
   } catch (e) { L.push('\u2717 Check failed: ' + e.message); }
-  out(L.join('<br>') + '<br><br>If every line is \u2713 but the prompt was not offered, use the browser menu: three dots, then Install app. Chrome may also hide the prompt if the app was installed before: look for it on your home screen.');
+  out(L.join('<br>'));
 };
+/* technical tools: Admin Panel only, never shown to students or lecturers */
+function paintAdminBox() {
+  var main = document.getElementById('main'); if (!main) return;
+  if (typeof isAdmin === 'function' && !isAdmin()) return;
+  var box = document.getElementById('as-instdiag-box');
+  if (!box) {
+    box = document.createElement('div'); box.id = 'as-instdiag-box';
+    var anchor = document.getElementById('as-team-box') || document.getElementById('as-rules-box');
+    if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(box, anchor.nextSibling); else if (main.firstElementChild) main.firstElementChild.appendChild(box); else return;
+  }
+  var dbg = false; try { dbg = localStorage.getItem('as_debug') === '1'; } catch (e) {}
+  box.className = 'card p-6 space-y-3';
+  box.innerHTML = '<div class="font-extrabold">Technical tools</div><p class="text-xs" style="color:var(--mut)">For testing only. Students and lecturers never see these.</p>' +
+    '<button class="btn2 w-full" onclick="asInstallCheck()">Check install readiness</button><div id="as-instdiag-out" class="text-[11px]" style="color:var(--mut)"></div>' +
+    '<button class="btn2 w-full" onclick="asDebugToggle()">Location details on this phone: ' + (dbg ? 'ON' : 'OFF') + '</button>';
+}
+W.asDebugToggle = function () { try { localStorage.setItem('as_debug', localStorage.getItem('as_debug') === '1' ? '0' : '1'); } catch (e) {} paintAdminBox(); };
+var goB = W.go;
+W.go = function (v) { var r = goB.apply(this, arguments); if (v === 'admin') [1700, 3000].forEach(function (ms) { setTimeout(paintAdminBox, ms); }); return r; };
 })();
 /* Academic Summit - data-report.js v1
    "Download my data" now offers a readable report (PDF or Word) organised into sections, plus the raw backup file
