@@ -1,4 +1,4 @@
-(function(){if(window.__asUpgrade)return;window.__asUpgrade='14';try{console.log('Academic Summit attendance upgrade v14 loaded')}catch(e){}
+(function(){if(window.__asUpgrade)return;window.__asUpgrade='15';try{console.log('Academic Summit attendance upgrade v15 loaded')}catch(e){}
 /* Academic Summit - session-min.js v1
    Ghost-session fix. A class that never reached the minimum head-count is hidden from the lecturer's
    records, and the admin sets that minimum / cleans up from the Admin Panel. The SERVER decides
@@ -1231,9 +1231,404 @@ function later(ios, ms) {
   clearTimeout(timer);
   timer = setTimeout(function () { if (signedIn()) show(ios); else later(ios, 8000); }, ms);
 }
+W.__asInstall = { ready: function () { return !!ev; }, prompt: function () { if (!ev) return false; try { ev.prompt(); ev.userChoice.then(function (c) { if (c && c.outcome === 'accepted') ls('as_installed', '1'); ev = null; }); return true; } catch (e) { return false; } } };
 W.addEventListener('beforeinstallprompt', function (e) { ev = e; if (!standalone() && !dismissed()) later(false, 7000); });   // index.html stores it too; we never cancel its handling
 W.addEventListener('appinstalled', function () { ls('as_installed', '1'); hide(); });
 if (isIos() && !standalone() && !dismissed()) later(true, 12000);
+})();
+/* Academic Summit - install-card.js v1
+   A permanent "Install the app" card on the Profile screen (student and lecturer) with a self-check that says exactly
+   why the browser is not offering the install (manifest, icons, service worker, already installed). */
+(function () {
+'use strict';
+var W = window;
+if (typeof document === 'undefined') return;
+function standalone() { try { return W.matchMedia('(display-mode: standalone)').matches || W.navigator.standalone === true; } catch (e) { return false; } }
+function out(h) { var o = document.getElementById('as-inst-out'); if (o) o.innerHTML = h; }
+function cardHtml() {
+  return '<div class="card p-5 space-y-2 mt-5" id="as-inst-card"><div class="lbl">Install the app</div>' +
+    '<button class="btn w-full" onclick="asInstallNow()">Install Academic Summit</button>' +
+    '<button class="btn2 w-full" onclick="asInstallCheck()">Why is it not offering to install?</button>' +
+    '<div id="as-inst-out" class="text-[11px]" style="color:var(--mut)">Installs to your home screen, opens full-screen and keeps working with a weak connection.</div></div>';
+}
+function wrapView(obj, key) {
+  if (!obj || typeof obj[key] !== 'function' || obj[key].__asInst) return;
+  var base = obj[key];
+  obj[key] = function () { var h = base.apply(this, arguments); return typeof h === 'string' && h.indexOf('as-inst-card') < 0 ? h + cardHtml() : h; };
+  obj[key].__asInst = true;
+}
+try { wrapView(V, 'prof'); } catch (e) {}
+try { wrapView(LECTURER_VIEWS, 'prof'); } catch (e) {}
+
+W.asInstallNow = function () {
+  if (standalone()) return out('The app is already installed on this phone.');
+  if (W.__asInstall && W.__asInstall.ready() && W.__asInstall.prompt()) return;
+  var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  out(ios ? '<b>iPhone:</b> tap the Share button, then <b>Add to Home Screen</b>.'
+          : '<b>Chrome:</b> tap the three dots at the top right, then <b>Install app</b> (or <b>Add to Home screen</b>), then <b>Install</b>.<br>If you only see a shortcut option, tap the button below to find out why.');
+};
+W.asInstallCheck = async function () {
+  var L = [], ok = function (b, t) { L.push((b ? '\u2713 ' : '\u2717 ') + t); };
+  out('Checking...');
+  try {
+    ok(location.protocol === 'https:', 'Secure connection (https)');
+    var link = document.querySelector('link[rel="manifest"]');
+    ok(!!link, 'Manifest linked in the page');
+    if (link) {
+      var r = await fetch(link.href, { cache: 'no-store' }), m = null;
+      try { m = await r.clone().json(); } catch (e) {}
+      ok(r.ok && !!m, 'Manifest loads (' + r.status + ')');
+      if (m) {
+        ok(!!(m.name || m.short_name), 'App name present');
+        ok(m.display === 'standalone' || m.display === 'fullscreen', 'Opens like an app (display: ' + m.display + ')');
+        var icons = m.icons || [], good = 0;
+        for (var i = 0; i < icons.length; i++) {
+          var u = new URL(icons[i].src, link.href), x;
+          try { x = await fetch(u, { cache: 'no-store' }); } catch (e) { x = { ok: false, status: 'blocked' }; }
+          if (x.ok) good++; else ok(false, 'Icon missing: ' + icons[i].src + ' (' + x.status + ')');
+        }
+        ok(good > 0 && good === icons.length, 'Icons load (' + good + ' of ' + icons.length + ')');
+      }
+    }
+    var reg = navigator.serviceWorker && (await navigator.serviceWorker.getRegistration());
+    ok(!!reg, 'Service worker registered');
+    ok(!standalone(), 'Running in the browser (not already installed)');
+    ok(!!(W.__asInstall && W.__asInstall.ready()), 'Browser has offered the install prompt');
+  } catch (e) { L.push('\u2717 Check failed: ' + e.message); }
+  out(L.join('<br>') + '<br><br>If every line is \u2713 but the prompt was not offered, use the browser menu: three dots, then Install app. Chrome may also hide the prompt if the app was installed before: look for it on your home screen.');
+};
+})();
+/* Academic Summit - data-report.js v1
+   "Download my data" now offers a readable report (PDF or Word) organised into sections, plus the raw backup file
+   (JSON) for restoring. The old button produced only the raw JSON. */
+(function () {
+'use strict';
+var W = window;
+function num(v) { var n = parseFloat(v); return isNaN(n) ? null : n; }
+function g(s) { s = num(s); if (s == null) return ['-', 0]; return s >= 70 ? ['A', 5] : s >= 60 ? ['B', 4] : s >= 50 ? ['C', 3] : s >= 45 ? ['D', 2] : s >= 40 ? ['E', 1] : ['F', 0]; }
+function d(x) { try { return new Date(x).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }); } catch (e) { return ''; } }
+function f1(n) { return (Math.round(n * 100) / 100).toFixed(2); }
+
+/* pure: turn the saved app state into titled tables */
+function collect(U, email) {
+  var p = (U && U.profile) || {}, blocks = [], totU = 0, totP = 0;
+  blocks.push({ h: 'Profile', cols: ['Item', 'Value'], w: [1, 2.4], rows: [['Name', p.name || (U && U.name) || ''], ['Email', email || ''], ['Matric / ID number', p.matric || ''], ['Institution', p.uni || ''], ['Faculty', p.faculty || ''], ['Department', p.program || ''], ['Level', p.level || '']].filter(function (r) { return r[1] !== ''; }) });
+  var sems = (U && U.semesters) || [], resultBlocks = [];
+  sems.forEach(function (s) {
+    var su = 0, sp = 0, rows = (s.courses || []).map(function (c) {
+      var sc = num(c.score != null ? c.score : c.sc), u = num(c.unit) || 0, gp = g(sc);
+      if (sc != null && u) { su += u; sp += gp[1] * u; }
+      return [c.code || '', u || '', sc == null ? '' : sc, sc == null ? '' : gp[0]];
+    });
+    totU += su; totP += sp;
+    if (rows.length) rows.push(['Semester GPA', su || '', '', su ? f1(sp / su) : '-']);
+    resultBlocks.push({ h: 'Results: ' + (s.name || 'Semester'), cols: ['Course', 'Units', 'Score', 'Grade'], w: [2, 1, 1, 1], rows: rows.length ? rows : [['No courses recorded', '', '', '']] });
+  });
+  blocks.push({ h: 'Summary', cols: ['Item', 'Value'], w: [1.4, 2], rows: [['Cumulative GPA (5.0 scale)', totU ? f1(totP / totU) : '-'], ['Units with scores', totU], ['Semesters recorded', sems.length]].concat(U && U.study && num(U.study.streak) != null ? [['Study streak (days)', U.study.streak]] : []) });
+  blocks = blocks.concat(resultBlocks);
+  ((U && U.dec) || []).forEach(function (half, i) {
+    if (half && half.length) blocks.push({ h: 'Course registration: semester ' + (i + 1), cols: ['Course', 'Type', 'Units'], w: [2, 1.4, 1], rows: half.map(function (c) { return [c.code || '', c.st === 'C' ? 'Core' : c.st === 'E' ? 'Elective' : (c.st || ''), c.unit || '']; }) });
+  });
+  var att = (U && U.attendance) || [];
+  if (att.length) {
+    var by = {}; att.forEach(function (a) { var k = String(a.code || '').toUpperCase(); by[k] = (by[k] || 0) + 1; });
+    blocks.push({ h: 'Attendance marked on this phone', cols: ['Course', 'Classes marked'], w: [2, 1.4], rows: Object.keys(by).sort().map(function (k) { return [k, by[k]]; }) });
+  }
+  var tx = (U && U.tx) || [];
+  if (tx.length) {
+    var inc = 0, exp = 0; tx.forEach(function (t) { var a = num(t.amt) || 0; if (/in|credit/i.test(String(t.type || ''))) inc += a; else exp += a; });
+    blocks.push({ h: 'Finance', cols: ['Date', 'Type', 'Category', 'Description', 'Amount'], w: [1.2, 1, 1.2, 2, 1.1],
+      rows: tx.slice(-40).reverse().map(function (t) { return [d(t.date), t.type || '', t.cat || '', t.desc || '', t.amt || '']; }).concat([['Total in / out', '', '', '', Math.round(inc) + ' / ' + Math.round(exp)]]) });
+  }
+  return { title: 'My Academic Summit data', sub: (p.name || email || '') + '  |  generated ' + d(new Date()), blocks: blocks };
+}
+
+/* hand-written PDF with several titled tables */
+function latin(s) { return String(s == null ? '' : s).replace(/[\r\n\t]+/g, ' ').replace(/[^\x20-\x7e\u00a0-\u00ff]/g, '?'); }
+function pstr(s) { return '(' + latin(s).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)') + ')'; }
+function fit(s, w, sz) { s = latin(s); var n = Math.max(1, Math.floor(w / (sz * 0.5))); return s.length > n ? s.slice(0, Math.max(1, n - 1)) + '.' : s; }
+function toPDF(m) {
+  var PW = 595, PH = 842, MX = 40, TOP = 56, BOT = 50, LH = 15, SZ = 9, usable = PW - 2 * MX, pages = [], cur = '', y = PH - TOP;
+  function T(sz, bold, x, yy, s) { return 'BT /' + (bold ? 'F2' : 'F1') + ' ' + sz + ' Tf ' + x.toFixed(1) + ' ' + yy.toFixed(1) + ' Td ' + pstr(s) + ' Tj ET\n'; }
+  function newPage() { pages.push(cur); cur = ''; y = PH - TOP; }
+  function need(h) { if (y - h < BOT) newPage(); }
+  cur += '0.06 0.32 0.20 rg\n' + T(18, true, MX, y, m.title) + '0.35 0.35 0.35 rg\n' + T(10, false, MX, y - 16, m.sub) + '0 0 0 rg\n'; y -= 42;
+  m.blocks.forEach(function (b) {
+    var ws = [], xs = [], tot = b.w.reduce(function (a, c) { return a + c; }, 0), x = MX;
+    b.w.forEach(function (w) { var cw = usable * w / tot; xs.push(x); ws.push(cw); x += cw; });
+    need(LH * 3); cur += '0.06 0.32 0.20 rg\n' + T(11.5, true, MX, y, b.h) + '0 0 0 rg\n'; y -= LH + 2;
+    function head() { cur += '0.06 0.32 0.20 rg ' + MX + ' ' + (y - 4) + ' ' + usable + ' ' + LH + ' re f 1 1 1 rg\n'; b.cols.forEach(function (c, k) { cur += T(SZ, true, xs[k] + 3, y, fit(c, ws[k] - 6, SZ)); }); cur += '0 0 0 rg\n'; y -= LH; }
+    head();
+    b.rows.forEach(function (r, i) {
+      if (y - LH < BOT) { newPage(); head(); }
+      if (i % 2) cur += '0.94 0.97 0.95 rg ' + MX + ' ' + (y - 4) + ' ' + usable + ' ' + LH + ' re f 0 0 0 rg\n';
+      var bold = /GPA|Total/.test(String(r[0]));
+      r.forEach(function (c, k) { cur += T(SZ, bold, xs[k] + 3, y, fit(c, ws[k] - 6, SZ)); }); y -= LH;
+    });
+    y -= 10;
+  });
+  pages.push(cur);
+  var N = pages.length, objs = [], kids = [];
+  objs[1] = '<< /Type /Catalog /Pages 2 0 R >>'; objs[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>'; objs[4] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
+  pages.forEach(function (c, p) {
+    c += '0.45 0.45 0.45 rg\n' + T(8, false, MX, 28, 'Academic Summit  -  personal data report') + T(8, false, PW - MX - 46, 28, 'Page ' + (p + 1) + ' of ' + N);
+    var pid = 5 + p * 2, cid = pid + 1; kids.push(pid + ' 0 R');
+    objs[pid] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + PW + ' ' + PH + '] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ' + cid + ' 0 R >>';
+    objs[cid] = '<< /Length ' + c.length + ' >>\nstream\n' + c + 'endstream';
+  });
+  objs[2] = '<< /Type /Pages /Kids [' + kids.join(' ') + '] /Count ' + N + ' >>';
+  var o = '%PDF-1.4\n', offs = [];
+  for (var n = 1; n < objs.length; n++) { offs[n] = o.length; o += n + ' 0 obj\n' + objs[n] + '\nendobj\n'; }
+  var xr = o.length; o += 'xref\n0 ' + objs.length + '\n0000000000 65535 f \n';
+  for (n = 1; n < objs.length; n++) o += ('0000000000' + offs[n]).slice(-10) + ' 00000 n \n';
+  o += 'trailer\n<< /Size ' + objs.length + ' /Root 1 0 R >>\nstartxref\n' + xr + '\n%%EOF';
+  var u8 = new Uint8Array(o.length); for (var q = 0; q < o.length; q++) u8[q] = o.charCodeAt(q) & 255; return u8;
+}
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function toWord(m) {
+  var h = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>' + esc(m.title) + '</title></head><body style="font-family:Calibri,Arial,sans-serif"><h2 style="color:#0f5132;margin-bottom:2px">' + esc(m.title) + '</h2><p style="color:#555;font-size:10pt;margin-top:0">' + esc(m.sub) + '</p>';
+  m.blocks.forEach(function (b) {
+    h += '<h3 style="color:#0f5132;margin-bottom:3px">' + esc(b.h) + '</h3><table style="border-collapse:collapse;width:100%"><tr>' + b.cols.map(function (c) { return '<th style="border:1px solid #999;background:#0f5132;color:#fff;padding:4px;text-align:left;font-size:10pt">' + esc(c) + '</th>'; }).join('') + '</tr>' +
+      b.rows.map(function (r) { return '<tr>' + r.map(function (c) { return '<td style="border:1px solid #bbb;padding:3px;font-size:10pt">' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</table>';
+  });
+  return h + '</body></html>';
+}
+W.__asReport = { collect: collect, toPDF: toPDF, toWord: toWord };
+if (typeof document === 'undefined') return;
+
+function save(blob, name) { var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000); }
+function day() { var x = new Date(); return x.getFullYear() + '-' + ('0' + (x.getMonth() + 1)).slice(-2) + '-' + ('0' + x.getDate()).slice(-2); }
+var rawExport = W.asExport;
+W.asExport = function () {
+  var old = document.getElementById('dr-ov'); if (old) old.remove();
+  var ov = document.createElement('div'); ov.id = 'dr-ov';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;padding:12px';
+  ov.innerHTML = '<div class="card p-5 space-y-3" style="width:100%;max-width:420px"><div class="font-extrabold">Download my data</div>' +
+    '<p class="text-xs" style="color:var(--mut)">The report is for reading. The backup file is only for restoring the app and is not meant to be read.</p>' +
+    '<button class="btn w-full" data-k="pdf">Readable report (PDF)</button><button class="btn2 w-full" data-k="doc">Readable report (Word)</button>' +
+    '<button class="btn2 w-full" data-k="raw">Backup file (for restore)</button><button class="btn2 w-full" data-k="x">Cancel</button></div>';
+  ov.addEventListener('click', function (e) {
+    var k = e.target && e.target.getAttribute && e.target.getAttribute('data-k'); if (e.target === ov) k = 'x'; if (!k) return; ov.remove();
+    try {
+      if (k === 'raw') return typeof rawExport === 'function' && rawExport();
+      if (k === 'x') return;
+      var m = collect(U, typeof email !== 'undefined' ? email : '');
+      if (k === 'pdf') save(new Blob([toPDF(m)], { type: 'application/pdf' }), 'academic-summit-report-' + day() + '.pdf');
+      else save(new Blob(['\ufeff' + toWord(m)], { type: 'application/msword' }), 'academic-summit-report-' + day() + '.doc');
+      try { showToast('Report saved'); } catch (e2) {}
+    } catch (err) { try { showToast('Could not create the report', 'error'); } catch (e3) {} }
+  });
+  document.body.appendChild(ov);
+};
+})();
+/* Academic Summit - auth-first.js v1
+   A new visitor lands on CREATE ACCOUNT (not login), with a short list of what they will need.
+   Anyone who has signed in on this phone before still lands on login. "Have an account? Log in" always works. */
+(function () {
+'use strict';
+var W = window;
+if (typeof document === 'undefined' || typeof W.authUI !== 'function') return;
+function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) {} return null; }
+var fromLink = false;
+document.addEventListener('click', function (e) {
+  var t = e.target && e.target.closest && e.target.closest('[onclick]'); if (!t) return;
+  var o = t.getAttribute('onclick') || '';
+  if (/authUI\('login'\)/.test(o) && !/as_welcomed/.test(o)) fromLink = true;      // the person chose "Log in" themselves
+}, true);
+var orig = W.authUI;
+W.authUI = function (mode, msg) {
+  var m = mode;
+  if (mode === 'login' && !msg && ls('as_welcomed') && ls('as_has_account') !== '1' && !fromLink) m = 'signup';
+  var r = orig.call(this, m, msg);
+  fromLink = false;
+  if (m === 'signup') setTimeout(addNeeds, 0);
+  return r;
+};
+function addNeeds() {
+  var name = document.getElementById('a-name'); if (!name || document.getElementById('as-needs')) return;
+  var box = document.createElement('div'); box.id = 'as-needs';
+  box.style.cssText = 'border:1px solid #14532d;background:#06241b;border-radius:14px;padding:12px;font-size:12px;line-height:1.5;color:#bfeadb;text-align:left';
+  box.innerHTML = '<b style="color:#6ee7b7">What you will need</b><br>1. Your full name, an email and a password<br>2. Your <b>matric number</b> (100 level: your JAMB number works until you get one)<br>3. Your <b>course registration</b> (screenshot or list). Add it after sign-up so your attendance and class notices match your courses.';
+  var holder = name.closest('.space-y-3') || name.parentNode.parentNode; holder.insertBefore(box, holder.firstChild);
+}
+/* remember this phone has an account once someone has signed in */
+var goB = W.go;
+W.go = function () { try { if (typeof uid !== 'undefined' && uid) ls('as_has_account', '1'); } catch (e) {} return goB.apply(this, arguments); };
+})();
+/* Academic Summit - att-card.js v1
+   Student attendance card, both on Home and on the Attend screen:
+   - Matric number instead of course code (the class comes from the lecturer's session on the server).
+   - First-mark consent sheet: short privacy notice + optional marketing opt-in (OFF by default), saved on the profile.
+   - New accounts are dropped onto the attendance screen once; on the second visit the Attend tab glows until opened.
+   Everything still goes through the same mark_attendance function. */
+(function () {
+'use strict';
+var W = window, FL = null, FLat = 0, firstDropNow = false, dropped = false;
+function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) {} return null; }
+function toast(m, t) { try { showToast(m, t); } catch (e) {} }
+function E(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function isLec() { try { return U && U.role === 'lecturer'; } catch (e) { return false; } }
+function norm(c) { return String(c || '').toUpperCase().replace(/\s+/g, ''); }
+function regCodes() { try { var d = (U.dec && U.dec[U.curHalf || 0]) || []; return d.map(function (c) { return norm(c.code); }).filter(Boolean); } catch (e) { return []; } }
+function fallback() { return { server: false, consent: ls('as_consent_v1') === '1', marketing: false, first_visit_done: true, glow_seen: true }; }
+function flags() {
+  if (FL && Date.now() - FLat < 120000) return Promise.resolve(FL);
+  return Promise.resolve(sb.rpc('my_flags')).then(function (r) {
+    if (r && !r.error && r.data) { FL = r.data; FL.server = true; FLat = Date.now(); return FL; }
+    return fallback();
+  }, fallback);
+}
+function modal(html) {
+  var old = document.getElementById('ac-ov'); if (old) old.remove();
+  var ov = document.createElement('div'); ov.id = 'ac-ov';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;padding:12px';
+  ov.innerHTML = '<div class="card p-5 space-y-3" style="width:100%;max-width:420px;max-height:88vh;overflow:auto">' + html + '</div>';
+  document.body.appendChild(ov); return ov;
+}
+W.__asCard = { fallback: fallback };
+
+/* ---- consent on the first mark ---- */
+function ensureConsent() {
+  return flags().then(function (f) {
+    if (f.consent) return true;
+    return new Promise(function (res) {
+      var ov = modal('<div class="font-extrabold">Before you mark attendance</div>' +
+        '<div class="text-xs space-y-2" style="color:var(--mut)"><p><b>What we record:</b> your matric number, the class, the time, and a yes/no for whether you were near your lecturer.</p>' +
+        '<p><b>Your location:</b> checked once when you mark. Your exact map position is never saved; at most we keep how far you were from your lecturer.</p>' +
+        '<p><b>Who sees it:</b> your lecturer sees your name, matric number and the time for classes you attend. Your records are stored securely and are not sold.</p></div>' +
+        '<label class="flex gap-2 items-start text-xs"><input id="ac-mk" type="checkbox" style="margin-top:2px"><span>Send me campus news, offers and product updates (optional, you can change this later)</span></label>' +
+        '<button class="btn w-full" id="ac-ok">I understand, continue</button><button class="btn2 w-full" id="ac-x">Cancel</button>');
+      document.getElementById('ac-x').onclick = function () { ov.remove(); res(false); };
+      document.getElementById('ac-ok').onclick = function () {
+        var mk = !!document.getElementById('ac-mk').checked; ov.remove(); ls('as_consent_v1', '1');
+        Promise.resolve(sb.rpc('record_consent', { p_marketing: mk })).then(function () {}, function () {});
+        if (FL) { FL.consent = true; FL.marketing = mk; } res(true);
+      };
+    });
+  });
+}
+
+/* ---- matric on the card ---- */
+function ensureId() {
+  return new Promise(function (res) {
+    var inp = document.getElementById('ha-matric'), v = inp ? inp.value.trim() : '', R = W.__asReg;
+    if (inp && v && R) {
+      var cur = String((U.profile && U.profile.matric) || '').toUpperCase().replace(/\s+/g, '');
+      if (v.toUpperCase().replace(/\s+/g, '') !== cur) {
+        var c = R.idCheck(v, (U.profile || {}).level);
+        if (!c.ok) { toast(c.msg, 'error'); return res(false); }
+        U.profile = U.profile || {}; U.profile.matric = c.value; save();
+        sb.from('profiles').update({ matric: c.value }).eq('id', uid).then(function () {}, function () {});
+        toast('Matric number saved');
+      }
+      return res(true);
+    }
+    if (R && R.needsId(U.profile) && typeof W.srMatricAsk === 'function') return W.srMatricAsk(function () { res(true); });
+    res(true);
+  });
+}
+var mk = W.markAttendance;
+if (typeof mk === 'function') W.markAttendance = async function (pin, course, source) {
+  if (isLec() || !/^\d{5}$/.test(pin)) return mk.apply(this, arguments);
+  if (!(await ensureId())) return false;
+  if (!(await ensureConsent())) return false;
+  var ok = await mk.apply(this, arguments);
+  try {
+    if (ok) { var last = (U.attendance || [])[(U.attendance || []).length - 1], codes = regCodes();
+      if (last && codes.length && codes.indexOf(norm(last.code)) < 0) toast('Note: ' + last.code + ' is not on your course registration.'); }
+  } catch (e) {}
+  return ok;
+};
+
+/* save the matric typed on the card BEFORE the course check runs, so the student is never asked twice */
+var mfh = W.markFromHome;
+if (typeof mfh === 'function') W.markFromHome = async function () { if (!isLec() && !(await ensureId())) return; return mfh.apply(this, arguments); };
+
+/* ---- the card itself ---- */
+(function () { var st = document.createElement('style'); st.textContent = '#sr-chips{display:none!important}@keyframes asglow{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}50%{box-shadow:0 0 16px 7px rgba(16,185,129,.6)}}.as-glow{animation:asglow 1.5s infinite;border-radius:16px}'; document.head.appendChild(st); })();
+function decorate() {
+  if (isLec()) return;
+  var c = document.getElementById('ha-course'); if (!c || document.getElementById('ha-matric')) return;
+  c.style.display = 'none';
+  var m = document.createElement('input'); m.id = 'ha-matric'; m.className = c.className; m.placeholder = 'Matric / JAMB number'; m.setAttribute('autocomplete', 'off');
+  m.value = (U.profile && U.profile.matric) || ''; m.style.textTransform = 'uppercase';
+  c.parentNode.insertBefore(m, c);
+}
+function glow() {
+  if (isLec()) return;
+  flags().then(function (f) {
+    var b = document.querySelector('.bn[data-n="att"]'); if (!b) return;
+    if (f.server && f.first_visit_done && !f.glow_seen && !firstDropNow && typeof view !== 'undefined' && view !== 'att') b.classList.add('as-glow'); else b.classList.remove('as-glow');
+  });
+}
+var goB = W.go;
+W.go = function (v) {
+  var r = goB.apply(this, arguments);
+  try {
+    if (!isLec() && typeof uid !== 'undefined' && uid) {
+      if (v === 'home' && !dropped) {
+        dropped = true;
+        flags().then(function (f) { if (f.server && !f.first_visit_done) { firstDropNow = true; FL.first_visit_done = true; Promise.resolve(sb.rpc('mark_first_visit')).then(function () {}, function () {}); setTimeout(function () { W.go('att'); toast('Welcome! Mark your first class here.'); }, 150); } });
+      }
+      if (v === 'att') flags().then(function (f) { if (f.server && f.first_visit_done && !f.glow_seen && !firstDropNow) { FL.glow_seen = true; Promise.resolve(sb.rpc('mark_glow_seen')).then(function () {}, function () {}); var b = document.querySelector('.bn[data-n="att"]'); if (b) b.classList.remove('as-glow'); } });
+      setTimeout(decorate, 450); setTimeout(decorate, 1400); setTimeout(glow, 700);
+    }
+  } catch (e) {}
+  return r;
+};
+})();
+/* Academic Summit - lec-clearance.js v1
+   Lecturer "Exam clearance": pick a course and a cutoff (30-100%, default 75). The cutoff belongs to THIS report only;
+   it never changes the school-wide pass mark. Students who registered the course but never attended show at 0%.
+   Exports (PDF / Word / CSV) are stamped with the cutoff. Every report is also saved on the server as an audit snapshot. */
+(function () {
+'use strict';
+var W = window, LAST = null;
+function E(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function toast(m, t) { try { showToast(m, t); } catch (e) {} }
+function csvCell(v) { v = String(v == null ? '' : v); if (/^[=+\-@]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; }
+function courses() { try { return ((U.lec && U.lec.courses) || []).filter(function (c) { return c && c.code; }).map(function (c) { return c.code; }); } catch (e) { return []; } }
+function card() {
+  var cs = courses();
+  return '<div id="lc-box" class="card p-4 space-y-3"><div class="font-extrabold">Exam clearance</div>' +
+    (cs.length ? '<p class="text-xs" style="color:var(--mut)">Who has attended enough classes to sit the exam. The cutoff applies to this report only.</p>' +
+      '<select id="lc-course" class="inp uppercase font-mono font-bold">' + cs.map(function (c) { return '<option>' + E(c) + '</option>'; }).join('') + '</select>' +
+      '<div class="flex items-center justify-between text-sm"><span>Cutoff</span><b id="lc-cutv">75%</b></div>' +
+      '<input id="lc-cut" type="range" min="30" max="100" step="5" value="75" style="width:100%" oninput="document.getElementById(\'lc-cutv\').textContent=this.value+\'%\'">' +
+      '<button class="btn w-full" onclick="lcRun(this)">Generate clearance report</button><div id="lc-out"></div>'
+      : '<p class="text-xs" style="color:var(--mut)">Register the courses you teach in your teaching profile first.</p>') + '</div>';
+}
+var base = LECTURER_VIEWS && LECTURER_VIEWS.records;
+if (typeof base === 'function') LECTURER_VIEWS.records = function () {
+  var h = base.apply(this, arguments);
+  return typeof h === 'string' && h.indexOf('lc-box') < 0 ? h.replace('<div id="rec-list"', card() + '<div id="rec-list"') : h;
+};
+W.lcRun = async function (btn) {
+  var course = (document.getElementById('lc-course') || {}).value, cut = parseInt((document.getElementById('lc-cut') || {}).value, 10) || 75, out = document.getElementById('lc-out');
+  if (!course) return toast('Choose a course', 'error');
+  if (btn) btn.disabled = true; out.innerHTML = '<div class="text-xs" style="color:var(--mut)">Working...</div>';
+  var r = await sb.rpc('clearance_report', { p_course: course, p_cutoff: cut });
+  if (btn) btn.disabled = false;
+  if (r.error) { out.innerHTML = ''; return toast(r.error.message, 'error'); }
+  LAST = r.data; var rows = LAST.rows || [], ok = rows.filter(function (x) { return x.eligible; }).length;
+  if (!LAST.held) { out.innerHTML = '<div class="text-xs" style="color:var(--mut)">No saved classes for this course yet.</div>'; return; }
+  out.innerHTML = '<div class="text-sm"><b>' + ok + '</b> of ' + rows.length + ' students cleared at ' + LAST.cutoff + '% (' + LAST.held + ' classes held)</div>' +
+    '<button class="btn2 w-full" onclick="lcExport()">Export (PDF / Word / CSV)</button><div style="max-height:260px;overflow:auto"><table class="w-full text-left text-xs"><thead><tr style="color:var(--mut)"><th class="py-1 pr-2">Student</th><th class="pr-2">Attended</th><th class="pr-2">%</th><th>Cleared</th></tr></thead><tbody>' +
+    rows.map(function (x) {
+      return '<tr style="border-top:1px solid var(--bd)"><td class="py-1 pr-2">' + E(x.name || '-') + '<div class="font-mono" style="color:var(--mut)">' + E(x.matric || '') + '</div></td><td class="pr-2">' + x.attended + '/' + x.held + '</td><td class="pr-2">' + x.pct + '%</td><td style="color:' + (x.eligible ? '#16a34a' : '#dc2626') + ';font-weight:700">' + (x.eligible ? 'Yes' : 'No') + '</td></tr>';
+    }).join('') + '</tbody></table></div>';
+};
+W.lcExport = function () {
+  var D = W.__asDocs; if (!LAST || !D || !D.choose) return toast('Nothing to export', 'error');
+  var rows = LAST.rows || [], ok = rows.filter(function (x) { return x.eligible; }).length, stamp = 'Cutoff ' + LAST.cutoff + '%  |  ' + LAST.held + ' classes held  |  ' + ok + ' of ' + rows.length + ' cleared  |  ' + D.stamp();
+  var m = { title: 'Exam clearance - ' + LAST.course, sub: stamp, cols: ['No', 'Name', 'Matric', 'Attended', '%', 'Cleared'], w: [0.6, 3, 2.4, 1.2, 0.8, 1],
+    rows: rows.map(function (x, i) { return [i + 1, x.name || '', x.matric || '', x.attended + '/' + x.held, x.pct + '%', x.eligible ? 'Yes' : 'No']; }) };
+  var csv = function () {
+    var lines = ['# ' + stamp, 'No,Name,Matric,Attended,Held,Percent,Cleared (cutoff ' + LAST.cutoff + '%)'].concat(rows.map(function (x, i) { return [i + 1, x.name, x.matric, x.attended, x.held, x.pct, x.eligible ? 'Yes' : 'No'].map(csvCell).join(','); }));
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' })); a.download = D.slug(LAST.course) + '-clearance-' + LAST.cutoff + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+  };
+  D.choose(m, csv, D.slug(LAST.course) + '-clearance-' + LAST.cutoff);
+};
 })();
 /* Academic Summit - guards.js v1
    1) The student "Target ... not a figure, a habit" sheet never opens for lecturers.

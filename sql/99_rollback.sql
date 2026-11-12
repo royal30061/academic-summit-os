@@ -185,3 +185,11 @@ drop function if exists public.admin_set_att_rule(text, integer);
 drop function if exists public.att_rules();
 
 -- ---- rollback of 09b_geo_tolerance.sql: re-run the att_geo_reason function from 09a_geo_tuning.sql ----
+
+-- ---- rollback of 15_flags_clearance.sql ----
+drop function if exists public.clearance_report(text, integer);
+drop function if exists public.my_flags();
+drop function if exists public.record_consent(boolean);
+drop function if exists public.mark_first_visit();
+drop function if exists public.mark_glow_seen();
+-- tables/columns kept on purpose: drop table public.exam_clearance_reports; alter table public.profiles drop column consent_at, drop column marketing_opt_in, drop column first_visit_done, drop column has_seen_glow_cue;
