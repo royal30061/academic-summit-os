@@ -1,4 +1,4 @@
-(function(){if(window.__asUpgrade)return;window.__asUpgrade='12';try{console.log('Academic Summit attendance upgrade v12 loaded')}catch(e){}
+(function(){if(window.__asUpgrade)return;window.__asUpgrade='13';try{console.log('Academic Summit attendance upgrade v13 loaded')}catch(e){}
 /* Academic Summit - session-min.js v1
    Ghost-session fix. A class that never reached the minimum head-count is hidden from the lecturer's
    records, and the admin sets that minimum / cleans up from the Admin Panel. The SERVER decides
@@ -401,9 +401,9 @@ W.recOpen = async function (id) {
       (rows.map(function (x, i) {
         var p = x.profiles || {};
         return '<tr style="border-top:1px solid var(--bd)"><td class="py-2 pr-2">' + (i + 1) + '</td><td class="pr-2">' + E(p.name || '\u2014') + '</td><td class="pr-2 font-mono">' + E(p.matric || '\u2014') +
-          '</td><td>' + E(T(x.marked_at)) + (x.in_range === true ? ' <span style="color:#16a34a" title="Inside class range">\u2713</span>' : '') + (x.method === 'manual' ? ' <span style="color:var(--mut)">(M)</span>' : '') + '</td></tr>';
+          '</td><td>' + E(T(x.marked_at)) + (x.in_range === true ? ' <span style="color:#16a34a" title="Inside class range">\u2713</span>' : (x.in_range === false ? ' <span style="color:#d97706" title="Outside class range">!</span>' : '')) + (x.method === 'manual' ? ' <span style="color:var(--mut)">(M)</span>' : '') + '</td></tr>';
       }).join('') || '<tr><td colspan="4" class="py-3">Nobody has marked this class.</td></tr>') + '</tbody></table>' +
-      (rows.some(function (x) { return x.in_range === true; }) ? '<div class="text-[11px]" style="color:var(--mut)">\u2713 = confirmed inside the class range.</div>' : '') + '</div>';
+      (rows.some(function (x) { return x.in_range === true || x.in_range === false; }) ? '<div class="text-[11px]" style="color:var(--mut)">\u2713 = inside the class range. ! = outside it (worth a look).</div>' : '') + '</div>';
   } catch (e) { console.error('recOpen', e); list.textContent = 'Could not load this list: ' + e.message; }
 };
 
@@ -434,7 +434,7 @@ W.paintRoster = function () {
     body.innerHTML = rosterRows.map(function (r, i) {
       var p = r.profiles || {};
       return '<tr><td class="p-3">' + (i + 1) + '</td><td class="p-3 text-xs">' + E(p.name || '\u2014') + '</td><td class="p-3 font-mono text-xs">' + E(p.matric || '\u2014') +
-        '</td><td class="p-3 text-xs">' + E(T(r.marked_at || r.created_at)) + (r.in_range === true ? ' <span style="color:#16a34a">\u2713</span>' : '') + (r.method === 'manual' ? ' (M)' : '') + '</td></tr>';
+        '</td><td class="p-3 text-xs">' + E(T(r.marked_at || r.created_at)) + (r.in_range === true ? ' <span style="color:#16a34a">\u2713</span>' : (r.in_range === false ? ' <span style="color:#d97706">!</span>' : '')) + (r.method === 'manual' ? ' (M)' : '') + '</td></tr>';
     }).join('') || '<tr><td class="p-3" colspan="4" style="color:var(--mut)">No attendance recorded yet.</td></tr>';
   } catch (e) { if (typeof paintBase === 'function') paintBase.apply(this, arguments); }
 };
@@ -833,20 +833,27 @@ function settings() {
 }
 
 /* one fresh, high-accuracy reading; stops early once it is good enough */
+var DIAG = { perm: '?', err: '', n: 0, best: null, offset: null };
+function diagText() {
+  return 'Details: permission ' + DIAG.perm + '; readings ' + DIAG.n + '; best ' + (DIAG.best == null ? 'none' : '+/-' + DIAG.best + ' m') +
+    (DIAG.err ? '; ' + DIAG.err : '') + (DIAG.offset != null && Math.abs(DIAG.offset) > 20000 ? '; phone clock differs by about ' + Math.round(DIAG.offset / 1000) + ' s' : '');
+}
 function fix(ms) {
   if (fixImpl) return fixImpl(ms);
+  DIAG = { perm: '?', err: '', n: 0, best: null, offset: null };
+  try { if (navigator.permissions && navigator.permissions.query) navigator.permissions.query({ name: 'geolocation' }).then(function (r) { DIAG.perm = r.state; }, function () {}); } catch (e) {}
   return new Promise(function (done) {
-    if (!navigator.geolocation) return done(null);
+    if (!navigator.geolocation) { DIAG.err = 'no geolocation support'; return done(null); }
     var best = null, fin = false, id = null, tm = null;
-    function end() { if (fin) return; fin = true; clearTimeout(tm); if (id != null) { try { navigator.geolocation.clearWatch(id); } catch (e) {} } done(best); }
+    function end() { if (fin) return; fin = true; clearTimeout(tm); if (id != null) { try { navigator.geolocation.clearWatch(id); } catch (e) {} } try { localStorage.setItem('as_geo_diag', diagText()); } catch (e) {} done(best); }
     try {
       id = navigator.geolocation.watchPosition(function (p) {
-        if (Date.now() - p.timestamp > 15000) return;                       // stale reading: ignore
-        var c = p.coords; if (!best || c.accuracy < best.acc) best = { lat: c.latitude, lng: c.longitude, acc: Math.round(c.accuracy) };
+        var c = p.coords; DIAG.n++; DIAG.offset = Date.now() - p.timestamp;      // recorded for diagnosis only: a wrong phone clock must never block a student
+        if (!best || c.accuracy < best.acc) { best = { lat: c.latitude, lng: c.longitude, acc: Math.round(c.accuracy) }; DIAG.best = best.acc; }
         if (best.acc <= GOOD) end();
-      }, function () { end(); }, { enableHighAccuracy: true, maximumAge: 0, timeout: ms });
+      }, function (e) { DIAG.err = 'error ' + (e && e.code) + (e && e.code === 1 ? ' (blocked for this site)' : e && e.code === 2 ? ' (position unavailable)' : e && e.code === 3 ? ' (timed out)' : ''); end(); }, { enableHighAccuracy: true, maximumAge: 0, timeout: ms });
       tm = setTimeout(end, ms);
-    } catch (e) { end(); }
+    } catch (e) { DIAG.err = 'exception'; end(); }
   });
 }
 function ask(opts) {            // opts: {title, body, retry, cont, cancel} -> resolves 'retry' | 'continue' | 'cancel'
@@ -863,19 +870,18 @@ function ask(opts) {            // opts: {title, body, retry, cont, cancel} -> r
 }
 /* pure-ish: get a usable fix, warning the student when the signal is weak */
 async function locate(args, st) {
-  GOOD = st.warn || GOOD;
-  var fx = args.p_lat != null ? { lat: args.p_lat, lng: args.p_lng, acc: Math.round(args.p_acc == null ? 9999 : args.p_acc) } : await fix(8000);
-  for (var tries = 0; tries < 5; tries++) {
-    if (fx && fx.acc <= GOOD) return fx;
-    var usable = fx && fx.acc <= st.accmax;
-    var k = await ask(fx ? { title: 'Weak GPS signal', body: 'Your location is only accurate to about ' + fx.acc + ' m. Step closer to the centre of the room or near a window, then retry.', cont: usable }
-                         : { title: 'No location yet', body: 'Allow location for this site, turn on high-accuracy location, then retry.', cont: false });
+  GOOD = Math.min(st.warn || GOOD, 50);
+  var fx = args.p_lat != null ? { lat: args.p_lat, lng: args.p_lng, acc: Math.round(args.p_acc == null ? 9999 : args.p_acc) } : await fix(10000);
+  for (var tries = 0; tries < 3; tries++) {
+    if (fx && fx.acc <= (st.warn || 50)) return fx;
+    var k = await ask(fx ? { title: 'Weak GPS signal', body: 'Your location is only accurate to about ' + fx.acc + ' m. Step closer to the centre of the room or near a window and retry, or continue and let the app try.', cont: true, detail: diagText() }
+                         : { title: 'No location received', body: 'Turn on location and allow this site to use it (browser menu, Settings, Site settings, Location). Then retry, or continue to try without it.', cont: true, detail: diagText() });
     if (k === 'cancel') return null;
-    if (k === 'continue' && usable) return fx;
-    var again = await fix(8000);
+    if (k === 'continue') return fx || { none: true };
+    var again = await fix(10000);
     if (again && (!fx || again.acc < fx.acc)) fx = again;
   }
-  return fx && fx.acc <= st.accmax ? fx : null;
+  return fx || { none: true };            // after three tries we stop asking: the server decides, nobody is stuck
 }
 
 /* wrong-code lock-out countdown (cosmetic: the database enforces it) */
@@ -888,7 +894,7 @@ function lockUI(sec) {
     btn.textContent = 'Wait ' + n + 's'; setTimeout(function () { tick(n - 1); }, 1000);
   })(Math.min(sec, 120));
 }
-W.__asGeo = { locate: locate, _fix: function (f) { fixImpl = f; }, _ask: function (f) { askImpl = f; } };
+W.__asGeo = { locate: locate, diagText: diagText, _fix: function (f) { fixImpl = f; }, _ask: function (f) { askImpl = f; } };
 if (typeof document === 'undefined') return;
 
 if (typeof sb === 'undefined' || !sb || !sb.rpc) return;
@@ -900,7 +906,7 @@ async function lecLocate(args) {
   for (var i = 0; i < 4; i++) {
     if (fx && fx.acc <= 100) return fx;                                 // the server needs the lecturer's own reading within 100 m
     var k = await ask(fx ? { title: 'GPS is too weak to set the class range', body: 'Your location is only accurate to about ' + fx.acc + ' m. Step near a window or outside the door, then retry.', cont: false }
-                         : { title: 'No location received', body: 'Turn on location, and allow this site to use it: Browser menu, Settings, Site settings, Location, then allow academic-summit.com.ng. Then retry.', cont: false });
+                         : { title: 'No location received', body: 'Turn on location, and allow this site to use it: Browser menu, Settings, Site settings, Location, then allow academic-summit.com.ng. Then retry.', cont: false, detail: diagText() });
     if (k === 'cancel') return null;
     var again = await fix(20000); if (again && (!fx || again.acc < fx.acc)) fx = again;
   }
@@ -928,7 +934,8 @@ sb.rpc = function (name, args) {
     };
     if (!st.geo) return go(args);
     return locate(args || {}, st).then(function (fx) {
-      if (!fx) return { data: null, error: { message: 'Cancelled. Marking needs a good location reading.' } };
+      if (!fx) return { data: null, error: { message: 'Cancelled.' } };
+      if (fx.none) return go(args);                                    // nothing to send: the server will say what it needs
       return go(Object.assign({}, args, { p_lat: fx.lat, p_lng: fx.lng, p_acc: fx.acc }));
     });
   });

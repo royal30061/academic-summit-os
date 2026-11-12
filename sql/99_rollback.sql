@@ -183,3 +183,5 @@ drop function if exists public.mint_pin();
 -- Re-run section 3 (att_geo_reason) of 01_attendance_protections.sql to restore the fixed 100 m accuracy limit, then:
 drop function if exists public.admin_set_att_rule(text, integer);
 drop function if exists public.att_rules();
+
+-- ---- rollback of 09b_geo_tolerance.sql: re-run the att_geo_reason function from 09a_geo_tuning.sql ----
