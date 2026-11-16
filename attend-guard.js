@@ -79,7 +79,7 @@ function studentMark(orig, name, args) {
   return settings().then(function (st) {
     var want = args.p_lat == null && (st.geofence_enforced || consent() !== 'no');
     if (want && st.geofence_enforced && name === 'mark_attendance') toast('Checking your location...');
-    return (want ? oneFix(7000, 30) : Promise.resolve(null)).then(function (fx) {
+    return (want ? (W.__asQuickFix ? W.__asQuickFix() : oneFix(7000, 30)) : Promise.resolve(null)).then(function (fx) {
       var a2 = withLoc(copy(args), fx); a2.p_device = devId();
       return safe(orig, name, args, a2);
     });
@@ -88,7 +88,7 @@ function studentMark(orig, name, args) {
 function lecturerStart(orig, name, args) {
   var a2 = copy(args); if (a2.p_radius == null) a2.p_radius = radius();
   if (name === 'start_session' && a2.p_lat == null) {
-    return oneFix(6000, 30).then(function (fx) { return safe(orig, name, args, withLoc(a2, fx)); });
+    return (W.__asQuickFix ? W.__asQuickFix() : oneFix(6000, 30)).then(function (fx) { return safe(orig, name, args, withLoc(a2, fx)); });
   }
   return safe(orig, name, args, a2);
 }

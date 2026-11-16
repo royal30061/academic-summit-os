@@ -1,4 +1,4 @@
-(function(){if(window.__asUpgrade)return;window.__asUpgrade='16';try{console.log('Academic Summit attendance upgrade v16 loaded')}catch(e){}
+(function(){if(window.__asUpgrade)return;window.__asUpgrade='19';try{console.log('Academic Summit attendance upgrade v19 loaded')}catch(e){}
 /* Academic Summit - session-min.js v1
    Ghost-session fix. A class that never reached the minimum head-count is hidden from the lecturer's
    records, and the admin sets that minimum / cleans up from the Admin Panel. The SERVER decides
@@ -834,6 +834,32 @@ function settings() {
 }
 
 /* one fresh, high-accuracy reading; stops early once it is good enough */
+/* ---- location pre-warm: start finding the position when the screen opens, so Mark never waits for GPS ---- */
+var LASTFIX = null, WATCH = null, WATCH_END = 0, DENIED = false;
+function usable() {
+  if (!LASTFIX) return null;
+  var age = Date.now() - LASTFIX.at;
+  return (WATCH != null ? age < 600000 : age < 60000) ? { lat: LASTFIX.lat, lng: LASTFIX.lng, acc: LASTFIX.acc } : null;
+}
+function stopWatch() { if (WATCH != null) { try { navigator.geolocation.clearWatch(WATCH); } catch (e) {} WATCH = null; } }
+function prewarm() {
+  if (typeof navigator === 'undefined' || !navigator.geolocation || DENIED) return;
+  try { if (localStorage.getItem('as_qa_loc') === 'no') return; } catch (e) {}
+  WATCH_END = Date.now() + 180000;
+  if (WATCH != null) return;
+  try {
+    WATCH = navigator.geolocation.watchPosition(function (p) {
+      var c = p.coords, f = { lat: c.latitude, lng: c.longitude, acc: Math.round(c.accuracy), at: Date.now() };
+      if (!LASTFIX || f.acc <= LASTFIX.acc * 1.3 || Date.now() - LASTFIX.at > 20000) LASTFIX = f;
+      if (Date.now() > WATCH_END) stopWatch();
+    }, function (e) { if (e && e.code === 1) { DENIED = true; stopWatch(); } }, { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 });
+  } catch (e) {}
+}
+function quickFix(maxWait) {
+  var q = usable(); if (q) return Promise.resolve(q);
+  prewarm();
+  return new Promise(function (res) { var t0 = Date.now(); (function poll() { var u = usable(); if (u) return res(u); if (DENIED || Date.now() - t0 >= maxWait) return res(null); setTimeout(poll, 100); })(); });
+}
 var DIAG = { perm: '?', err: '', n: 0, best: null, offset: null };
 function diagText() {
   return 'Details: permission ' + DIAG.perm + '; readings ' + DIAG.n + '; best ' + (DIAG.best == null ? 'none' : '+/-' + DIAG.best + ' m') +
@@ -872,7 +898,7 @@ function ask(opts) {            // opts: {title, body, retry, cont, cancel} -> r
 /* pure-ish: get a usable fix, warning the student when the signal is weak */
 async function locate(args, st) {
   GOOD = Math.min(st.warn || GOOD, 50); OKACC = st.accmax || 150;
-  var fx = args.p_lat != null ? { lat: args.p_lat, lng: args.p_lng, acc: Math.round(args.p_acc == null ? 9999 : args.p_acc) } : await fix(10000);
+  var fx = args.p_lat != null ? { lat: args.p_lat, lng: args.p_lng, acc: Math.round(args.p_acc == null ? 9999 : args.p_acc) } : (usable() || await fix(10000));
   for (var tries = 0; tries < 3; tries++) {
     if (fx && fx.acc <= OKACC) return fx;                              // usable evidence: send it, no questions asked
     if (Date.now() < skipUntil) return fx || { none: true };           // they already chose to continue a moment ago
@@ -896,7 +922,8 @@ function lockUI(sec) {
     btn.textContent = 'Wait ' + n + 's'; setTimeout(function () { tick(n - 1); }, 1000);
   })(Math.min(sec, 120));
 }
-W.__asGeo = { locate: locate, diagText: diagText, _fix: function (f) { fixImpl = f; }, _ask: function (f) { askImpl = f; } };
+W.__asQuickFix = function () { return quickFix(1500).then(function (f) { return f ? { lat: f.lat, lng: f.lng, acc: f.acc } : null; }); };
+W.__asGeo = { locate: locate, prewarm: prewarm, diagText: diagText, _fix: function (f) { fixImpl = f; }, _ask: function (f) { askImpl = f; } };
 if (typeof document === 'undefined') return;
 
 if (typeof sb === 'undefined' || !sb || !sb.rpc) return;
@@ -928,14 +955,19 @@ sb.rpc = function (name, args) {
   }
   if (name !== 'mark_attendance') return prev.apply(sb, arguments);
   return settings().then(function (st) {
+    var T0 = Date.now();
     var go = function (a) {
       return Promise.resolve(prev.call(sb, name, a)).then(function (r) {
+        try { var ms = Date.now() - T0; localStorage.setItem('as_mark_ms', String(ms)); if (debugOn()) toast('Mark took ' + (ms / 1000).toFixed(1) + ' s'); } catch (e) {}
         var m = r && r.error && String(r.error.message || ''), w = m && (m.match(/try again in (\d+) seconds/i) || (/wait a minute/i.test(m) ? [0, 60] : null));
         if (w) lockUI(+w[1]);
         return r;
       });
     };
-    if (!st.geo) return go(args);
+    if (!st.geo) {
+      if (args && args.p_lat == null) { var q = usable(); if (q) args = Object.assign({}, args, { p_lat: q.lat, p_lng: q.lng, p_acc: q.acc }); }
+      return go(args);
+    }
     return locate(args || {}, st).then(function (fx) {
       if (!fx) return { data: null, error: { message: 'Cancelled.' } };
       if (fx.none) return go(args);                                    // nothing to send: the server will say what it needs
@@ -975,6 +1007,7 @@ W.asRulesSave = function () {
 var goB = W.go;
 W.go = function (v) {
   var r = goB.apply(this, arguments);
+  if (v === 'home' || v === 'att') { try { if (typeof U !== 'undefined' && U && typeof uid !== 'undefined' && uid) { prewarm(); settings(); } } catch (e) {} }
   if (v === 'admin') setTimeout(function () {
     Promise.resolve(sb.rpc('att_rules')).then(function (x) { if (x && !x.error && x.data) { W.__asRules = x.data; paintAdmin(x.data); } }, function () {});
   }, 800);
@@ -1122,7 +1155,7 @@ var GROUPS = [
   ['onb', 'Lecturer onboarding', function () { return [cardByTitle('Onboarding Kit'), cardByTitle('Active Lecturers'), byId('as-onboard-box')]; }],
   ['rules', 'Attendance rules and switches', function () { return [byId('att-prot-box'), byId('att-min-box'), byId('as-rules-box')]; }],
   ['notice', 'Class notices', function () { return [byId('as-notice-box')]; }],
-  ['team', 'Admin team and tools', function () { return [byId('as-team-box'), byId('as-instdiag-box')]; }]
+  ['team', 'Admin team and tools', function () { return [byId('as-team-box'), byId('as-wipe-box'), byId('as-instdiag-box')]; }]
 ];
 function tidy() {
   var main = byId('main'); if (!main || !byId('as-acc-probe') && !(main.textContent || '').match(/Admin Panel/)) return;
@@ -1248,10 +1281,9 @@ function standalone() { try { return W.matchMedia('(display-mode: standalone)').
 var OUT = 'as-inst-out';
 function out(h) { var o = document.getElementById(OUT); if (o) o.innerHTML = h; }
 function cardHtml() {
-  if (standalone()) return '';                                   // already installed: show nothing
   return '<div class="card p-5 space-y-2 mt-5" id="as-inst-card"><div class="lbl">Install the app</div>' +
     '<button class="btn w-full" onclick="asInstallNow()">Install Academic Summit</button>' +
-    '<div id="as-inst-out" class="text-[11px]" style="color:var(--mut)">Opens like an app from your home screen and loads faster.</div></div>';
+    '<div id="as-inst-out" class="text-[11px]" style="color:var(--mut)">' + (standalone() ? 'Installed on this phone.' : 'Opens like an app from your home screen and loads faster.') + '</div></div>';
 }
 function wrapView(obj, key) {
   if (!obj || typeof obj[key] !== 'function' || obj[key].__asInst) return;
@@ -1263,7 +1295,8 @@ try { wrapView(V, 'prof'); } catch (e) {}
 try { wrapView(LECTURER_VIEWS, 'prof'); } catch (e) {}
 
 W.asInstallNow = function () {
-  if (standalone()) return out('The app is already installed on this phone.');
+  OUT = 'as-inst-out';
+  if (standalone()) return out('Already installed on this phone. \u2713');
   if (W.__asInstall && W.__asInstall.ready() && W.__asInstall.prompt()) return;
   var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
   OUT = 'as-inst-out';
@@ -1651,6 +1684,98 @@ W.lcExport = function () {
     var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' })); a.download = D.slug(LAST.course) + '-clearance-' + LAST.cutoff + '.csv'; document.body.appendChild(a); a.click(); a.remove();
   };
   D.choose(m, csv, D.slug(LAST.course) + '-clearance-' + LAST.cutoff);
+};
+})();
+/* Academic Summit - lec-delete.js v1
+   1) Lecturers can delete a class (open roster or any class in Records) only while the owner's switch is ON.
+      Deleting goes through a database function; the old direct delete is blocked by design.
+   2) Owner-only Admin card: the delete switch, and "Clear all attendance records" for starting fresh at launch.
+   3) After a wipe, students' phones clear their local attendance list too. */
+(function () {
+'use strict';
+var W = window, ON = null, ONat = 0;
+if (typeof document === 'undefined') return;
+function toast(m, t) { try { showToast(m, t); } catch (e) {} }
+function isLec() { try { return U && U.role === 'lecturer'; } catch (e) { return false; } }
+function delOn(force) {
+  if (!force && ON !== null && Date.now() - ONat < 30000) return Promise.resolve(ON);
+  return Promise.resolve(sb.rpc('lecturer_delete_on')).then(function (r) { if (r && !r.error && typeof r.data === 'boolean') { ON = r.data; ONat = Date.now(); } return ON === true; }, function () { return ON === true; });
+}
+async function doDelete(sid) {
+  var r = await sb.rpc('delete_my_session', { p_id: sid });
+  if (r.error) { toast(r.error.message, 'error'); return false; }
+  toast('Class deleted (' + (r.data || 0) + ' records removed)'); return true;
+}
+
+/* ---- lecturer: roster danger zone ---- */
+W.deleteRoster = async function () {
+  var sid = W._rosterSid; if (!sid) return toast('Open a roster first', 'error');
+  if (!(await delOn(true))) return toast('Deleting classes is switched off by the administrator', 'error');
+  if (!confirm('This permanently deletes this class and every attendance record in it. Export it first if you need it. Delete?')) return;
+  if (await doDelete(sid)) { W._rosterSid = null; try { localStorage.removeItem('as_live_' + uid); } catch (e) {} if (typeof W.loadRoster === 'function') W.loadRoster(); }
+};
+function hideDanger() {
+  delOn().then(function (on) {
+    var cs = document.querySelectorAll('#main .card');
+    Array.prototype.forEach.call(cs, function (c) { var f = c.firstElementChild; if (f && /^Danger zone/.test((f.textContent || '').trim())) c.style.display = on ? '' : 'none'; });
+  });
+}
+/* ---- lecturer: delete button on a class in Records ---- */
+var ro = W.recOpen;
+if (typeof ro === 'function') W.recOpen = async function (id) {
+  await ro.apply(this, arguments);
+  if (!(await delOn())) return;
+  var c = document.querySelector('#rec-list .card'); if (!c || c.querySelector('[data-del]')) return;
+  var b = document.createElement('button'); b.className = 'btn2 w-full'; b.style.color = '#e11d48'; b.setAttribute('data-del', '1'); b.textContent = 'Delete this class';
+  b.onclick = async function () { if (!confirm('Delete this class and all its attendance records? This cannot be undone.')) return; if (await doDelete(id) && typeof W.loadRecs === 'function') W.loadRecs(); };
+  c.appendChild(b);
+};
+
+/* ---- owner: Admin card ---- */
+function paintAdmin() {
+  var main = document.getElementById('main'); if (!main || document.getElementById('as-wipe-box')) return;
+  Promise.resolve(sb.rpc('admin_team')).then(function (r) {
+    if (!r || r.error || !r.data || !r.data.me_owner) return;                 // owner only
+    delOn(true).then(function (on) {
+      var box = document.createElement('div'); box.id = 'as-wipe-box'; box.className = 'card p-6 space-y-3';
+      box.innerHTML = '<div class="font-extrabold">Records and deletion (owner only)</div>' +
+        '<div class="flex items-center justify-between text-sm"><span>Lecturers can delete classes</span><b style="color:' + (on ? '#16a34a' : '#dc2626') + '">' + (on ? 'ON' : 'OFF') + '</b></div>' +
+        '<button class="btn2 w-full" id="wp-tog">' + (on ? 'Turn deleting off' : 'Turn deleting on') + '</button>' +
+        '<div class="text-xs" style="color:var(--mut)">Starting fresh at launch: removes every class, attendance record, QR record, clearance report and attempt counter, for lecturers and students. It cannot be undone, so export what you need first.</div>' +
+        '<button class="btn2 w-full" style="color:#e11d48" id="wp-wipe">Clear all attendance records</button>';
+      var anchor = document.getElementById('as-instdiag-box') || document.getElementById('as-team-box');
+      if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(box, anchor); else if (main.firstElementChild) main.firstElementChild.appendChild(box); else return;
+      document.getElementById('wp-tog').onclick = function () { sb.rpc('admin_set_lecturer_delete', { p_on: !on }).then(function (x) { if (x.error) return toast(x.error.message, 'error'); ON = x.data; ONat = Date.now(); toast('Lecturer deleting is now ' + (x.data ? 'ON' : 'OFF')); box.remove(); paintAdmin(); }); };
+      document.getElementById('wp-wipe').onclick = async function () {
+        var p = await sb.rpc('admin_wipe_preview'); if (p.error) return toast(p.error.message, 'error');
+        var c = p.data;
+        if (!confirm('This will permanently delete:\n' + c.attendance + ' attendance marks\n' + c.sessions + ' classes\n' + c.qr_sessions + ' QR classes\n' + c.clearance_reports + ' clearance reports\n\nContinue?')) return;
+        var phrase = prompt('Type exactly: WIPE ALL ATTENDANCE'); if (phrase === null) return;
+        var w = await sb.rpc('admin_wipe_attendance', { p_phrase: phrase.trim() });
+        if (w.error) return toast(w.error.message, 'error');
+        toast('All attendance records cleared'); try { localStorage.removeItem('as_live_' + uid); } catch (e) {}
+      };
+    });
+  }, function () {});
+}
+
+/* ---- students: clear the local attendance list after a wipe ---- */
+var epochAt = 0;
+function syncEpoch() {
+  if (isLec() || Date.now() - epochAt < 120000) return; epochAt = Date.now();
+  Promise.resolve(sb.from('app_settings').select('key,num_value').eq('key', 'attendance_epoch')).then(function (r) {
+    var srv = r && r.data && r.data[0] && r.data[0].num_value; if (!srv) return;
+    var loc = 0; try { loc = +localStorage.getItem('as_att_epoch') || 0; } catch (e) {}
+    if (srv > loc) { try { if (U.attendance && U.attendance.length) { U.attendance = []; save(); } localStorage.setItem('as_att_epoch', String(srv)); } catch (e) {} }
+  }, function () {});
+}
+var goB = W.go;
+W.go = function (v) {
+  var r = goB.apply(this, arguments);
+  if (v === 'roster' && isLec()) [500, 1400].forEach(function (ms) { setTimeout(hideDanger, ms); });
+  if (v === 'admin') [2200, 3600].forEach(function (ms) { setTimeout(paintAdmin, ms); });
+  if (v === 'home' || v === 'att') setTimeout(syncEpoch, 1500);
+  return r;
 };
 })();
 /* Academic Summit - guards.js v1
