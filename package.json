@@ -4,7 +4,9 @@
   "description": "",
   "main": "acad2.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build:web": "node scripts/prepare-web.mjs && esbuild native/location-entry.js --bundle --platform=browser --format=iife --target=es2020 --outfile=native-location.js && cp native-location.js www/native-location.js",
+    "android:sync": "npm run build:web && cap sync android",
+    "android:build": "npm run android:sync && cd android && ./gradlew assembleDebug"
   },
   "keywords": [],
   "type": "commonjs"
