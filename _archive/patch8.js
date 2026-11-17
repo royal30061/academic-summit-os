@@ -1,0 +1,10 @@
+const fs=require('fs');
+let s=fs.readFileSync('index.html','utf8');
+const a='<p class="text-[11px] text-slate-500 font-mono">QP:';
+if(s.split(a).length!==2)throw new Error('QP line: expected 1, found '+(s.split(a).length-1));
+const i=s.indexOf(a),endTag='</p>',j=s.indexOf(endTag,i);
+if(j<0)throw new Error('end not found');
+s=s.slice(0,i)+s.slice(j+endTag.length);
+if(/QP:/.test(s))throw new Error('QP still present');
+fs.writeFileSync('index.html',s);
+console.log('DETECTIVE PATCH OK');
