@@ -1,4 +1,4 @@
-(function(){if(window.__asUpgrade)return;window.__asUpgrade='19';try{console.log('Academic Summit attendance upgrade v19 loaded')}catch(e){}
+(function(){if(window.__asUpgrade)return;window.__asUpgrade='20';try{console.log('Academic Summit attendance upgrade v20 loaded')}catch(e){}
 /* Academic Summit - session-min.js v1
    Ghost-session fix. A class that never reached the minimum head-count is hidden from the lecturer's
    records, and the admin sets that minimum / cleans up from the Admin Panel. The SERVER decides
@@ -828,6 +828,7 @@ function settings() {
   if (cache && Date.now() - cache.at < 60000) return Promise.resolve(cache);
   return Promise.resolve(sb.from('app_settings').select('key,value,num_value')).then(function (r) {
     var m = {}; ((r && r.data) || []).forEach(function (x) { m[x.key] = x; });
+    W.__asLocOn = !!(m.geofence_enforced && m.geofence_enforced.value);
     cache = { at: Date.now(), geo: !!(m.geofence_enforced && m.geofence_enforced.value), accmax: (m.geo_max_accuracy_m && m.geo_max_accuracy_m.num_value) || 150, warn: (m.geo_warn_accuracy_m && m.geo_warn_accuracy_m.num_value) || 50 };
     return cache;
   }, function () { return { geo: false, accmax: 150, warn: 50 }; });
@@ -922,7 +923,7 @@ function lockUI(sec) {
     btn.textContent = 'Wait ' + n + 's'; setTimeout(function () { tick(n - 1); }, 1000);
   })(Math.min(sec, 120));
 }
-W.__asQuickFix = function () { return quickFix(1500).then(function (f) { return f ? { lat: f.lat, lng: f.lng, acc: f.acc } : null; }); };
+W.__asQuickFix = function () { if (W.__asLocOn === false) return Promise.resolve(null); return quickFix(1500).then(function (f) { return f ? { lat: f.lat, lng: f.lng, acc: f.acc } : null; }); };
 W.__asGeo = { locate: locate, prewarm: prewarm, diagText: diagText, _fix: function (f) { fixImpl = f; }, _ask: function (f) { askImpl = f; } };
 if (typeof document === 'undefined') return;
 
@@ -964,10 +965,7 @@ sb.rpc = function (name, args) {
         return r;
       });
     };
-    if (!st.geo) {
-      if (args && args.p_lat == null) { var q = usable(); if (q) args = Object.assign({}, args, { p_lat: q.lat, p_lng: q.lng, p_acc: q.acc }); }
-      return go(args);
-    }
+    if (!st.geo) return go(args);                                   // range check OFF: no location, no waiting, no prompts
     return locate(args || {}, st).then(function (fx) {
       if (!fx) return { data: null, error: { message: 'Cancelled.' } };
       if (fx.none) return go(args);                                    // nothing to send: the server will say what it needs
@@ -1007,7 +1005,7 @@ W.asRulesSave = function () {
 var goB = W.go;
 W.go = function (v) {
   var r = goB.apply(this, arguments);
-  if (v === 'home' || v === 'att') { try { if (typeof U !== 'undefined' && U && typeof uid !== 'undefined' && uid) { prewarm(); settings(); } } catch (e) {} }
+  if (v === 'home' || v === 'att') { try { if (typeof U !== 'undefined' && U && typeof uid !== 'undefined' && uid) settings().then(function (st) { if (st.geo) prewarm(); }); } catch (e) {} }
   if (v === 'admin') setTimeout(function () {
     Promise.resolve(sb.rpc('att_rules')).then(function (x) { if (x && !x.error && x.data) { W.__asRules = x.data; paintAdmin(x.data); } }, function () {});
   }, 800);
@@ -1583,17 +1581,40 @@ function ensureId() {
     res(true);
   });
 }
+var marking = false;
+function btns() { return document.querySelectorAll('button[onclick*="markFromHome"],button[onclick*="submitAttendanceFast"]'); }
+function busy(on) {
+  Array.prototype.forEach.call(btns(), function (b) {
+    if (on) { b.setAttribute('data-t', b.textContent); b.textContent = 'Marking...'; b.disabled = true; b.classList.add('as-busy'); }
+    else { b.disabled = false; b.classList.remove('as-busy'); if (b.hasAttribute('data-t')) { b.textContent = b.getAttribute('data-t'); b.removeAttribute('data-t'); } }
+  });
+}
+function celebrate(label) {
+  var old = document.getElementById('ac-cheer'); if (old) old.remove();
+  var ov = document.createElement('div'); ov.id = 'ac-cheer';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45)';
+  ov.innerHTML = '<div class="card p-6 text-center space-y-2" style="max-width:320px">' + (W.zumaImg ? W.zumaImg('cheer', 110) : '') +
+    '<div class="font-extrabold text-lg">You are marked present!</div><div class="text-xs" style="color:var(--mut)">' + E(label || '') + '</div></div>';
+  ov.onclick = function () { ov.remove(); }; document.body.appendChild(ov); setTimeout(function () { if (ov.parentNode) ov.remove(); }, 2600);
+}
 var mk = W.markAttendance;
 if (typeof mk === 'function') W.markAttendance = async function (pin, course, source) {
   if (isLec() || !/^\d{5}$/.test(pin)) return mk.apply(this, arguments);
+  if (marking) return false;                                   // extra taps while working are ignored
+  marking = true;
+  try {
   if (!(await ensureId())) return false;
   if (!(await ensureConsent())) return false;
+  busy(true);
   var ok = await mk.apply(this, arguments);
+  busy(false);
+  if (ok) { var last0 = (U.attendance || [])[(U.attendance || []).length - 1]; celebrate(last0 && last0.code ? String(last0.code) : ''); }
   try {
     if (ok) { var last = (U.attendance || [])[(U.attendance || []).length - 1], codes = regCodes();
       if (last && codes.length && codes.indexOf(norm(last.code)) < 0) toast('Note: ' + last.code + ' is not on your course registration.'); }
   } catch (e) {}
   return ok;
+  } finally { marking = false; busy(false); }
 };
 
 /* save the matric typed on the card BEFORE the course check runs, so the student is never asked twice */
@@ -1601,7 +1622,7 @@ var mfh = W.markFromHome;
 if (typeof mfh === 'function') W.markFromHome = async function () { if (!isLec() && !(await ensureId())) return; return mfh.apply(this, arguments); };
 
 /* ---- the card itself ---- */
-(function () { var st = document.createElement('style'); st.textContent = '#sr-chips{display:none!important}@keyframes asglow{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}50%{box-shadow:0 0 16px 7px rgba(16,185,129,.6)}}.as-glow{animation:asglow 1.5s infinite;border-radius:16px}'; document.head.appendChild(st); })();
+(function () { var st = document.createElement('style'); st.textContent = '#sr-chips{display:none!important}.as-busy{filter:hue-rotate(40deg) saturate(.7) brightness(.92);opacity:.85;animation:aspulse 1.1s ease-in-out infinite}@keyframes aspulse{50%{opacity:.55}}@keyframes asglow{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}50%{box-shadow:0 0 16px 7px rgba(16,185,129,.6)}}.as-glow{animation:asglow 1.5s infinite;border-radius:16px}'; document.head.appendChild(st); })();
 function decorate() {
   if (isLec()) return;
   var c = document.getElementById('ha-course'); if (!c || document.getElementById('ha-matric')) return;
@@ -1609,6 +1630,9 @@ function decorate() {
   var m = document.createElement('input'); m.id = 'ha-matric'; m.className = c.className; m.placeholder = 'Matric / JAMB number'; m.setAttribute('autocomplete', 'off');
   m.value = (U.profile && U.profile.matric) || ''; m.style.textTransform = 'uppercase';
   c.parentNode.insertBefore(m, c);
+  Array.prototype.forEach.call(document.querySelectorAll('#main p,#main div'), function (n) {
+    if (n.children.length === 0 && /Enter your course code and the 5-digit/.test(n.textContent || '')) n.textContent = 'Enter your matric number and the 5-digit code your lecturer calls out, then tap Mark.';
+  });
 }
 function glow() {
   if (isLec()) return;
