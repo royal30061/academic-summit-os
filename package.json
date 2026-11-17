@@ -6,7 +6,8 @@
   "scripts": {
     "build:web": "node scripts/prepare-web.mjs && esbuild native/location-entry.js --bundle --platform=browser --format=iife --target=es2020 --outfile=native-location.js && cp native-location.js www/native-location.js",
     "android:sync": "npm run build:web && cap sync android",
-    "android:build": "npm run android:sync && cd android && ./gradlew assembleDebug"
+    "android:build": "npm run android:sync && cd android && ./gradlew assembleDebug",
+    "android:web": "npm run build:web"
   },
   "keywords": [],
   "type": "commonjs"
