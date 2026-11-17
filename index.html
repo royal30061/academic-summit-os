@@ -1365,7 +1365,15 @@ function installApp(){
   deferredPrompt.prompt();
   deferredPrompt.userChoice.then(()=>{deferredPrompt=null;});
 }
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+var isNativeApp = !!(
+  window.Capacitor &&
+  window.Capacitor.isNativePlatform &&
+  window.Capacitor.isNativePlatform()
+);
+
+if (!isNativeApp && 'serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(function(){});
+}
 </script>
 <script>
 async function runDet(){
