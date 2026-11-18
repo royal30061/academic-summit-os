@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">academic-summit-os-master</string>
-    <string name="title_activity_main">academic-summit-os-master</string>
+    <string name="app_name">Academic Summit</string>
+    <string name="title_activity_main">Academic Summit</string>
     <string name="package_name">com.academicsummit.app</string>
     <string name="custom_url_scheme">com.academicsummit.app</string>
 </resources>

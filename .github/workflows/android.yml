@@ -8,6 +8,8 @@ on:
       - master
       - native-android-migration
       - android-migration-clean
+    tags:
+      - 'v*'
 
 permissions:
   contents: read
@@ -58,3 +60,27 @@ jobs:
           name: academic-summit-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download APK
+        uses: actions/download-artifact@v4
+        with:
+          name: academic-summit-debug
+
+      - name: Rename asset
+        run: mv app-debug.apk academic-summit.apk
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: academic-summit.apk
+          name: Academic Summit ${{ github.ref_name }}
+          body: |
+            Native Android build (pilot, debug-signed).
+            Install: download academic-summit.apk, tap it, allow installs from your browser.
