@@ -1,4 +1,3 @@
-
 import {
   cp,
   mkdir,
@@ -19,19 +18,7 @@ const excluded = new Set([
   'www',
   '_archive',
   'sql',
-  'scripts',
-  'native'
-]);
-
-const excludedFiles = new Set([
-  'package.json',
-  'package-lock.json',
-  'capacitor.config.ts',
-  'capacitor.config.json',
-  'README.txt',
-  'ship.sh',
-  'precheck.sh',
-  'apply-polish.sh'
+  'scripts'
 ]);
 
 await rm(output, {
@@ -49,26 +36,20 @@ const entries = await readdir(root, {
 
 for (const entry of entries) {
   if (excluded.has(entry.name)) continue;
-  if (excludedFiles.has(entry.name)) continue;
   if (entry.name.startsWith('.')) continue;
 
-  const source = join(root, entry.name);
-  const destination = join(output, entry.name);
+  if (
+    entry.name === 'package.json' ||
+    entry.name === 'package-lock.json' ||
+    entry.name.startsWith('capacitor.config.')
+  ) continue;
 
-  if (entry.isDirectory()) {
-    if (['assets', 'icons'].includes(entry.name)) {
-      await cp(source, destination, {
-        recursive: true
-      });
-    }
-    continue;
-  }
-
-  if (entry.name.endsWith('.test.js')) continue;
-
-  await cp(source, destination);
+  await cp(
+    join(root, entry.name),
+    join(output, entry.name),
+    { recursive: true }
+  );
 }
 
 console.log('Academic Summit web assets prepared.');
-console.log('Output directory: www/');
-
+console.log('Output:', output);

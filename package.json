@@ -4,11 +4,23 @@
   "description": "",
   "main": "acad2.js",
   "scripts": {
-    "build:web": "node scripts/prepare-web.mjs && esbuild native/location-entry.js --bundle --platform=browser --format=iife --target=es2020 --outfile=native-location.js && cp native-location.js www/native-location.js",
+    "build:web": "node scripts/prepare-web.mjs",
     "android:sync": "npm run build:web && cap sync android",
-    "android:build": "npm run android:sync && cd android && ./gradlew assembleDebug",
-    "android:web": "npm run build:web"
+    "android:build": "npm run android:sync && cd android && ./gradlew assembleDebug"
   },
   "keywords": [],
-  "type": "commonjs"
+  "type": "commonjs",
+  "dependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/geolocation": "^8.2.5"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.2",
+    "esbuild": "^0.28.2"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  }
 }
