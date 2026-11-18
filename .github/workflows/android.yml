@@ -8,6 +8,7 @@ on:
       - native-android-migration
       - main
       - master
+      - android-migration-clean
 
 permissions:
   contents: read
