@@ -68,19 +68,29 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout site source
+        uses: actions/checkout@v4
+        with:
+          ref: master
+
       - name: Download APK
         uses: actions/download-artifact@v4
         with:
           name: academic-summit-debug
+          path: apk
 
-      - name: Rename asset
-        run: mv app-debug.apk academic-summit.apk
+      - name: Publish APK to the site (downloads/)
+        run: |
+          mkdir -p downloads
+          cp apk/app-debug.apk downloads/academic-summit.apk
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add downloads/academic-summit.apk
+          git diff --cached --quiet || git commit -m "chore: publish APK ${{ github.ref_name }}"
+          git push origin HEAD:master
 
-      - name: Publish release
+      - name: Private release backup
         uses: softprops/action-gh-release@v2
         with:
-          files: academic-summit.apk
+          files: downloads/academic-summit.apk
           name: Academic Summit ${{ github.ref_name }}
-          body: |
-            Native Android build (pilot, debug-signed).
-            Install: download academic-summit.apk, tap it, allow installs from your browser.
