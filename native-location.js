@@ -811,3 +811,15 @@
 @capacitor/core/dist/index.js:
   (*! Capacitor: https://capacitorjs.com/ - MIT License *)
 */
+if (isNative) {
+  try {
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition: ASGeo.getCurrentPosition,
+        watchPosition: ASGeo.watchPosition,
+        clearWatch: ASGeo.clearWatch
+      }
+    });
+  } catch (e) {}
+}
