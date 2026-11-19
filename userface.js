@@ -54,7 +54,7 @@
   /* ---- plain-language clean-up (hide only / reword; nothing is removed from the page) ---- */
   function hideBlock(n, limit) {
     var c = n, hops = 0;
-    while (hops < 4 && c.parentElement && !/^(BODY|HTML|MAIN)$/.test(c.parentElement.tagName) && txt(c.parentElement).length <= limit) { c = c.parentElement; hops++; }
+    while (hops < 4 && c.parentElement && !/^(BODY|HTML|MAIN)$/.test(c.parentElement.tagName) && txt(c.parentElement).length <= limit && !/^(auth|app)$/.test(c.parentElement.id) && !c.parentElement.querySelector('input:not([type=checkbox]):not([type=radio]),textarea,select')) { c = c.parentElement; hops++; }
     if (!c.hasAttribute('data-asu-hide')) { c.setAttribute('data-asu-hide', '1'); c.style.display = 'none'; }
   }
   function cleanup() {
@@ -200,7 +200,7 @@
       while ((n = w.nextNode())) {
         if (!/tour guide/i.test(n.nodeValue) || !n.parentElement || n.parentElement.closest('#asw-gate,#asw-help,#asw-sheet,#asw-toast')) continue;
         var c = n.parentElement, hops = 0;
-        while (hops < 5 && c.parentElement && !/^(BODY|HTML|MAIN)$/.test(c.parentElement.tagName) && txt(c.parentElement).length <= 900) { c = c.parentElement; hops++; }
+        while (hops < 5 && c.parentElement && !/^(BODY|HTML|MAIN)$/.test(c.parentElement.tagName) && txt(c.parentElement).length <= 900 && !/^(auth|app)$/.test(c.parentElement.id) && !c.parentElement.querySelector('input:not([type=checkbox]):not([type=radio]),textarea,select')) { c = c.parentElement; hops++; }
         hideAuth(c);
       }
     } catch (e) {}
