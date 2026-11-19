@@ -43,6 +43,8 @@ for (const [url, file] of targets) {
     console.warn('keeping CDN for', url, '-', e.message);
   }
 }
+// APK_NO_FONT_BLOCK: drop render-blocking Google Fonts link in the APK only
+html = html.replace(/<link[^>]+fonts\.googleapis\.com[^>]*>/g, '');
 const stamp = {
   ref: process.env.GITHUB_REF_NAME || 'local',
   sha: process.env.GITHUB_SHA || '',
