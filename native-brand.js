@@ -1,8 +1,35 @@
 (function () {
-  if (window.__asNativeBrand) return; window.__asNativeBrand = '4';
+  if (window.__asNativeBrand) return; window.__asNativeBrand = '5';
   try { document.title = 'Academic Summit'; } catch (e) {}
   var NAT = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-  if (NAT) return; // inside the installed app: nothing to show
+
+  // Hide the app's own in-page "Install the app" card. Only display:none is applied; nothing is moved or removed.
+  function hideOld() {
+    try {
+      var nodes = document.querySelectorAll('button, a');
+      for (var i = 0; i < nodes.length; i++) {
+        var n = nodes[i], t = (n.textContent || '').trim();
+        if (!/^Install Academic Summit$/i.test(t) && !/^Install the app$/i.test(t)) continue;
+        if (n.closest('#asb-sheet')) continue;
+        var c = n, hops = 0;
+        while (hops < 3 && c.parentElement && c.parentElement !== document.body &&
+               !/^(MAIN|BODY|HTML)$/.test(c.parentElement.tagName) &&
+               (c.parentElement.textContent || '').trim().length <= 160) { c = c.parentElement; hops++; }
+        if (c !== n && !c.hasAttribute('data-asb-hidden')) { c.setAttribute('data-asb-hidden', '1'); c.style.display = 'none'; }
+      }
+    } catch (e) {}
+  }
+  var ht = null;
+  function watch() {
+    hideOld();
+    new MutationObserver(function () {
+      if (ht) return;
+      ht = setTimeout(function () { ht = null; hideOld(); }, 300);
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.readyState !== 'loading') watch(); else document.addEventListener('DOMContentLoaded', watch);
+
+  if (NAT) return; // inside the installed app: no banner
   var APK = '/academic-summit.apk', KEY = 'asb_dismiss';
 
   function dismissed() {
