@@ -14,6 +14,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -38,6 +42,15 @@ jobs:
           SDK="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
           yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
           "$SDK/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
 
       - name: Install dependencies
         run: npm ci
@@ -64,7 +77,12 @@ jobs:
         run: |
           chmod +x android/gradlew
           cd android
-          ./gradlew assembleDebug --no-daemon
+          for i in 1 2 3; do
+            if ./gradlew assembleDebug --no-daemon; then break; fi
+            echo "Gradle attempt $i failed - retrying in 20s"
+            sleep 20
+          done
+          test -f app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

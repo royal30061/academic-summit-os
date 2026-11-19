@@ -1,13 +1,13 @@
-/* Academic Summit - native-boot.js v2: no white screen, ever.
-   Three guarantees: (1) base script dead -> recovery panel; (2) shell up but
-   #main empty -> retry then fallback home; (3) NEW: sign-in never renders
-   (session restore stalls silently) -> timed race, then a dependency-free
-   sign-in form wired to the real doLogin/doSignup, with a network probe.
+/* Academic Summit - native-boot.js v3: no white screen, ever, and the build is always visible.
+   (1) base dead -> panel; (2) shell up, #main empty -> retry/fallback home;
+   (3) sign-in never renders -> session race + visibility watchdog + fallback form;
+   (4) catch-all: nothing visible at 12s -> panel with errors + network probe;
+   (5) native-only build chip, always on screen, so every screenshot identifies the binary.
    Load LAST, after smooth.js. */
 (function () {
   'use strict';
   var W = window;
-  if (W.__asNativeBoot === '2') return; W.__asNativeBoot = '2';
+  if (W.__asNativeBoot === '3') return; W.__asNativeBoot = '3';
   var NAT = !!(W.Capacitor && W.Capacitor.isNativePlatform && W.Capacitor.isNativePlatform());
   var BUILD = W.__AS_BUILD__ || { ref: 'dev', sha: '', at: '' };
   var errs = [];
@@ -21,8 +21,8 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); }
   function stamp() { return (BUILD.ref || 'dev') + ' ' + String(BUILD.sha || '').slice(0, 7); }
   function allErrs() { return (W.__asErrs || []).slice(-4).concat(errs.slice(-4)).slice(-6); }
+  function visible(el) { return !!(el && (el.offsetWidth || el.offsetHeight || (el.getClientRects && el.getClientRects().length))); }
 
-  /* boot exactly once, whoever gets there first */
   if (typeof W.boot === 'function' && !W.__asBootGuard) {
     var b0 = W.boot;
     W.boot = function (u) { if (W.__asBooted) return; W.__asBooted = true; return b0.apply(this, arguments); };
@@ -56,14 +56,17 @@
     p.stamp();
   }
 
-  /* ---- sign-in guarantee ---- */
   function appHidden() { var a = document.getElementById('app'); return !a || a.classList.contains('hidden'); }
   function authRendered() {
-    if (document.getElementById('asw-gate') || document.getElementById('as-boot-panel')) return true;
-    var a = document.getElementById('auth');
-    return !!(a && a.querySelector('input,button'));
+    if (visible(document.getElementById('asw-gate')) || visible(document.getElementById('as-boot-panel'))) return true;
+    var a = document.getElementById('auth'); if (!a) return false;
+    var n = a.querySelectorAll('input,button');
+    for (var i = 0; i < n.length; i++) if (visible(n[i])) return true;
+    return false;
   }
+  function shellUp() { var b = document.getElementById('bnav'); return !!(b && b.querySelector('button') && visible(b)); }
   function stuck() { return appHidden() && !authRendered(); }
+  function white() { return !authRendered() && !shellUp() && !visible(document.getElementById('as-boot-panel')); }
   var INP = 'display:block;width:100%;padding:12px;border-radius:12px;border:1px solid #0d3f2e;background:#0b3527;color:#e7fff5;font-size:14px;margin-bottom:10px;box-sizing:border-box';
   function minAuth(msg) {
     var a = document.getElementById('auth'); if (!a) return;
@@ -89,9 +92,7 @@
       goBtn.textContent = signup ? 'Create account' : 'Log in';
       modeBtn.textContent = signup ? 'Have an account? Log in' : 'New here? Create account';
     };
-    goBtn.onclick = function () {
-      try { if (signup) doSignup(); else doLogin(); } catch (e) { note('sign-in: ' + e.message); }
-    };
+    goBtn.onclick = function () { try { if (signup) doSignup(); else doLogin(); } catch (e) { note('sign-in: ' + e.message); } };
   }
   function probe() {
     try {
@@ -109,7 +110,13 @@
       setTimeout(function () { if (stuck()) { minAuth('The sign-in screen did not appear on this device. Use this form.'); probe(); } }, 700);
     }, 3500);
     setTimeout(function () { if (stuck()) { minAuth('Sign-in still missing. Use this form.'); probe(); } }, 9000);
-    setTimeout(function () { if (stuck() && !document.getElementById('auth').innerHTML) fatalCheck(); }, 12000);
+    setTimeout(function () {
+      if (!white()) return;
+      var p = panel('Nothing rendered on this device', 'The app loaded but no screen appeared. Your data is safe. Retry, or use the web version.');
+      p.add('Retry', function () { location.reload(); }, true);
+      p.add('Open web version', function () { location.href = 'https://academic-summit-os.vercel.app'; });
+      p.stamp(); probe();
+    }, 12000);
   }
   function sessionRace() {
     if (!NAT || typeof sb === 'undefined' || !sb.auth) return;
@@ -126,7 +133,6 @@
     });
   }
 
-  /* ---- empty-main guarantee (from v1) ---- */
   function appShown() { var a = document.getElementById('app'); return a && !a.classList.contains('hidden'); }
   function mainEmpty() {
     var m = document.getElementById('main'); if (!m) return true;
@@ -169,11 +175,19 @@
       clearInterval(iv); fallbackHome();
     }, 1200);
   }
+  function chip() {
+    if (!NAT || document.getElementById('as-build-chip')) return;
+    var c = document.createElement('div'); c.id = 'as-build-chip';
+    c.style.cssText = 'position:fixed;left:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 4px);z-index:2147483500;padding:2px 7px;border-radius:7px;background:rgba(2,18,12,.78);color:#9ED9C0;font:700 9px/1.5 monospace;pointer-events:none';
+    c.textContent = 'AS ' + stamp();
+    document.body.appendChild(c);
+  }
 
   if (NAT) {
     try { localStorage.setItem('as_home_mode', 'classic'); localStorage.setItem('as_hh_off', '1'); sessionStorage.removeItem('as_hh_classic'); } catch (e) {}
   }
   function arm() {
+    chip();
     setTimeout(fatalCheck, 1800);
     setTimeout(fatalCheck, 6000);
     sessionRace();
