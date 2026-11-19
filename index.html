@@ -474,7 +474,44 @@ async function boot(user){
     start();
   }catch(e){console.error(e);showRecover(e);}
 }
-function startSession(){sb.auth.getSession().then(({data})=>data.session?(RECOVERY?resetUI(data.session.user):boot(data.session.user)):authUI('login'));}
+
+async function startSession() {
+  try {
+    const { data, error } = await sb.auth.getSession();
+
+    if (error) throw error;
+
+    if (data && data.session) {
+      return RECOVERY
+        ? resetUI(data.session.user)
+        : boot(data.session.user);
+    }
+
+    return authUI('login');
+
+  } catch (e) {
+    console.error('[Academic Summit startup]', e);
+
+    try {
+      return authUI(
+        'login',
+        'Session restoration failed. Please sign in again.'
+      );
+    } catch (renderError) {
+      console.error('[Academic Summit auth UI]', renderError);
+
+      const a = document.getElementById('auth');
+
+      if (a) {
+        a.innerHTML =
+          '<div style="padding:30px;color:#fff;background:#021812;min-height:100vh">' +
+          '<h2>Academic Summit</h2>' +
+          '<p>Unable to initialize authentication.</p>' +
+          '<button onclick="location.reload()">Retry</button></div>';
+      }
+    }
+  }
+}
 document.addEventListener('DOMContentLoaded',startSession);
 
 // ---------- Shell ----------

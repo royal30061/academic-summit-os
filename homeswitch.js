@@ -3,6 +3,7 @@
    Classic always carries a return control; the setting lives in Profile > Appearance. */
 (function () {
 'use strict';
+try { localStorage.setItem('as_home_mode', 'classic'); } catch (e) {}
 var W = window;
 if (typeof document === 'undefined') return;
 function UU() { return (typeof U !== 'undefined' && U) ? U : null; }
