@@ -16,6 +16,8 @@
   function css(){var s=document.createElement('style');s.textContent='#asErrBadge{position:fixed;left:10px;bottom:76px;z-index:99999;background:#7F1D1D;color:#FEE2E2;border:1px solid #FCA5A5;border-radius:999px;padding:6px 12px;font:700 12px/1 monospace;box-shadow:0 4px 14px rgba(0,0,0,.4);cursor:pointer}#asErrSheet{position:fixed;inset:auto 8px 76px 8px;z-index:99999;background:#111827;color:#E5E7EB;border:1px solid #374151;border-radius:14px;padding:12px;font:12px/1.5 monospace;max-height:45vh;overflow:auto;-webkit-overflow-scrolling:touch}#asErrSheet b{color:#FCA5A5}#asErrSheet div{margin:6px 0;word-break:break-all}';document.head.appendChild(s);}
   function render(){
     if(!errs.length)return;
+    var dbg=false;try{dbg=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform())||/[?&]debug=1/.test(location.search)||localStorage.getItem('as_debug')==='1';}catch(e){}
+    if(!dbg)return;
     if(!badge){css();badge=document.createElement('button');badge.id='asErrBadge';document.body.appendChild(badge);badge.addEventListener('click',toggle);}
     badge.textContent='\u26A0 '+errs.length+' error'+(errs.length>1?'s':'')+' \u2014 tap';
   }

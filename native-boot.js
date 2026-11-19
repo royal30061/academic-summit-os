@@ -1,28 +1,33 @@
-/* Academic Summit - native-boot.js v1: the APK must never show a blank screen.
-   1) Fatal check: base script died (a required script never loaded) -> recovery panel.
-   2) Watchdog (native): shell up but #main empty -> retry home once, then a
-      dependency-free fallback home built from local data, with the error shown.
-   3) Native ships the classic dashboard; the web keeps Profile > Appearance.
+/* Academic Summit - native-boot.js v2: no white screen, ever.
+   Three guarantees: (1) base script dead -> recovery panel; (2) shell up but
+   #main empty -> retry then fallback home; (3) NEW: sign-in never renders
+   (session restore stalls silently) -> timed race, then a dependency-free
+   sign-in form wired to the real doLogin/doSignup, with a network probe.
    Load LAST, after smooth.js. */
 (function () {
   'use strict';
   var W = window;
-  if (W.__asNativeBoot) return; W.__asNativeBoot = '1';
+  if (W.__asNativeBoot === '2') return; W.__asNativeBoot = '2';
   var NAT = !!(W.Capacitor && W.Capacitor.isNativePlatform && W.Capacitor.isNativePlatform());
   var BUILD = W.__AS_BUILD__ || { ref: 'dev', sha: '', at: '' };
   var errs = [];
-  function note(m) { errs.push(m); if (errs.length > 6) errs.shift(); }
+  function note(m) { errs.push(String(m)); if (errs.length > 8) errs.shift(); var n = document.getElementById('nb-note'); if (n) n.textContent = errs.slice(-3).join(' | '); }
   W.addEventListener('error', function (e) {
     var t = e.target;
     if (t && t !== W && (t.src || t.href)) note('load failed: ' + (t.src || t.href));
     else note((e.message || 'error') + (e.filename ? ' @' + String(e.filename).split('/').pop() + ':' + e.lineno : ''));
   }, true);
-  W.addEventListener('unhandledrejection', function (e) {
-    var r = e.reason; note('promise: ' + ((r && r.message) || r));
-  }, true);
+  W.addEventListener('unhandledrejection', function (e) { var r = e.reason; note('promise: ' + ((r && r.message) || r)); }, true);
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); }
-  function stamp() { return (BUILD.ref || 'dev') + ' ' + String(BUILD.sha || '').slice(0, 7) + ' ' + (BUILD.at || ''); }
-  function allErrs() { var a = (W.__asErrs || []).slice(-4).concat(errs.slice(-4)); return a.slice(-6); }
+  function stamp() { return (BUILD.ref || 'dev') + ' ' + String(BUILD.sha || '').slice(0, 7); }
+  function allErrs() { return (W.__asErrs || []).slice(-4).concat(errs.slice(-4)).slice(-6); }
+
+  /* boot exactly once, whoever gets there first */
+  if (typeof W.boot === 'function' && !W.__asBootGuard) {
+    var b0 = W.boot;
+    W.boot = function (u) { if (W.__asBooted) return; W.__asBooted = true; return b0.apply(this, arguments); };
+    W.__asBootGuard = 1;
+  }
 
   function panel(title, body) {
     var old = document.getElementById('as-boot-panel'); if (old) old.remove();
@@ -42,9 +47,7 @@
       stamp: function () { var s = document.createElement('div'); s.style.cssText = 'color:#56616b;font-size:11px;margin-top:16px'; s.textContent = 'build ' + stamp(); box.appendChild(s); }
     };
   }
-  function baseAlive() {
-    try { return typeof sb !== 'undefined' && typeof boot === 'function' && typeof go === 'function'; } catch (e) { return false; }
-  }
+  function baseAlive() { try { return typeof sb !== 'undefined' && typeof boot === 'function' && typeof go === 'function'; } catch (e) { return false; } }
   function fatalCheck() {
     if (baseAlive()) return;
     var p = panel('Academic Summit could not start', 'A required script did not load. Your saved data is safe on this phone.');
@@ -53,6 +56,77 @@
     p.stamp();
   }
 
+  /* ---- sign-in guarantee ---- */
+  function appHidden() { var a = document.getElementById('app'); return !a || a.classList.contains('hidden'); }
+  function authRendered() {
+    if (document.getElementById('asw-gate') || document.getElementById('as-boot-panel')) return true;
+    var a = document.getElementById('auth');
+    return !!(a && a.querySelector('input,button'));
+  }
+  function stuck() { return appHidden() && !authRendered(); }
+  var INP = 'display:block;width:100%;padding:12px;border-radius:12px;border:1px solid #0d3f2e;background:#0b3527;color:#e7fff5;font-size:14px;margin-bottom:10px;box-sizing:border-box';
+  function minAuth(msg) {
+    var a = document.getElementById('auth'); if (!a) return;
+    var app = document.getElementById('app'); if (app) app.classList.add('hidden');
+    var sp = document.getElementById('splash'); if (sp) sp.remove();
+    var as = document.getElementById('as-splash'); if (as) as.remove();
+    a.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:#021812;font:14px/1.5 system-ui,sans-serif;box-sizing:border-box">' +
+      '<div style="width:100%;max-width:380px;background:#07271d;border:1px solid #0d3f2e;border-radius:18px;padding:22px;color:#e7fff5;box-sizing:border-box">' +
+      '<div style="font-size:20px;font-weight:800;margin-bottom:4px">Academic Summit</div>' +
+      '<div style="color:#8fb8a9;font-size:12px;margin-bottom:14px">' + esc(msg || 'Sign in to continue.') + '</div>' +
+      '<input id="a-name" placeholder="Full name" style="' + INP + ';display:none">' +
+      '<input id="a-email" type="email" placeholder="Email" style="' + INP + '">' +
+      '<input id="a-pass" type="password" placeholder="Password" style="' + INP + '">' +
+      '<button id="nb-go" style="display:block;width:100%;padding:13px;border-radius:14px;border:none;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-weight:800;font-size:15px;cursor:pointer;margin-bottom:10px">Log in</button>' +
+      '<button id="nb-mode" style="display:block;width:100%;padding:11px;border-radius:14px;border:1px solid #0d3f2e;background:transparent;color:#8fb8a9;font-weight:700;font-size:13px;cursor:pointer">New here? Create account</button>' +
+      '<div id="nb-note" style="color:#fca5a5;font-size:11px;margin-top:10px;word-break:break-word">' + esc(allErrs().slice(-3).join(' | ')) + '</div>' +
+      '<div style="color:#56616b;font-size:10px;margin-top:12px">build ' + stamp() + ' - fallback sign-in</div></div></div>';
+    var signup = false;
+    var name = document.getElementById('a-name'), goBtn = document.getElementById('nb-go'), modeBtn = document.getElementById('nb-mode');
+    modeBtn.onclick = function () {
+      signup = !signup;
+      name.style.display = signup ? 'block' : 'none';
+      goBtn.textContent = signup ? 'Create account' : 'Log in';
+      modeBtn.textContent = signup ? 'Have an account? Log in' : 'New here? Create account';
+    };
+    goBtn.onclick = function () {
+      try { if (signup) doSignup(); else doLogin(); } catch (e) { note('sign-in: ' + e.message); }
+    };
+  }
+  function probe() {
+    try {
+      var url = (typeof SB_URL !== 'undefined') ? SB_URL : 'https://okajzlkeaydskdvogdaw.supabase.co';
+      var ctl = ('AbortController' in W) ? new AbortController() : null;
+      var tm = setTimeout(function () { if (ctl) ctl.abort(); note('network: timeout (5s)'); }, 5000);
+      fetch(url + '/auth/v1/health', { cache: 'no-store', signal: ctl ? ctl.signal : undefined })
+        .then(function (r) { clearTimeout(tm); note('network: HTTP ' + r.status); }, function (e) { clearTimeout(tm); note('network: ' + (e && e.message || e)); });
+    } catch (e) { note('network probe: ' + e.message); }
+  }
+  function authWatch() {
+    setTimeout(function () {
+      if (!stuck()) return;
+      try { authUI('login'); } catch (e) { note('authUI: ' + e.message); }
+      setTimeout(function () { if (stuck()) { minAuth('The sign-in screen did not appear on this device. Use this form.'); probe(); } }, 700);
+    }, 3500);
+    setTimeout(function () { if (stuck()) { minAuth('Sign-in still missing. Use this form.'); probe(); } }, 9000);
+    setTimeout(function () { if (stuck() && !document.getElementById('auth').innerHTML) fatalCheck(); }, 12000);
+  }
+  function sessionRace() {
+    if (!NAT || typeof sb === 'undefined' || !sb.auth) return;
+    var tm = setTimeout(function () { if (stuck()) { minAuth('Restoring your session took too long. Sign in below.'); probe(); } }, 6000);
+    Promise.resolve(sb.auth.getSession()).then(function (r) {
+      clearTimeout(tm);
+      if (!stuck()) return;
+      var s = r && r.data && r.data.session;
+      if (s && s.user) { try { boot(s.user); } catch (e) { note('boot: ' + e.message); minAuth('Sign in to continue.'); } }
+      else { try { authUI('login'); } catch (e) { note('authUI: ' + e.message); minAuth('Sign in to continue.'); } }
+    }, function (e) {
+      clearTimeout(tm); note('session: ' + (e && e.message || e));
+      if (stuck()) { minAuth('Session restore failed. Sign in below.'); probe(); }
+    });
+  }
+
+  /* ---- empty-main guarantee (from v1) ---- */
   function appShown() { var a = document.getElementById('app'); return a && !a.classList.contains('hidden'); }
   function mainEmpty() {
     var m = document.getElementById('main'); if (!m) return true;
@@ -84,13 +158,7 @@
     });
     var r = m.querySelector('[data-reload]'); if (r) r.addEventListener('click', function () { location.reload(); });
   }
-
-  if (NAT) {
-    try { localStorage.setItem('as_home_mode', 'classic'); localStorage.setItem('as_hh_off', '1'); sessionStorage.removeItem('as_hh_classic'); } catch (e) {}
-  }
-  function arm() {
-    setTimeout(fatalCheck, 1800);
-    setTimeout(fatalCheck, 6000);
+  function mainWatch() {
     if (!NAT) return;
     var ticks = 0, retried = false;
     var iv = setInterval(function () {
@@ -100,6 +168,17 @@
       if (!retried) { retried = true; try { go('home'); } catch (e) { note('retry home: ' + e.message); } return; }
       clearInterval(iv); fallbackHome();
     }, 1200);
+  }
+
+  if (NAT) {
+    try { localStorage.setItem('as_home_mode', 'classic'); localStorage.setItem('as_hh_off', '1'); sessionStorage.removeItem('as_hh_classic'); } catch (e) {}
+  }
+  function arm() {
+    setTimeout(fatalCheck, 1800);
+    setTimeout(fatalCheck, 6000);
+    sessionRace();
+    authWatch();
+    mainWatch();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', arm); else arm();
 })();
