@@ -1,6 +1,6 @@
 (function(){
   if(window.__asErrCatch)return;window.__asErrCatch='1';
-  var errs=[];
+  var errs=[];window.__asErrs=errs;
   function push(kind,msg,src,line){
     errs.push({k:kind,m:msg,s:src,l:line,t:new Date().toLocaleTimeString()});
     if(errs.length>8)errs.shift();
@@ -22,7 +22,7 @@
   function toggle(){
     if(sheet){sheet.remove();sheet=null;return;}
     sheet=document.createElement('div');sheet.id='asErrSheet';
-    sheet.innerHTML=errs.map(function(e){return '<div><b>'+e.k+' @'+e.t+'</b> '+esc(e.m)+(e.s?' <i>'+short(e.s)+':'+e.l+'</i>':'')+'</div>';}).join('');
+    sheet.innerHTML='<div><b>build</b> '+(((window.__AS_BUILD__||{}).ref)||'dev')+' '+String((window.__AS_BUILD__||{}).sha||'').slice(0,7)+'</div>'+errs.map(function(e){return '<div><b>'+e.k+' @'+e.t+'</b> '+esc(e.m)+(e.s?' <i>'+short(e.s)+':'+e.l+'</i>':'')+'</div>';}).join('');
     document.body.appendChild(sheet);
   }
   function esc(s){return String(s).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}

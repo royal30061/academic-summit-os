@@ -3,7 +3,7 @@
    Classic always carries a return control; the setting lives in Profile > Appearance. */
 (function () {
 'use strict';
-try { localStorage.setItem('as_home_mode', 'classic'); } catch (e) {}
+/* v23: classic pin is native-only (native-boot.js); the web keeps the user's choice. */
 var W = window;
 if (typeof document === 'undefined') return;
 function UU() { return (typeof U !== 'undefined' && U) ? U : null; }

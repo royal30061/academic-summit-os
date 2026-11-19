@@ -48,6 +48,18 @@ jobs:
       - name: Synchronise Capacitor
         run: npx cap sync android
 
+      - name: Stable debug signing key
+        env:
+          KS_B64: ${{ secrets.AS_DEBUG_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KS_B64" ]; then
+            mkdir -p "$HOME/.android"
+            printf '%s' "$KS_B64" | base64 -d > "$HOME/.android/debug.keystore"
+            echo "Using stable debug keystore - builds can update-install."
+          else
+            echo "No AS_DEBUG_KEYSTORE_B64 secret: fresh debug key this run (update requires uninstall)."
+          fi
+
       - name: Build APK
         run: |
           chmod +x android/gradlew
@@ -79,13 +91,14 @@ jobs:
           name: academic-summit-debug
           path: apk
 
-      - name: Publish APK to the site (downloads/)
+      - name: Publish APK to the site (root + downloads/)
         run: |
           mkdir -p downloads
           cp apk/app-debug.apk downloads/academic-summit.apk
+          cp apk/app-debug.apk academic-summit.apk
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git add downloads/academic-summit.apk
+          git add downloads/academic-summit.apk academic-summit.apk
           git diff --cached --quiet || git commit -m "chore: publish APK ${{ github.ref_name }}"
           git push origin HEAD:master
 
