@@ -4,7 +4,7 @@
      (Script addresses carry ?v=N, so a new version is a new address and downloads straight away.)
    - Tailwind, Supabase JS and fonts: served from the saved copy and refreshed in the background.
    - Supabase data calls are never touched. */
-const C = 'summit-v2611190441';
+const C = 'summit-v2611190522';
 const LIBS = ['https://cdn.tailwindcss.com', 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
   'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap'];
 const HOSTS = ['cdn.tailwindcss.com', 'cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com', 'cdnjs.cloudflare.com'];

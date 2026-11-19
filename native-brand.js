@@ -1,10 +1,13 @@
 (function () {
-  if (window.__asNativeBrand) return; window.__asNativeBrand = '5';
+  if (window.__asNativeBrand) return; window.__asNativeBrand = '6';
   try { document.title = 'Academic Summit'; } catch (e) {}
   var NAT = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
 
   // Hide the app's own in-page "Install the app" card. Only display:none is applied; nothing is moved or removed.
+  var STANDALONE = false;
+  try { STANDALONE = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch (e) {}
   function hideOld() {
+    if (!(NAT || STANDALONE)) return; // on the website the install button stays visible
     try {
       var nodes = document.querySelectorAll('button, a');
       for (var i = 0; i < nodes.length; i++) {
@@ -29,7 +32,7 @@
   }
   if (document.readyState !== 'loading') watch(); else document.addEventListener('DOMContentLoaded', watch);
 
-  if (NAT) return; // inside the installed app: no banner
+  if (NAT || STANDALONE) return; // inside the installed app: no banner
   var APK = '/academic-summit.apk', KEY = 'asb_dismiss';
 
   function dismissed() {

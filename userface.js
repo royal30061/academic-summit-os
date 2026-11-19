@@ -23,7 +23,7 @@
 
   /* ---- styles ---- */
   var css = '' +
-    '#asw-gate{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:24px;' +
+    '#asw-gate{position:fixed;top:0;left:0;right:0;bottom:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:24px;' +
     'background:radial-gradient(120% 80% at 50% 0%,#0B3A2D 0%,#031812 70%);color:#E9FBF3;font-family:inherit}' +
     '#asw-gate .w{width:100%;max-width:380px;text-align:center}' +
     '#asw-gate h1{font-size:28px;font-weight:800;margin:14px 0 6px}' +
@@ -36,7 +36,7 @@
     'border:0;font-size:26px;font-weight:800;color:#04241B;cursor:pointer;background:linear-gradient(135deg,#10B981,#2DD4BF);' +
     'animation:aswPulse 1.8s ease-in-out infinite}' +
     '@keyframes aswPulse{0%,100%{box-shadow:0 0 0 0 rgba(45,212,191,.55),0 6px 18px rgba(16,185,129,.4)}50%{box-shadow:0 0 0 14px rgba(45,212,191,0),0 6px 22px rgba(45,212,191,.6)}}' +
-    '#asw-sheet{position:fixed;inset:0;z-index:2147483002;background:rgba(2,12,9,.6);display:flex;align-items:flex-end}' +
+    '#asw-sheet{position:fixed;top:0;left:0;right:0;bottom:0;z-index:2147483002;background:rgba(2,12,9,.6);display:flex;align-items:flex-end}' +
     '#asw-sheet .c{width:100%;max-height:82vh;overflow:auto;padding:22px 20px calc(22px + env(safe-area-inset-bottom,0px));border-radius:22px 22px 0 0;' +
     'background:#06281F;color:#E9FBF3;font:15px/1.5 system-ui,sans-serif;border-top:1px solid rgba(45,212,191,.35)}' +
     '#asw-sheet h2{font-size:19px;margin:0 0 12px}#asw-sheet ol{padding-left:20px;margin:0 0 16px}#asw-sheet li{margin:0 0 10px}' +
@@ -67,7 +67,7 @@
         else if (/^What you will need$/i.test(t)) hideBlock(p, 500);
         else if (/^Dashboard style$/i.test(t)) hideBlock(p, 260);
         else if (/^System check:/i.test(t)) hideBlock(p, 60);
-        else if (/^(Install the app|Install Academic Summit)$/i.test(t)) hideBlock(p, 160);
+        else if (/^(Install the app|Install Academic Summit)$/i.test(t) && (NAT || STANDALONE)) hideBlock(p, 160);
         else if (/^Download Academic Summit App$/i.test(t) && (NAT || STANDALONE)) hideBlock(p, 200);
       }
     } catch (e) {}
@@ -133,6 +133,7 @@
       '<li>After you sign up, add your <b>course registration</b> (a screenshot or a list works). This keeps your attendance and class notices matched to your courses.</li>' +
       '<li>If you are asked to confirm your email, open the message we send you, tap the link, then log in.</li>' +
       '<li>Sign up <b>once</b> on your phone. Next time, just tap <b>Log in</b>.</li></ol>' +
+      '<p style="margin:0 0 16px;color:#9ED9C0">Once your account is ready, I\u2019ll be right here in the <b>?</b> button. Tap it any time and I\u2019ll show you around. \u2014 Zuma</p>' +
       '<button type="button">Got it</button></div>';
     s.addEventListener('click', function (e) { if (e.target === s || e.target.tagName === 'BUTTON') s.remove(); });
     document.body.appendChild(s);
@@ -175,17 +176,42 @@
     var b = e.target.closest && e.target.closest('button,[role=button],input[type=submit]');
     if (!b || b.closest('#asw-gate,#asw-sheet,#asw-toast')) return;
     var t = txt(b) || b.value || '';
-    if (/^Download Academic Summit App$/i.test(t) && !NAT && !STANDALONE) { e.preventDefault(); e.stopImmediatePropagation(); startDownload(); return; }
+    if (/^(Download Academic Summit App|Install Academic Summit|Install the app)$/i.test(t) && !NAT && !STANDALONE) { e.preventDefault(); e.stopImmediatePropagation(); startDownload(); return; }
     if (/^create account$/i.test(t)) guardSignup(e);
   }, true);
   document.addEventListener('submit', function (e) { if (signupMode()) guardSignup(e); }, true);
+
+  /* ---- before sign-in, only the sign-up guide may appear; Zuma returns after login ---- */
+  function hideAuth(el) { if (el.hasAttribute('data-asw-ah')) return; el.setAttribute('data-asw-ah', el.style.display || '-'); el.style.display = 'none'; }
+  function restoreAuth() {
+    var l = document.querySelectorAll('[data-asw-ah]');
+    for (var i = 0; i < l.length; i++) { var v = l[i].getAttribute('data-asw-ah'); l[i].style.display = (v === '-') ? '' : v; l[i].removeAttribute('data-asw-ah'); }
+  }
+  function authClean() {
+    try {
+      var els = document.querySelectorAll('button,[role=button],a,div,span');
+      for (var i = 0; i < els.length; i++) {
+        var e = els[i]; if (e.closest('#asw-gate,#asw-help,#asw-sheet,#asw-toast')) continue;
+        if (txt(e) === '?') { hideAuth(e); continue; }
+        var al = e.getAttribute('aria-label') || e.title || '';
+        if (/^(help|guide|zuma|ask zuma|open help|tour guide)/i.test(al) && (e.tagName === 'BUTTON' || e.getAttribute('role') === 'button')) hideAuth(e);
+      }
+      var w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null), n;
+      while ((n = w.nextNode())) {
+        if (!/tour guide/i.test(n.nodeValue) || !n.parentElement || n.parentElement.closest('#asw-gate,#asw-help,#asw-sheet,#asw-toast')) continue;
+        var c = n.parentElement, hops = 0;
+        while (hops < 5 && c.parentElement && !/^(BODY|HTML|MAIN)$/.test(c.parentElement.tagName) && txt(c.parentElement).length <= 900) { c = c.parentElement; hops++; }
+        hideAuth(c);
+      }
+    } catch (e) {}
+  }
 
   /* ---- keep everything in step as screens change ---- */
   function tick() {
     cleanup();
     var g = document.getElementById('asw-gate'), h = document.getElementById('asw-help');
-    if (authVisible()) { if (!gateDone && !g) showGate(); showHelp(); }
-    else { gateDone = false; if (g) g.remove(); if (h) h.remove(); }
+    if (authVisible()) { if (!gateDone && !g) showGate(); showHelp(); authClean(); }
+    else { gateDone = false; if (g) g.remove(); if (h) h.remove(); restoreAuth(); }
   }
   var tm = null;
   new MutationObserver(function () { if (tm) return; tm = setTimeout(function () { tm = null; tick(); }, 400); })
