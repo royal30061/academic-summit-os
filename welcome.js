@@ -1,7 +1,8 @@
 /* Academic Summit - welcome screen + Help sheet (small and self-contained).
    Never hides a parent that contains form fields. Touches nothing after sign-in. */
 (function () {
-  if (window.__asWelcome) return; window.__asWelcome = '2';
+  if (window.__asWelcome) return; window.__asWelcome = '3';
+  if (/[?&]nowelcome=1/.test(location.search)) return; // test switch: add &nowelcome=1 to the address to turn this script off
   var NAT = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
   var isLect = /[?&]lecturer=1/.test(location.search);
   function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
