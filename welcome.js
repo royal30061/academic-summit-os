@@ -1,7 +1,7 @@
 /* Academic Summit - welcome screen + Help sheet (small and self-contained).
    Never hides a parent that contains form fields. Touches nothing after sign-in. */
 (function () {
-  if (window.__asWelcome) return; window.__asWelcome = '1';
+  if (window.__asWelcome) return; window.__asWelcome = '2';
   var NAT = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
   var isLect = /[?&]lecturer=1/.test(location.search);
   function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -59,11 +59,47 @@
       else if (want === 'signup' && !isSignup) { var b = btnByText(/^(new here|need an account|create (an )?account|sign ?up)/i); if (b) b.click(); }
     } catch (e) {}
   }
+  var t0 = Date.now(), lastAuth = 0;
+  function navLoggedIn() { var t = document.body.innerText || ''; return /\bFinance\b/.test(t) && /\bAttend\b/.test(t); }
+  function tokenIn() {
+    try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (/^sb-.*-auth-token$/.test(k) && localStorage.getItem(k)) return true; } } catch (e) {}
+    return false;
+  }
+  function pwVisible() { var pw = document.querySelector('input[type="password"]'); return !!(pw && visible(pw) && !pw.closest(OURS)); }
+  function emailVisible() {
+    var ins = document.querySelectorAll('input');
+    for (var i = 0; i < ins.length; i++) {
+      var e = ins[i], h = ((e.type || '') + ' ' + (e.name || '') + ' ' + (e.id || '') + ' ' + (e.placeholder || '')).toLowerCase();
+      if (/email/.test(h) && visible(e)) return true;
+    }
+    return false;
+  }
   function authVisible() {
-    var pw = document.querySelector('input[type="password"]');
-    if (!pw || !visible(pw)) return false;
-    var t = document.body.innerText || '';
-    return !(/\bFinance\b/.test(t) && /\bAttend\b/.test(t));
+    if (!pwVisible() || navLoggedIn()) return false;
+    lastAuth = Date.now(); return true;
+  }
+  /* the password-reset screen has no password box, so keep the Help button for a short while after sign-in screens */
+  function authContext() {
+    if (authVisible()) return true;
+    if (!lastAuth || Date.now() - lastAuth > 60000 || navLoggedIn() || tokenIn()) return false;
+    return emailVisible();
+  }
+  /* wait for the app's own splash to finish before showing the welcome screen */
+  function splashShowing() {
+    if (Date.now() - t0 > 9000) return false;
+    try {
+      var w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null), n;
+      while ((n = w.nextNode())) {
+        if (!/HIGHER GOALS, BIGGER FUTURE/i.test(n.nodeValue)) continue;
+        var el = n.parentElement;
+        for (var i = 0; el && i < 8; i++, el = el.parentElement) {
+          var cs = getComputedStyle(el);
+          if (cs.display === 'none' || cs.visibility === 'hidden' || parseFloat(cs.opacity) < 0.05) return false;
+        }
+        return true;
+      }
+    } catch (e) {}
+    return false;
   }
 
   /* ---- hide ONLY the "What you will need" box; never climb into anything holding fields ---- */
@@ -128,18 +164,38 @@
     var b = document.createElement('button'); b.id = 'asw-help'; b.type = 'button'; b.textContent = 'Help';
     b.addEventListener('click', openSheet); document.body.appendChild(b);
   }
-  function openSheet() {
-    if (document.getElementById('asw-sheet')) return;
-    var s = document.createElement('div'); s.id = 'asw-sheet';
-    s.innerHTML = '<div class="c"><h2>Creating your account</h2>' +
+  function helpMode() {
+    if (document.getElementById('asw-gate')) return 'welcome';
+    if (!pwVisible()) return 'reset';
+    return signupMode() ? 'signup' : 'login';
+  }
+  var HELP = {
+    welcome: '<h2>Welcome</h2><ol>' +
+      '<li><b>Log in</b> if you already have an account.</li>' +
+      '<li><b>Create account</b> if you are new. It takes about a minute.</li>' +
+      '<li><b>Lecturer?</b> Tap \u201cLecturer? Sign in here\u201d. You will need the access PIN you were given.</li></ol>',
+    login: '<h2>Logging in</h2><ol>' +
+      '<li>Enter the email and password you used when you signed up.</li>' +
+      '<li><b>Forgot your password?</b> Tap \u201cForgot password?\u201d under the button. We will email you a link to choose a new one.</li>' +
+      '<li><b>No account yet?</b> Tap \u201cNew here? Create account\u201d.</li>' +
+      '<li>Still stuck? Check your internet connection, and make sure there are no extra spaces in your email.</li></ol>',
+    reset: '<h2>Resetting your password</h2><ol>' +
+      '<li>Type the email you signed up with and tap the button.</li>' +
+      '<li>Open your inbox (check spam too) and tap the link we send.</li>' +
+      '<li>Choose a new password, then come back and <b>log in</b>.</li></ol>',
+    signup: '<h2>Creating your account</h2>' +
       '<p class="n">This is a brand-new account. You do <b>not</b> need your school portal login. Just choose a new password.</p><ol>' +
-      '<li>Tap <b>Create account</b>, then enter your full name, your email and a new password of at least 6 characters.</li>' +
+      '<li>Enter your full name, your email and a new password of at least 6 characters.</li>' +
       '<li>Enter your <b>matric number</b>. In 100 level and don\u2019t have one yet? Use your JAMB number for now.</li>' +
       '<li>After you sign up, add your <b>course registration</b> (a screenshot or a list works). This keeps your attendance and class notices matched to your courses.</li>' +
       '<li>If you are asked to confirm your email, open the message we send you, tap the link, then log in.</li>' +
       '<li>Sign up <b>once</b> on your phone. Next time, just tap <b>Log in</b>.</li></ol>' +
-      '<p class="n">Once you are in, I\u2019ll be in the <b>?</b> button. Tap it any time and I\u2019ll show you around. \u2014 Zuma</p>' +
-      '<button type="button">Got it</button></div>';
+      '<p class="n">Once you are in, I\u2019ll be in the <b>?</b> button. Tap it any time and I\u2019ll show you around. \u2014 Zuma</p>'
+  };
+  function openSheet() {
+    if (document.getElementById('asw-sheet')) return;
+    var s = document.createElement('div'); s.id = 'asw-sheet';
+    s.innerHTML = '<div class="c">' + HELP[helpMode()] + '<button type="button">Got it</button></div>';
     s.addEventListener('click', function (e) { if (e.target === s || e.target.tagName === 'BUTTON') s.remove(); });
     document.body.appendChild(s);
   }
@@ -147,16 +203,17 @@
   /* ---- keep in step as screens change ---- */
   function tick() {
     var g = document.getElementById('asw-gate'), h = document.getElementById('asw-help');
-    if (authVisible()) {
-      hideNeedBox(); hideZuma(); showHelp();
-      if (!gateDone && !g && Date.now() - t0 > 2500) showGate();
-    } else {
-      gateDone = false; if (g) g.remove(); if (h) h.remove(); restoreZuma();
-    }
+    if (navLoggedIn() || tokenIn()) gateDone = false;
+    var av = authVisible(), ctx = av || authContext();
+    if (ctx) { hideNeedBox(); hideZuma(); showHelp(); }
+    else { if (g) g.remove(); if (h) h.remove(); restoreZuma(); }
+    if (av && !gateDone && !g && !tokenIn() && !splashShowing()) showGate();
+    if (!av && g) g.remove();
   }
-  var t0 = Date.now(), tm = null;
-  new MutationObserver(function () { if (tm) return; tm = setTimeout(function () { tm = null; tick(); }, 400); })
+  var tm = null;
+  new MutationObserver(function () { if (tm) return; tm = setTimeout(function () { tm = null; tick(); }, 120); })
     .observe(document.body, { childList: true, subtree: true });
+  var fast = setInterval(tick, 120); setTimeout(function () { clearInterval(fast); }, 10000);
   setInterval(tick, 1500);
   if (document.readyState !== 'loading') tick(); else document.addEventListener('DOMContentLoaded', tick);
 })();
