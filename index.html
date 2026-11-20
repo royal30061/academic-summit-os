@@ -21,7 +21,7 @@
 </script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>if(window.tailwind)tailwind.config={darkMode:'class'};</script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 /* ---------- Theme tokens (light = silver, dark = deep green) ---------- */
@@ -142,7 +142,12 @@ body[data-role="lecturer"] #tour-fab{display:none!important}
 const SB_URL='https://okajzlkeaydskdvogdaw.supabase.co';
 const SB_KEY='sb_publishable_xqUBfEtWElgUkKAz65bueg_66AkIHtr';
 const RECOVERY=/type=recovery/.test(location.hash);
-const sb=supabase.createClient(SB_URL,SB_KEY);
+const { createClient } = window.supabase || {};
+if (!createClient) {
+  console.error('Supabase SDK failed to load');
+  throw new Error('supabase is not defined – local SDK missing');
+}
+const sb = createClient(SB_URL, SB_KEY);
 const LEC_LINK=location.hash==='#lecturer'||/[?&]lecturer=1/.test(location.search);
 
 // ---------- Helpers ----------
@@ -3240,8 +3245,6 @@ start=function(){_start63();setTimeout(function(){homeExtras();acadExtras();},25
 <script src="attend-qr.js?v=201"></script>
 <script src="attend-guard.js?v=202"></script>
 <script src="attendance-upgrade.js?v=20"></script>
-<script src="native-brand.js?v=6"></script>
-<script src="userface.js?v=3"></script>
 <script src="chartfix.js?v=201"></script>
 <script src="resit.js?v=201"></script>
 <script src="navback.js?v=201"></script>
