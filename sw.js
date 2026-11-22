@@ -4,7 +4,7 @@
      (Script addresses carry ?v=N, so a new version is a new address and downloads straight away.)
    - Tailwind, Supabase JS and fonts: served from the saved copy and refreshed in the background.
    - Supabase data calls are never touched. */
-const C = 'summit-v2611201608';
+const C = 'summit-v27pinfix1';
 const LIBS = ['https://cdn.tailwindcss.com', 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
   'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap'];
 const HOSTS = ['cdn.tailwindcss.com', 'cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com', 'cdnjs.cloudflare.com'];
@@ -43,7 +43,7 @@ self.addEventListener('fetch', function (e) {
   var url = new URL(req.url), same = url.origin === location.origin;
   if (!same && HOSTS.indexOf(url.hostname) < 0) return;                 // Supabase API and everything else: the browser handles it
   if (!same) return e.respondWith(swr(req));
-  if (req.mode === 'navigate' || url.pathname === '/' || /index\.html$/.test(url.pathname)) return e.respondWith(netFirst(req, 2500));
+  if (req.mode === 'navigate' || url.pathname === '/' || /index\.html$/.test(url.pathname)) return e.respondWith(netFirst(req, 1500));
   if (STATIC.test(url.pathname)) return e.respondWith(swr(req));
   e.respondWith(netFirst(req, 4000));
 });
