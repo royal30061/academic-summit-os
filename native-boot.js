@@ -184,7 +184,6 @@
   }
 
   if (NAT) {
-    try { localStorage.setItem('as_home_mode', 'classic'); localStorage.setItem('as_hh_off', '1'); sessionStorage.removeItem('as_hh_classic'); } catch (e) {}
   }
   function arm() {
     setTimeout(fatalCheck, 1800);
