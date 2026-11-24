@@ -278,7 +278,7 @@ function vSessions() {
     '<div><div class="lbl">Learning objectives (one per line)</div><textarea class="inp" rows="3" placeholder="What should you be able to do by the end?" oninput="shF(\'obj\',this.value)">' + esc(F.obj) + '</textarea></div>' +
     '<div><div class="lbl">Planned duration</div><div class="flex flex-wrap gap-2">' + PRESETS.map(function (m) { return chip(m + ' min', F.min === m && !F.custom, 'shMin(' + m + ')'); }).join('') +
     '<input class="inp" type="number" min="5" max="240" placeholder="Custom" style="width:96px" value="' + esc(F.custom) + '" oninput="shF(\'custom\',this.value)"></div></div>' +
-    '<div><div class="lbl">Reading on</div><select class="inp" onchange="asSetMed(this.value)"><option value="book"' + asMedSel('book') + '>Book or paper</option><option value="phone"' + asMedSel('phone') + '>Phone or tablet</option></select><div class="text-[11px] text-slate-500 mt-1">Phone or tablet: the timer keeps counting while you switch apps. Book: it pauses when you leave the app.</div></div><div><div class="lbl">Study method</div><select class="inp" onchange="shF(\'method\',this.value);shRefresh()">' + METHODS.map(function (m) { return '<option' + (m === F.method ? ' selected' : '') + '>' + m + '</option>'; }).join('') + '</select></div>';
+    '<div><div class="lbl">Study method</div><select class="inp" onchange="shF(\'method\',this.value);shRefresh()">' + METHODS.map(function (m) { return '<option' + (m === F.method ? ' selected' : '') + '>' + m + '</option>'; }).join('') + '</select></div>';
   if (F.course && F.method === 'Active recall' && W.as2Has && W.as2Has(F.course)) h += '<button class="btn2 w-full" onclick="shMaterial()">Use my saved material for questions</button>';
   h += '<button class="btn w-full" onclick="shStart()">Start session</button>' + muted('Time counts only while the app is open and the timer is running. At least 5 focused minutes count toward your streak.') + '</div>';
   var wk = calc.week(s.log, today), recent = s.log.slice(-8).reverse();
@@ -643,13 +643,10 @@ W.shSaveReflect = function () {
 document.addEventListener('visibilitychange', function () {
   try {
     var A = typeof U !== 'undefined' && U && U.sh && U.sh.active; if (!A) return;
-    if (document.hidden) { if (!A.pauseAt && !A.hidAt && !(window.asMed && asMed() === 'phone')) A.hidAt = Date.now(); }
+    if (document.hidden) { /* time away from the app still counts */ }
     else if (A.hidAt) { A.hiddenMs = (A.hiddenMs || 0) + (Date.now() - A.hidAt); A.hidAt = null; persist(); paint(); }
   } catch (e) {}
 });
 W.__sh = { mount: mount, render: render, setActive: function (v) { ACTIVE = v; }, state: SH, form: F, plan: P, reset: function () { TAB = 'today'; COURSE = null; }, ttAll: function () { return ttAll(); }, tab: function () { return TAB; } };
 })();
 
-;window.asMed = function () { try { return localStorage.getItem('as_study_medium') || 'book'; } catch (e) { return 'book'; } };
-window.asSetMed = function (v) { try { localStorage.setItem('as_study_medium', v); } catch (e) {} };
-window.asMedSel = function (v) { return window.asMed() === v ? ' selected' : ''; };

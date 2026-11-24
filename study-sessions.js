@@ -46,7 +46,7 @@ SS.history = function (code) {
 };
 document.addEventListener('visibilitychange', function () {
   if (!cur) return;
-  if (document.visibilityState === 'hidden') { if (!(window.asMed && asMed() === 'phone')) hiddenAt = Date.now(); }
+  if (document.visibilityState === 'hidden') { /* time away from the app still counts */ }
   else if (hiddenAt) { pausedMs += Date.now() - hiddenAt; hiddenAt = 0; }
 });
 })();
