@@ -91,6 +91,18 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
+      - name: Verify signing key (diagnostic)
+        if: always()
+        continue-on-error: true
+        run: |
+          SDK="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          BT=$(ls -d "$SDK"/build-tools/* | tail -1)
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          echo "== APK signed by:"; "$BT/apksigner" verify --print-certs "$APK" | grep "SHA-256" || true
+          echo "== Keystore file on the runner:"; ls -la "$HOME/.android" || true
+          keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android 2>/dev/null | grep "SHA256:" || echo "no keystore file"
+          echo "== Overrides:"; env | grep -i "ANDROID_USER_HOME\|ANDROID_SDK_HOME\|ANDROID_PREFS_ROOT" || echo "none"
+
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: build
