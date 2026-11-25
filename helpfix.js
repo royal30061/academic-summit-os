@@ -1,13 +1,14 @@
-/* Academic Summit - helpfix.js v1: lecturer-door Help shows lecturer copy.
-   welcome.js misreads the lecturer login card as "signup" (it has a Create
-   account button) and serves student matric/JAMB text. Intercept on lecturer
-   door only. Undo = remove the script tag. */
+/* Academic Summit - helpfix.js v2: lecturer-door Help shows lecturer copy.
+   v2 keys off the LIVE session role (U.role) + lecturer-door URL only.
+   v1 used sticky localStorage.as_role, which leaked lecturer help onto the
+   student side after switching roles. Undo = remove the script tag. */
 (function(){
 'use strict';
-if(window.__asHelpFix)return;window.__asHelpFix='1';
+if(window.__asHelpFix)return;window.__asHelpFix='2';
 function isLect(){
   if(/[?&]lecturer=1/.test(location.search)||location.hash==='#lecturer')return true;
-  try{return localStorage.getItem('as_role')==='lecturer';}catch(e){return false;}
+  try{ if(typeof U!=='undefined'&&U&&U.role)return U.role==='lecturer'; }catch(e){}
+  return false;
 }
 function screen(){
   if(document.getElementById('asw-gate'))return 'gate';
