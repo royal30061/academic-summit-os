@@ -1,7 +1,7 @@
 /* Academic Summit - welcome screen + Help sheet (small and self-contained).
    Never hides a parent that contains form fields. Touches nothing after sign-in. */
 (function () {
-  if (window.__asWelcome) return; window.__asWelcome = '3';
+  if (window.__asWelcome) return; window.__asWelcome = '4';
   if (/[?&]nowelcome=1/.test(location.search)) return; // test switch: add &nowelcome=1 to the address to turn this script off
   var NAT = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
   var isLect = /[?&]lecturer=1/.test(location.search);
@@ -204,7 +204,8 @@
   /* ---- keep in step as screens change ---- */
   function tick() {
     var g = document.getElementById('asw-gate'), h = document.getElementById('asw-help');
-    if (navLoggedIn() || tokenIn()) gateDone = false;
+    if (tokenIn()) gateDone = false;
+    if (gateDone && lastAuth && Date.now() - lastAuth > 20000) gateDone = false;
     var av = authVisible(), ctx = av || authContext();
     if (ctx) { hideNeedBox(); hideZuma(); showHelp(); }
     else { if (g) g.remove(); if (h) h.remove(); restoreZuma(); }
@@ -212,9 +213,9 @@
     if (!av && g) g.remove();
   }
   var tm = null;
-  new MutationObserver(function () { if (tm) return; tm = setTimeout(function () { tm = null; tick(); }, 120); })
+  new MutationObserver(function () { if (tm) return; tm = setTimeout(function () { tm = null; tick(); }, 200); })
     .observe(document.body, { childList: true, subtree: true });
-  var fast = setInterval(tick, 120); setTimeout(function () { clearInterval(fast); }, 10000);
-  setInterval(tick, 1500);
+  var fast = setInterval(tick, 200); setTimeout(function () { clearInterval(fast); }, 8000);
+  setInterval(tick, 3000);
   if (document.readyState !== 'loading') tick(); else document.addEventListener('DOMContentLoaded', tick);
 })();

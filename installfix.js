@@ -1,6 +1,6 @@
 /* Install buttons: on the website they download the APK; inside the app they are hidden. */
 (function () {
-  if (window.__asInstallFix) return; window.__asInstallFix = '1';
+  if (window.__asInstallFix) return; window.__asInstallFix = '2';
   var NAT = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
   var STANDALONE = false;
   try { STANDALONE = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch (e) {}
@@ -21,6 +21,9 @@
 
   /* hide only what is safe: the install card inside the app, and the developer status line everywhere */
   function sweep() {
+    if (document.hidden) return;
+    var tc = document.body.textContent || '';
+    if (tc.indexOf('System check:') < 0 && !(INSIDE && (tc.indexOf('Install the app') > -1 || tc.indexOf('Install Academic Summit') > -1 || tc.indexOf('Download Academic Summit App') > -1))) return;
     try {
       var w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null), n;
       while ((n = w.nextNode())) {
@@ -42,8 +45,8 @@
     } catch (e) {}
   }
   var tm = null;
-  new MutationObserver(function () { if (tm) return; tm = setTimeout(function () { tm = null; sweep(); }, 300); })
+  new MutationObserver(function () { if (tm) return; tm = setTimeout(function () { tm = null; sweep(); }, 800); })
     .observe(document.body, { childList: true, subtree: true });
-  setInterval(sweep, 2000);
+  setInterval(sweep, 5000);
   if (document.readyState !== 'loading') sweep(); else document.addEventListener('DOMContentLoaded', sweep);
 })();
