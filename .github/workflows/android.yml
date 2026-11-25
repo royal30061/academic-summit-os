@@ -66,7 +66,7 @@ jobs:
           KS_B64: ${{ secrets.AS_DEBUG_KEYSTORE_B64 }}
         run: |
           if [ -z "$KS_B64" ]; then
-            echo "::error::Missing AS_DEBUG_KEYSTORE_B64 secret. Create it from 'base64 -w0' of your stable keystore (Settings > Secrets and variables > Actions). Refusing to build with a random key."
+            echo "::error::Missing AS_DEBUG_KEYSTORE_B64 secret. Create it from 'base64 -w0' of your stable keystore. Refusing to build with a random key."
             exit 1
           fi
           mkdir -p "$HOME/.android"
@@ -74,7 +74,7 @@ jobs:
           if keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -noprompt >/dev/null 2>&1; then
             echo "Stable keystore written and verified (alias androiddebugkey, storepass android)."
           else
-            echo "::error::Secret decodes but is not a debug-default keystore (alias androiddebugkey / storepass android / keypass android). Re-save the secret from a clean base64 -w0 of the keystore."
+            echo "::error::Secret decodes but is not a debug-default keystore. Re-save it from a clean base64 -w0."
             exit 1
           fi
 
@@ -82,8 +82,13 @@ jobs:
         run: |
           chmod +x android/gradlew
           cd android
+          KS="$HOME/.android/debug.keystore"
           for i in 1 2 3; do
-            if ./gradlew assembleDebug --no-daemon; then break; fi
+            if ./gradlew assembleDebug --no-daemon --no-build-cache \
+              -Pandroid.injected.signing.store.file="$KS" \
+              -Pandroid.injected.signing.store.password=android \
+              -Pandroid.injected.signing.key.alias=androiddebugkey \
+              -Pandroid.injected.signing.key.password=android; then break; fi
             echo "Gradle attempt $i failed - retrying in 20s"
             sleep 20
           done
@@ -103,6 +108,7 @@ jobs:
           BT=$(ls -d "$SDK"/build-tools/* | tail -1)
           APK=android/app/build/outputs/apk/debug/app-debug.apk
           EXPECTED=d6ed8e76b399134a8de2cf3a5eac0447e484610cf11394d474e66d1078f003b4
+          echo "== Overrides:"; env | grep -i "ANDROID_USER_HOME\|ANDROID_SDK_HOME\|ANDROID_PREFS_ROOT" || echo "none"
           if [ ! -f "$APK" ]; then
             echo "::error::No APK produced - an earlier step failed. Fix that first."
             exit 1
@@ -113,11 +119,11 @@ jobs:
           echo "KEY: $K"
           echo "PIN: $EXPECTED"
           if [ "$K" != "$EXPECTED" ]; then
-            echo "::error::Runner keystore does not match the pinned key - the secret is mangled or holds a different keystore. Re-save it."
+            echo "::error::Runner keystore != pinned key: the secret is mangled or holds a different keystore. Re-save it."
             exit 1
           fi
           if [ "$A" != "$EXPECTED" ]; then
-            echo "::error::APK was not signed with the pinned key - Gradle ignored ~/.android/debug.keystore. Refusing to publish."
+            echo "::error::APK != pinned key even with explicit injected signing: Gradle is not using the file we wrote. Refusing to publish."
             exit 1
           fi
           echo "Signing verified: APK == KEY == PIN."
