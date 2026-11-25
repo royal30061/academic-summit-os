@@ -107,12 +107,27 @@ jobs:
           SDK="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
           BT=$(ls -d "$SDK"/build-tools/* | tail -1)
           APK=android/app/build/outputs/apk/debug/app-debug.apk
-          EXPECTED=d6ed8e76b399134a8de2cf3a5eac0447e484610cf11394d474e66d1078f003b4
-          echo "== Overrides:"; env | grep -i "ANDROID_USER_HOME\|ANDROID_SDK_HOME\|ANDROID_PREFS_ROOT" || echo "none"
+          PIN=d6ed8e76b399134a8de2cf3a5eac0447e484610cf11394d474e66d1078f003b4
+          clean() { printf '%s' "$1" | tr -d '[:space:]:' | tr 'A-F' 'a-f'; }
           if [ ! -f "$APK" ]; then
             echo "::error::No APK produced - an earlier step failed. Fix that first."
             exit 1
           fi
+          A=$(clean "$("$BT/apksigner" verify --print-certs "$APK" | grep -m1 'SHA-256' | awk '{print $NF}')")
+          K=$(clean "$(keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android 2>/dev/null | grep -m1 'SHA256:' | awk '{print $NF}')")
+          P=$(clean "$PIN")
+          echo "APK len=${#A} $A"
+          echo "KEY len=${#K} $K"
+          echo "PIN len=${#P} $P"
+          if [ "$K" != "$P" ]; then
+            echo "::error::Runner keystore != pinned key (lengths ${#K} vs ${#P}). Re-save the secret."
+            exit 1
+          fi
+          if [ "$A" != "$K" ]; then
+            echo "::error::APK was not signed by the runner keystore (lengths ${#A} vs ${#K}). Refusing to publish."
+            exit 1
+          fi
+          echo "Signing verified: APK == KEY == PIN."
           A=$("$BT/apksigner" verify --print-certs "$APK" | grep -m1 "SHA-256" | awk '{print $NF}' | tr -d ':' | tr 'A-F' 'a-f')
           K=$(keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android 2>/dev/null | grep -m1 "SHA256:" | awk '{print $NF}' | tr -d ':' | tr 'A-F' 'a-f')
           echo "APK: $A"
