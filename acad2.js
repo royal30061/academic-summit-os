@@ -29,6 +29,7 @@ function scan(o, path, depth, found) {
   if (Array.isArray(o)) { if (o.length && o.every(function (x) { return x && typeof x.code === 'string' && CODE.test(x.code.replace(/^UA-/i, '').trim().toUpperCase()); })) found.push({ path: path, list: o }); return; }
   Object.keys(o).forEach(function (k) { if (!SKIP.test(k)) scan(o[k], path + '.' + k, depth + 1, found); });
 }
+window.asEngineCourses = function () { return courses(); };
 function courses() {
   var list = [];
   try { if (W.h2courses) list = W.h2courses() || []; else if (W.asCourses) list = W.asCourses() || []; } catch (e) {}

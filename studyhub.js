@@ -136,7 +136,50 @@ function SH() {
   s.topics = s.topics || {}; s.meta = s.meta || {}; s.tt = s.tt || []; s.events = s.events || []; s.plan = s.plan || []; s.log = s.log || []; s.active = s.active || null; s.reflect = s.reflect || null; s.v = 1;
   return s;
 }
+function asLvFilter(arr) {
+  try {
+    var lv = parseInt(((U.profile || {}).level) || U.level, 10);
+    if (!lv) return arr;
+    if (lv < 10) lv = lv * 100;
+    var want = Math.floor(lv / 100), rec = {};
+    (U.semesters || []).forEach(function (s) {
+      (s.courses || []).forEach(function (c) {
+        var k = String(c.code || '').replace(/\s+/g, '').toUpperCase(); if (!k) return;
+        var r = rec[k] || (rec[k] = { passed: false, failed: false });
+        var sc = parseFloat(c.score);
+        if (c.sup || (!isNaN(sc) && sc >= 40)) r.passed = true;
+        else if (!isNaN(sc) && sc < 40) r.failed = true;
+      });
+    });
+    var out = [], seen = {};
+    arr.forEach(function (c) {
+      var k = String(c.code || '').replace(/\s+/g, '').toUpperCase(); if (!k || seen[k]) return;
+      var r = rec[k] || {}, m = k.match(/(\d)/), dig = m ? +m[1] : want;
+      if (r.passed) return;
+      if (dig !== want && !(r.failed && !r.passed)) return;
+      seen[k] = 1; out.push(c);
+    });
+    return out;
+  } catch (e) { return arr; }
+}
+function asNormCourses(a) {
+  return (a || []).filter(function (c) { return c && c.code; }).map(function (c) { return { code: c.code, title: c.title || c.name || '', units: c.units || c.unit || 1 }; });
+}
 function courses() {
+  var eng = [];
+  try { if (window.asEngineCourses) eng = asNormCourses(window.asEngineCourses()); } catch (e) {}
+  if (eng.length) return eng;
+  var base = asLvFilter(courses0());
+  if (base.length) return base;
+  var best = [], bestScore = -1, f = [];
+  try { f = scan('U', 0, 7); } catch (e) {}
+  f.forEach(function (it) {
+    var l = asLvFilter(asNormCourses(it.list)), sc = (/reg|current|course/i.test(it.path) ? 1000 : 0) + l.length;
+    if (l.length && sc > bestScore) { best = l; bestScore = sc; }
+  });
+  return best;
+}
+function courses0() {
   try { if (W.as2Courses) return W.as2Courses() || []; if (W.h2courses) return (W.h2courses() || []).map(function (c) { return { code: c.code, title: c.title || c.name || '', units: c.units || c.unit || '' }; }); } catch (e) {}
   return [];
 }
@@ -280,7 +323,7 @@ function vSessions() {
     '<input class="inp" type="number" min="5" max="240" placeholder="Custom" style="width:96px" value="' + esc(F.custom) + '" oninput="shF(\'custom\',this.value)"></div></div>' +
     '<div><div class="lbl">Study method</div><select class="inp" onchange="shF(\'method\',this.value);shRefresh()">' + METHODS.map(function (m) { return '<option' + (m === F.method ? ' selected' : '') + '>' + m + '</option>'; }).join('') + '</select></div>';
   if (F.course && F.method === 'Active recall' && W.as2Has && W.as2Has(F.course)) h += '<button class="btn2 w-full" onclick="shMaterial()">Use my saved material for questions</button>';
-  h += '<button class="btn w-full" onclick="shStart()">Start session</button>' + muted('Time counts only while the app is open and the timer is running. At least 5 focused minutes count toward your streak.') + '</div>';
+  h += '<button class="btn w-full" onclick="shStart()">Start session</button>' + muted('Time keeps counting while you switch apps, as long as the timer is running. At least 5 focused minutes count toward your streak.') + '</div>';
   var wk = calc.week(s.log, today), recent = s.log.slice(-8).reverse();
   h += '%%SPLIT%%';
   h += '<div class="card space-y-2"><div class="font-extrabold">Study history</div><div class="grid grid-cols-3 gap-2 text-center"><div><div class="text-xl font-extrabold">' + s.log.filter(function (e) { return e.status === 'done'; }).length + '</div>' + muted('completed') + '</div><div><div class="text-xl font-extrabold">' + Math.round(sum(s.log, function (e) { return e.focused || 0; }) / 6) / 10 + 'h</div>' + muted('focused total') + '</div><div><div class="text-xl font-extrabold">' + s.log.filter(function (e) { return e.status === 'abandoned'; }).length + '</div>' + muted('ended early') + '</div></div>' +
