@@ -60,24 +60,23 @@ jobs:
 
       - name: Synchronise Capacitor
         run: npx cap sync android
-        
+
       - name: Stable debug signing key
         env:
-          B60_SERIAL_KEYSTORE_B64: ${{ secrets.B60_SERIAL_KEYSTORE_B64 }}
+          KS_B64: ${{ secrets.AS_DEBUG_KEYSTORE_B64 }}
         run: |
-          if [ -n "$B60_SERIAL_KEYSTORE_B64" ]; then
-            mkdir -p ~/.android
-            printf "%s" "$B60_SERIAL_KEYSTORE_B64" | base64 -d > ~/.android/debug.keystore
-            keytool -list -keystore ~/.android/debug.keystore -storepass android -noprompt >/dev/null 2>&1 || {
-              echo "::error::Secret decodes but is NOT a valid debug keystore (alias androiddebugkey / storepass android)."
-              exit 1
-            }
-          else
-            echo "::error::Tag builds require B60_SERIAL_KEYSTORE_B64 secret. Fresh debug key this run."
+          if [ -z "$KS_B64" ]; then
+            echo "::error::Missing AS_DEBUG_KEYSTORE_B64 secret. Create it from 'base64 -w0' of your stable keystore (Settings > Secrets and variables > Actions). Refusing to build with a random key."
             exit 1
           fi
-
-        
+          mkdir -p "$HOME/.android"
+          printf '%s' "$KS_B64" | base64 -d > "$HOME/.android/debug.keystore"
+          if keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -noprompt >/dev/null 2>&1; then
+            echo "Stable keystore written and verified (alias androiddebugkey, storepass android)."
+          else
+            echo "::error::Secret decodes but is not a debug-default keystore (alias androiddebugkey / storepass android / keypass android). Re-save the secret from a clean base64 -w0 of the keystore."
+            exit 1
+          fi
 
       - name: Build APK
         run: |
@@ -104,12 +103,25 @@ jobs:
           BT=$(ls -d "$SDK"/build-tools/* | tail -1)
           APK=android/app/build/outputs/apk/debug/app-debug.apk
           EXPECTED=d6ed8e76b399134a8de2cf3a5eac0447e484610cf11394d474e66d1078f003b4
+          if [ ! -f "$APK" ]; then
+            echo "::error::No APK produced - an earlier step failed. Fix that first."
+            exit 1
+          fi
           A=$("$BT/apksigner" verify --print-certs "$APK" | grep -m1 "SHA-256" | awk '{print $NF}' | tr -d ':' | tr 'A-F' 'a-f')
           K=$(keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android 2>/dev/null | grep -m1 "SHA256:" | awk '{print $NF}' | tr -d ':' | tr 'A-F' 'a-f')
-          echo "APK: $A"; echo "KEY: $K"; echo "PIN: $EXPECTED"
-          if [ "$A" != "$EXPECTED" ]; then
-            echo "::error::APK certificate does not match the pinned stable key - refusing to publish."; exit 1
+          echo "APK: $A"
+          echo "KEY: $K"
+          echo "PIN: $EXPECTED"
+          if [ "$K" != "$EXPECTED" ]; then
+            echo "::error::Runner keystore does not match the pinned key - the secret is mangled or holds a different keystore. Re-save it."
+            exit 1
           fi
+          if [ "$A" != "$EXPECTED" ]; then
+            echo "::error::APK was not signed with the pinned key - Gradle ignored ~/.android/debug.keystore. Refusing to publish."
+            exit 1
+          fi
+          echo "Signing verified: APK == KEY == PIN."
+
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: build
