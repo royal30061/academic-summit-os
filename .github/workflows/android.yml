@@ -66,17 +66,21 @@ jobs:
           KS_B64: ${{ secrets.AS_DEBUG_KEYSTORE_B64 }}
         run: |
           if [ -z "$KS_B64" ]; then
-            echo "::error::Missing AS_DEBUG_KEYSTORE_B64 secret. Create it from 'base64 -w0' of your stable keystore. Refusing to build with a random key."
+            echo "::error::Missing AS_DEBUG_KEYSTORE_B64 secret. Refusing to build with a random key."
             exit 1
           fi
           mkdir -p "$HOME/.android"
           printf '%s' "$KS_B64" | base64 -d > "$HOME/.android/debug.keystore"
-          if keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -noprompt >/dev/null 2>&1; then
-            echo "Stable keystore written and verified (alias androiddebugkey, storepass android)."
-          else
-            echo "::error::Secret decodes but is not a debug-default keystore. Re-save it from a clean base64 -w0."
+          keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -noprompt >/dev/null 2>&1 || {
+            echo "::error::Secret is not a debug-default keystore (alias androiddebugkey / storepass android)."
             exit 1
-          fi
+          }
+          FP=$(keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android | grep -m1 'SHA256:' | awk '{print $NF}' | tr -d ': ' | tr 'A-F' 'a-f')
+          printf '%s\n' "$FP" | grep -qixF 'd6ed8e76b399134a8de2cf3a5eac0447e484610cf11394d474e66d1078f003b4' || {
+            echo "::error::Secret fingerprint $FP is not the pinned stable key."
+            exit 1
+          }
+          echo "Stable keystore written, verified, and fingerprint-pinned."
 
       - name: Build APK
         run: |
@@ -107,41 +111,20 @@ jobs:
           SDK="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
           BT=$(ls -d "$SDK"/build-tools/* | tail -1)
           APK=android/app/build/outputs/apk/debug/app-debug.apk
-          PIN=d6ed8e76b399134a8de2cf3a5eac0447e484610cf11394d474e66d1078f003b4
-          clean() { printf '%s' "$1" | tr -d '[:space:]:' | tr 'A-F' 'a-f'; }
           if [ ! -f "$APK" ]; then
-            echo "::error::No APK produced - an earlier step failed. Fix that first."
+            echo "::error::No APK produced - an earlier step failed."
             exit 1
           fi
-          A=$(clean "$("$BT/apksigner" verify --print-certs "$APK" | grep -m1 'SHA-256' | awk '{print $NF}')")
-          K=$(clean "$(keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android 2>/dev/null | grep -m1 'SHA256:' | awk '{print $NF}')")
-          P=$(clean "$PIN")
+          A=$("$BT/apksigner" verify --print-certs "$APK" | grep -m1 'SHA-256' | awk '{print $NF}' | tr -d ': ' | tr 'A-F' 'a-f')
+          K=$(keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android | grep -m1 'SHA256:' | awk '{print $NF}' | tr -d ': ' | tr 'A-F' 'a-f')
           echo "APK len=${#A} $A"
           echo "KEY len=${#K} $K"
-          echo "PIN len=${#P} $P"
-          if [ "$K" != "$P" ]; then
-            echo "::error::Runner keystore != pinned key (lengths ${#K} vs ${#P}). Re-save the secret."
+          if printf '%s\n' "$A" | grep -qixF "$K"; then
+            echo "Signing verified: APK signed by the pinned stable keystore."
+          else
+            echo "::error::APK signer differs from the stable keystore. Refusing to publish."
             exit 1
           fi
-          if [ "$A" != "$K" ]; then
-            echo "::error::APK was not signed by the runner keystore (lengths ${#A} vs ${#K}). Refusing to publish."
-            exit 1
-          fi
-          echo "Signing verified: APK == KEY == PIN."
-          A=$("$BT/apksigner" verify --print-certs "$APK" | grep -m1 "SHA-256" | awk '{print $NF}' | tr -d ':' | tr 'A-F' 'a-f')
-          K=$(keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android 2>/dev/null | grep -m1 "SHA256:" | awk '{print $NF}' | tr -d ':' | tr 'A-F' 'a-f')
-          echo "APK: $A"
-          echo "KEY: $K"
-          echo "PIN: $EXPECTED"
-          if [ "$K" != "$EXPECTED" ]; then
-            echo "::error::Runner keystore != pinned key: the secret is mangled or holds a different keystore. Re-save it."
-            exit 1
-          fi
-          if [ "$A" != "$EXPECTED" ]; then
-            echo "::error::APK != pinned key even with explicit injected signing: Gradle is not using the file we wrote. Refusing to publish."
-            exit 1
-          fi
-          echo "Signing verified: APK == KEY == PIN."
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
