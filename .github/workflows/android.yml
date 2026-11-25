@@ -60,18 +60,24 @@ jobs:
 
       - name: Synchronise Capacitor
         run: npx cap sync android
-
+        
       - name: Stable debug signing key
         env:
-          KS_B64: ${{ secrets.AS_DEBUG_KEYSTORE_B64 }}
+          B60_SERIAL_KEYSTORE_B64: ${{ secrets.B60_SERIAL_KEYSTORE_B64 }}
         run: |
-          if [ -n "$KS_B64" ]; then
-            mkdir -p "$HOME/.android"
-            printf '%s' "$KS_B64" | base64 -d > "$HOME/.android/debug.keystore"
-            echo "Using stable debug keystore - builds can update-install."
+          if [ -n "$B60_SERIAL_KEYSTORE_B64" ]; then
+            mkdir -p ~/.android
+            printf "%s" "$B60_SERIAL_KEYSTORE_B64" | base64 -d > ~/.android/debug.keystore
+            keytool -list -keystore ~/.android/debug.keystore -storepass android -noprompt >/dev/null 2>&1 || {
+              echo "::error::Secret decodes but is NOT a valid debug keystore (alias androiddebugkey / storepass android)."
+              exit 1
+            }
           else
-            echo "No AS_DEBUG_KEYSTORE_B64 secret: fresh debug key this run (update requires uninstall)."
+            echo "::error::Tag builds require B60_SERIAL_KEYSTORE_B64 secret. Fresh debug key this run."
+            exit 1
           fi
+
+        
 
       - name: Build APK
         run: |
