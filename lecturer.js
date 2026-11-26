@@ -10,6 +10,20 @@
   var INSTITUTIONS = ['University of Abuja', 'University of Lagos', 'University of Ibadan', 'Ahmadu Bello University', 'Obafemi Awolowo University',
     'University of Nigeria, Nsukka', 'University of Benin', 'University of Ilorin', 'Federal University of Technology, Minna'];
   var val = function (id) { return (($(id) || {}).value || '').trim(); };
+  var rosterFilter = 'all';
+  function rangeLabel(r) { return r.in_range === true ? 'Inside' : r.in_range === false ? 'Outside' : 'Unknown'; }
+  function filteredRoster() {
+    var rows = rosterSort(rosterRows || []);
+    if (rosterFilter === 'inside') return rows.filter(function (r) { return r.in_range === true; });
+    if (rosterFilter === 'outside') return rows.filter(function (r) { return r.in_range === false; });
+    if (rosterFilter === 'unknown') return rows.filter(function (r) { return r.in_range == null; });
+    return rows;
+  }
+  W.asRosterFiltered = filteredRoster;
+  W.setRosterFilter = function (v) {
+    rosterFilter = ['all', 'inside', 'outside', 'unknown'].indexOf(v) > -1 ? v : 'all';
+    W.paintRoster();
+  };
 
   /* =================== teaching profile =================== */
   function courseRow(code, level) {
@@ -87,11 +101,12 @@
   function courseOf(r) { return r.course || (r.sessions && r.sessions.course) || ''; }
   W.paintRoster = function () {
     var body = $('roster-body'); if (!body) return;
-    body.innerHTML = rosterRows.map(function (r, i) {
+    var rows = filteredRoster();
+    body.innerHTML = rows.map(function (r, i) {
       var p = r.profiles || {};
       return '<tr><td class="p-3">' + (i + 1) + '</td><td class="p-3 font-mono text-xs">' + esc(p.matric || p.name || '\u2014') + (p.matric ? '' : ' \u26A0\uFE0F') + '</td><td class="p-3 text-xs">' + esc(courseOf(r)) +
-        '</td><td class="p-3 text-xs">' + fmtD(r.marked_at || r.created_at || '') + '</td><td class="p-3 text-xs">' + (r.method === 'manual' ? 'M' : 'OTP') + '</td></tr>';
-    }).join('') || '<tr><td class="p-3 text-slate-400" colspan="5">No attendance recorded yet.</td></tr>';
+        '</td><td class="p-3 text-xs">' + fmtD(r.marked_at || r.created_at || '') + '</td><td class="p-3 text-xs">' + (r.method === 'manual' ? 'M' : 'OTP') + '</td><td class="p-3 text-xs">' + rangeLabel(r) + '</td></tr>';
+    }).join('') || '<tr><td class="p-3 text-slate-400" colspan="6">No marks match this filter.</td></tr>';
   };
   async function currentSid() {
   var live = typeof liveGet === 'function' ? liveGet() : null;
@@ -119,7 +134,7 @@
   var body = $('roster-body');
   if (body) {
     body.innerHTML =
-      '<tr><td colspan="5" class="p-3">Loading attendance...</td></tr>';
+      '<tr><td colspan="6" class="p-3">Loading attendance...</td></tr>';
   }
 
   try {
@@ -153,12 +168,12 @@
 };
   W.exportRosterCSV = function () {
     var cell = function (v) { v = String(v == null ? '' : v); if (/^[=+\-@]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; };
-    var rows = rosterSort(rosterRows).map(function (r, i) {
+    var rows = filteredRoster().map(function (r, i) {
       var m = (r.profiles && r.profiles.matric) || '';
-      return [i + 1, m, matricKey(m).g, courseOf(r), r.marked_at, r.method || 'otp'];
+      return [i + 1, m, matricKey(m).g, courseOf(r), r.marked_at, r.method || 'otp', rangeLabel(r)];
     });
     var a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([[['No', 'Matric', 'Dept', 'Course', 'Date', 'Method']].concat(rows).map(function (r) { return r.map(cell).join(','); }).join('\n')], { type: 'text/csv' }));
+    a.href = URL.createObjectURL(new Blob([[['No', 'Matric', 'Dept', 'Course', 'Date', 'Method', 'Range']].concat(rows).map(function (r) { return r.map(cell).join(','); }).join('\n')], { type: 'text/csv' }));
     a.download = 'attendance-roster.csv'; a.click();
     showToast('Roster exported - sorted by department');
   };
@@ -177,7 +192,16 @@
   };
   var rosterBase = LECTURER_VIEWS.roster;           // the old danger-zone patch targeted V.roster, which lecturers never use
   LECTURER_VIEWS.roster = function () {
-    return rosterBase() + '<div class="card p-4 mt-4 space-y-2" style="border:1px solid rgba(225,29,72,.4)"><div class="font-extrabold text-xs" style="color:#e11d48">Danger zone</div>' +
+    var rosterHtml = rosterBase();
+    rosterHtml = rosterHtml.replace('<th class="p-3">Via</th>', '<th class="p-3">Via</th><th class="p-3">Range</th>');
+    rosterHtml = rosterHtml.replace('<div class="overflow-x-auto">',
+      '<div class="card p-4 mt-3 space-y-2"><label class="lbl" for="roster-filter">Export / display filter</label><select id="roster-filter" class="inp" onchange="setRosterFilter(this.value)">' +
+      '<option value="all"' + (rosterFilter === 'all' ? ' selected' : '') + '>All successful marks</option>' +
+      '<option value="inside"' + (rosterFilter === 'inside' ? ' selected' : '') + '>Inside the lecturer range</option>' +
+      '<option value="outside"' + (rosterFilter === 'outside' ? ' selected' : '') + '>Outside the lecturer range</option>' +
+      '<option value="unknown"' + (rosterFilter === 'unknown' ? ' selected' : '') + '>Location unavailable / unverified</option>' +
+      '</select><p class="text-xs" style="color:var(--mut)">Unknown includes marks without a recorded range result, including older marks. Failed attempts are not in the attendance roster and cannot be attributed to this session by the current schema.</p></div><div class="overflow-x-auto">');
+    return rosterHtml + '<div class="card p-4 mt-4 space-y-2" style="border:1px solid rgba(225,29,72,.4)"><div class="font-extrabold text-xs" style="color:#e11d48">Danger zone</div>' +
       '<p class="text-[11px] text-slate-500">Deletes the open roster and every attendance record inside it. Export the CSV first if you need it.</p><button class="btn2 w-full" style="color:#e11d48" onclick="deleteRoster()">Delete this roster</button></div>';
   };
 

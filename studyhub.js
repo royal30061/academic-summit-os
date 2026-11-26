@@ -167,7 +167,7 @@ function asNormCourses(a) {
 }
 function courses() {
   var eng = [];
-  try { if (window.asEngineCourses) eng = asNormCourses(window.asEngineCourses()); } catch (e) {}
+  try { if (window.asEngineCourses) eng = asLvFilter(asNormCourses(window.asEngineCourses())); } catch (e) {}
   if (eng.length) return eng;
   var base = asLvFilter(courses0());
   if (base.length) return base;
