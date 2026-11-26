@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - master
+      - academic-summit-study-hub-v1
       - native-android-migration
       - android-migration-clean
     tags:
