@@ -1140,6 +1140,7 @@ async function startAttendanceSession(){
     if(!s.id||!s.code)s=await sessionFromTable(s,s.id);
     if(!s.id||!s.code){console.error('start_session reply',data);return showToast('Server reply not understood (fields: '+(s.keys.join(', ')||'none')+')','error');}
     liveSet({id:s.id,code:s.code,end:s.end,course,topic,level,count:0});
+    try{ if(level)Promise.resolve(sb.rpc('set_session_level',{p_session:s.id,p_level:level})).then(function(){},function(){}); if(window.ASBle&&window.ASBle.lecturerStart)window.ASBle.lecturerStart(s.id); }catch(e){}
     const lp=$('live-panel');if(lp)lp.classList.remove('hidden');
     liveRun();
   }catch(e){
@@ -1253,7 +1254,7 @@ function openSupport(){
   $('sheet').innerHTML=sheetWrap('Support',
   '<p class="text-xs text-slate-500 dark:text-slate-400">Questions or issues? The team replies within 24 hours.</p>'+
   '<a class="btn w-full" href="mailto:support@academicsummit.app">Email Support</a>'+
-  '<a class="btn2 w-full" target="_blank" rel="noopener" href="https://wa.me/2348000000000">WhatsApp Community</a>');
+  '<a class="btn2 w-full" target="_blank" rel="noopener" href="https://chat.whatsapp.com/J1Ra5MDLkHM1vIrWISRCPh">WhatsApp Community</a>');
 }
 function openInfoSheet(){
   const p=U.profile||{};
@@ -3239,7 +3240,8 @@ start=function(){_start63();setTimeout(function(){homeExtras();acadExtras();},25
     <script src="native-location.js?v=2708"></script>
 <script src="attend-qr.js?v=2708"></script>
 <script src="attend-guard.js?v=2708"></script>
-<script src="attendance-upgrade.js?v=2708"></script>
+<script src="attendance-upgrade.js?v=2709"></script>
+<script src="ble.js?v=3"></script>
 <script src="welcome.js?v=2708"></script>
 <script src="installfix.js?v=2708"></script>
 

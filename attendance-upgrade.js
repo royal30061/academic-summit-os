@@ -199,15 +199,15 @@ if (typeof document === 'undefined') return;
 var csvRoster = W.exportRosterCSV, csvRecs = W.exportRecordsCSV, csvQr = W.qaCsv;
 
 W.exportRosterCSV = function () {
-  var rows = (typeof rosterRows !== 'undefined' && rosterRows) || [];
-  if (!rows.length) return toast('No attendance to export yet', 'error');
+  var rows = typeof W.asRosterFiltered === 'function' ? W.asRosterFiltered() : ((typeof rosterRows !== 'undefined' && rosterRows) || []);
+  if (!rows.length) return toast('No attendance matches this filter', 'error');
   var course = (rows[0].course || (rows[0].sessions && rows[0].sessions.course) || '');
   var m = {
-    title: 'Attendance roster' + (course ? ' - ' + course : ''), sub: rows.length + ' present  |  exported ' + stamp(),
-    cols: ['No', 'Name', 'Matric', 'Time', 'Method'], w: [0.6, 3, 2.4, 2.4, 1],
+    title: 'Attendance roster' + (course ? ' - ' + course : ''), sub: rows.length + ' successful mark(s)  |  exported ' + stamp(),
+    cols: ['No', 'Name', 'Matric', 'Course', 'Time', 'Method', 'Range'], w: [0.5, 2.5, 2.2, 1.5, 2.2, 1, 1],
     rows: rows.map(function (r, i) {
-      var p = r.profiles || {};
-      return [i + 1, p.name || '', p.matric || '', r.marked_at ? new Date(r.marked_at).toLocaleString() : '', r.method === 'manual' ? 'Manual' : 'Code'];
+      var p = r.profiles || {}, range = r.in_range === true ? 'Inside' : r.in_range === false ? 'Outside' : 'Unknown';
+      return [i + 1, p.name || '', p.matric || '', r.course || (r.sessions && r.sessions.course) || '', r.marked_at ? new Date(r.marked_at).toLocaleString() : '', r.method === 'manual' ? 'Manual' : 'Code', range];
     })
   };
   choose(m, csvRoster, slug(course) + '-roster-' + day());
@@ -429,13 +429,14 @@ W.paintRoster = function () {
   var body = document.getElementById('roster-body');
   try {
     if (!body || typeof rosterRows === 'undefined') throw 0;
+    var rows = typeof W.asRosterFiltered === 'function' ? W.asRosterFiltered() : rosterRows;
     var th = body.parentNode && body.parentNode.querySelector('thead tr');
-    if (th) th.innerHTML = '<th class="p-3">#</th><th class="p-3">Name</th><th class="p-3">Matric</th><th class="p-3">Time</th>';
-    body.innerHTML = rosterRows.map(function (r, i) {
-      var p = r.profiles || {};
-      return '<tr><td class="p-3">' + (i + 1) + '</td><td class="p-3 text-xs">' + E(p.name || '\u2014') + '</td><td class="p-3 font-mono text-xs">' + E(p.matric || '\u2014') +
-        '</td><td class="p-3 text-xs">' + E(T(r.marked_at || r.created_at)) + (r.in_range === true ? ' <span style="color:#16a34a">\u2713</span>' : (r.in_range === false ? ' <span style="color:#d97706">!</span>' : '')) + (r.method === 'manual' ? ' (M)' : '') + '</td></tr>';
-    }).join('') || '<tr><td class="p-3" colspan="4" style="color:var(--mut)">No attendance recorded yet.</td></tr>';
+    if (th) th.innerHTML = '<th class="p-3">#</th><th class="p-3">Matric</th><th class="p-3">Course</th><th class="p-3">Date</th><th class="p-3">Via</th><th class="p-3">Range</th>';
+    body.innerHTML = rows.map(function (r, i) {
+      var p = r.profiles || {}, range = r.in_range === true ? 'Inside' : r.in_range === false ? 'Outside' : 'Unknown';
+      return '<tr><td class="p-3">' + (i + 1) + '</td><td class="p-3 font-mono text-xs">' + E(p.matric || p.name || '\u2014') + '</td><td class="p-3 text-xs">' + E(r.course || (r.sessions && r.sessions.course) || '') +
+        '</td><td class="p-3 text-xs">' + E(T(r.marked_at || r.created_at)) + '</td><td class="p-3 text-xs">' + (r.method === 'manual' ? 'M' : 'OTP') + '</td><td class="p-3 text-xs">' + range + '</td></tr>';
+    }).join('') || '<tr><td class="p-3" colspan="6" style="color:var(--mut)">No marks match this filter.</td></tr>';
   } catch (e) { if (typeof paintBase === 'function') paintBase.apply(this, arguments); }
 };
 })();
@@ -1657,25 +1658,39 @@ W.go = function (v) {
   return r;
 };
 })();
-/* Academic Summit - lec-clearance.js v1
+/* Academic Summit - lec-clearance.js v2
    Lecturer "Exam clearance": pick a course and a cutoff (30-100%, default 75). The cutoff belongs to THIS report only;
    it never changes the school-wide pass mark. Students who registered the course but never attended show at 0%.
-   Exports (PDF / Word / CSV) are stamped with the cutoff. Every report is also saved on the server as an audit snapshot. */
+   v2: Eligible / Ineligible views that re-split instantly when the cutoff moves; the export lists the APPROVED students with
+   course, department, classes held and cutoff; "Saved lists" reopens earlier snapshots from the server on any device.
+   Every Generate / Save is stored on the server (clearance_report) as an audit snapshot. */
 (function () {
 'use strict';
-var W = window, LAST = null;
+var W = window, LAST = null, VIEW = 'ok', SAVED_CUT = null;
 function E(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 function toast(m, t) { try { showToast(m, t); } catch (e) {} }
 function csvCell(v) { v = String(v == null ? '' : v); if (/^[=+\-@]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; }
 function courses() { try { return ((U.lec && U.lec.courses) || []).filter(function (c) { return c && c.code; }).map(function (c) { return c.code; }); } catch (e) { return []; } }
+function dept() { try { return ((document.getElementById('lc-dept') || {}).value || (U.profile && U.profile.program) || '').trim(); } catch (e) { return ''; } }
+function pctOf(x) { return x.held > 0 ? (100 * x.attended / x.held) : 0; }
+function isOk(x, cut) { return x.held > 0 && 100 * x.attended >= cut * x.held; }      // same rule the server uses
+function split(cut) {
+  var rows = (LAST && LAST.rows) || [], ok = [], no = [];
+  rows.forEach(function (x) { (isOk(x, cut) ? ok : no).push(x); });
+  return { ok: ok, no: no };
+}
+function curCut() { return parseInt((document.getElementById('lc-cut') || {}).value, 10) || (LAST && LAST.cutoff) || 75; }
 function card() {
-  var cs = courses();
+  var cs = courses(), d0 = '';
+  try { d0 = (U.profile && U.profile.program) || ''; } catch (e) {}
   return '<div id="lc-box" class="card p-4 space-y-3"><div class="font-extrabold">Exam clearance</div>' +
     (cs.length ? '<p class="text-xs" style="color:var(--mut)">Who has attended enough classes to sit the exam. The cutoff applies to this report only.</p>' +
       '<select id="lc-course" class="inp uppercase font-mono font-bold">' + cs.map(function (c) { return '<option>' + E(c) + '</option>'; }).join('') + '</select>' +
+      '<input id="lc-dept" class="inp" placeholder="Department (printed on the list)" value="' + E(d0) + '">' +
       '<div class="flex items-center justify-between text-sm"><span>Cutoff</span><b id="lc-cutv">75%</b></div>' +
-      '<input id="lc-cut" type="range" min="30" max="100" step="5" value="75" style="width:100%" oninput="document.getElementById(\'lc-cutv\').textContent=this.value+\'%\'">' +
-      '<button class="btn w-full" onclick="lcRun(this)">Generate clearance report</button><div id="lc-out"></div>'
+      '<input id="lc-cut" type="range" min="30" max="100" step="5" value="75" style="width:100%" oninput="lcCut(this.value)">' +
+      '<button class="btn w-full" onclick="lcRun(this)">Generate clearance report</button>' +
+      '<button class="btn2 w-full" onclick="lcSaved(this)">Saved lists</button><div id="lc-out"></div>'
       : '<p class="text-xs" style="color:var(--mut)">Register the courses you teach in your teaching profile first.</p>') + '</div>';
 }
 var base = LECTURER_VIEWS && LECTURER_VIEWS.records;
@@ -1683,31 +1698,64 @@ if (typeof base === 'function') LECTURER_VIEWS.records = function () {
   var h = base.apply(this, arguments);
   return typeof h === 'string' && h.indexOf('lc-box') < 0 ? h.replace('<div id="rec-list"', card() + '<div id="rec-list"') : h;
 };
+function paint() {
+  var out = document.getElementById('lc-out'); if (!out || !LAST) return;
+  var cut = curCut(), s = split(cut), rows = VIEW === 'ok' ? s.ok : s.no, total = s.ok.length + s.no.length;
+  var tab = function (k, label, n) { return '<button class="' + (VIEW === k ? 'btn' : 'btn2') + ' flex-1" style="padding:8px 4px;font-size:12px" onclick="lcView(\'' + k + '\')">' + label + ' (' + n + ')</button>'; };
+  out.innerHTML = '<div class="text-sm"><b>' + s.ok.length + '</b> of ' + total + ' students eligible at ' + cut + '% &middot; ' + LAST.held + ' classes held</div>' +
+    (SAVED_CUT !== cut ? '<button class="btn2 w-full" onclick="lcRun(this)">Save this list at ' + cut + '%</button>' : '<div class="text-[11px]" style="color:#16a34a">Saved to your account at ' + cut + '%.</div>') +
+    '<div class="flex gap-2">' + tab('ok', 'Eligible', s.ok.length) + tab('no', 'Ineligible', s.no.length) + '</div>' +
+    (VIEW === 'ok' ? '<button class="btn w-full" onclick="lcExport()">Export approved list (PDF / Word / CSV)</button>' : '') +
+    '<div style="max-height:280px;overflow:auto"><table class="w-full text-left text-xs"><thead><tr style="color:var(--mut)"><th class="py-1 pr-2">Student</th><th class="pr-2">Attended</th><th>%</th></tr></thead><tbody>' +
+    (rows.map(function (x) {
+      return '<tr style="border-top:1px solid var(--bd)"><td class="py-1 pr-2">' + E(x.name || '-') + '<div class="font-mono" style="color:var(--mut)">' + E(x.matric || '') + '</div></td><td class="pr-2">' + x.attended + '/' + x.held + '</td><td>' + pctOf(x).toFixed(1) + '%</td></tr>';
+    }).join('') || '<tr><td colspan="3" class="py-3" style="color:var(--mut)">Nobody in this group.</td></tr>') + '</tbody></table></div>';
+}
+W.lcCut = function (v) { var b = document.getElementById('lc-cutv'); if (b) b.textContent = v + '%'; if (LAST) paint(); };
+W.lcView = function (k) { VIEW = k === 'no' ? 'no' : 'ok'; paint(); };
 W.lcRun = async function (btn) {
-  var course = (document.getElementById('lc-course') || {}).value, cut = parseInt((document.getElementById('lc-cut') || {}).value, 10) || 75, out = document.getElementById('lc-out');
+  var course = (document.getElementById('lc-course') || {}).value, cut = curCut(), out = document.getElementById('lc-out');
   if (!course) return toast('Choose a course', 'error');
   if (btn) btn.disabled = true; out.innerHTML = '<div class="text-xs" style="color:var(--mut)">Working...</div>';
   var r = await sb.rpc('clearance_report', { p_course: course, p_cutoff: cut });
   if (btn) btn.disabled = false;
   if (r.error) { out.innerHTML = ''; return toast(r.error.message, 'error'); }
-  LAST = r.data; var rows = LAST.rows || [], ok = rows.filter(function (x) { return x.eligible; }).length;
-  if (!LAST.held) { out.innerHTML = '<div class="text-xs" style="color:var(--mut)">No saved classes for this course yet.</div>'; return; }
-  out.innerHTML = '<div class="text-sm"><b>' + ok + '</b> of ' + rows.length + ' students cleared at ' + LAST.cutoff + '% (' + LAST.held + ' classes held)</div>' +
-    '<button class="btn2 w-full" onclick="lcExport()">Export (PDF / Word / CSV)</button><div style="max-height:260px;overflow:auto"><table class="w-full text-left text-xs"><thead><tr style="color:var(--mut)"><th class="py-1 pr-2">Student</th><th class="pr-2">Attended</th><th class="pr-2">%</th><th>Cleared</th></tr></thead><tbody>' +
-    rows.map(function (x) {
-      return '<tr style="border-top:1px solid var(--bd)"><td class="py-1 pr-2">' + E(x.name || '-') + '<div class="font-mono" style="color:var(--mut)">' + E(x.matric || '') + '</div></td><td class="pr-2">' + x.attended + '/' + x.held + '</td><td class="pr-2">' + x.pct + '%</td><td style="color:' + (x.eligible ? '#16a34a' : '#dc2626') + ';font-weight:700">' + (x.eligible ? 'Yes' : 'No') + '</td></tr>';
-    }).join('') + '</tbody></table></div>';
+  LAST = r.data; SAVED_CUT = LAST.cutoff; VIEW = 'ok';
+  if (!LAST.held) { LAST = null; out.innerHTML = '<div class="text-xs" style="color:var(--mut)">No saved classes for this course yet.</div>'; return; }
+  var sl = document.getElementById('lc-cut'); if (sl) sl.value = LAST.cutoff; W.lcCut(LAST.cutoff); paint();
+};
+W.lcSaved = async function (btn) {
+  var out = document.getElementById('lc-out'); if (!out) return;
+  if (btn) btn.disabled = true; out.innerHTML = '<div class="text-xs" style="color:var(--mut)">Loading saved lists...</div>';
+  var r = await sb.from('exam_clearance_reports').select('id,course,cutoff,held,created_at').order('created_at', { ascending: false }).limit(30);
+  if (btn) btn.disabled = false;
+  if (r.error) { out.innerHTML = ''; return toast('Could not load saved lists: ' + r.error.message, 'error'); }
+  var list = r.data || [];
+  out.innerHTML = list.length ? '<div class="space-y-2">' + list.map(function (x) {
+    return '<button class="btn2 w-full text-left" style="font-size:12px" onclick="lcOpen(\'' + E(x.id) + '\')"><b>' + E(x.course) + '</b> &middot; ' + x.cutoff + '% &middot; ' + x.held + ' classes<br><span style="color:var(--mut)">' + E(new Date(x.created_at).toLocaleString()) + '</span></button>';
+  }).join('') + '</div>' : '<div class="text-xs" style="color:var(--mut)">No saved lists yet.</div>';
+};
+W.lcOpen = async function (id) {
+  var out = document.getElementById('lc-out'); if (out) out.innerHTML = '<div class="text-xs" style="color:var(--mut)">Opening...</div>';
+  var r = await sb.from('exam_clearance_reports').select('id,course,cutoff,held,rows,created_at').eq('id', id).maybeSingle();
+  if (r.error || !r.data) { if (out) out.innerHTML = ''; return toast('Could not open that list', 'error'); }
+  LAST = r.data; SAVED_CUT = LAST.cutoff; VIEW = 'ok';
+  var sl = document.getElementById('lc-cut'); if (sl) sl.value = LAST.cutoff; W.lcCut(LAST.cutoff);
+  var cs = document.getElementById('lc-course'); if (cs) { for (var i = 0; i < cs.options.length; i++) if (cs.options[i].text.replace(/\s+/g, '').toUpperCase() === LAST.course) cs.selectedIndex = i; }
+  paint();
 };
 W.lcExport = function () {
   var D = W.__asDocs; if (!LAST || !D || !D.choose) return toast('Nothing to export', 'error');
-  var rows = LAST.rows || [], ok = rows.filter(function (x) { return x.eligible; }).length, stamp = 'Cutoff ' + LAST.cutoff + '%  |  ' + LAST.held + ' classes held  |  ' + ok + ' of ' + rows.length + ' cleared  |  ' + D.stamp();
-  var m = { title: 'Exam clearance - ' + LAST.course, sub: stamp, cols: ['No', 'Name', 'Matric', 'Attended', '%', 'Cleared'], w: [0.6, 3, 2.4, 1.2, 0.8, 1],
-    rows: rows.map(function (x, i) { return [i + 1, x.name || '', x.matric || '', x.attended + '/' + x.held, x.pct + '%', x.eligible ? 'Yes' : 'No']; }) };
+  var cut = curCut(), s = split(cut), rows = s.ok, dp = dept() || 'Department not set', total = s.ok.length + s.no.length;
+  var sub = dp + '  |  ' + LAST.held + ' classes held  |  Cutoff ' + cut + '%  |  ' + rows.length + ' of ' + total + ' approved  |  ' + D.stamp();
+  var m = { title: 'Exam clearance - ' + LAST.course, sub: sub, cols: ['No', 'Matric', 'Full name', 'Attended', 'Final %'], w: [0.6, 2.4, 3.2, 1.2, 1],
+    rows: rows.map(function (x, i) { return [i + 1, x.matric || '', x.name || '', x.attended + '/' + x.held, pctOf(x).toFixed(1) + '%']; }) };
   var csv = function () {
-    var lines = ['# ' + stamp, 'No,Name,Matric,Attended,Held,Percent,Cleared (cutoff ' + LAST.cutoff + '%)'].concat(rows.map(function (x, i) { return [i + 1, x.name, x.matric, x.attended, x.held, x.pct, x.eligible ? 'Yes' : 'No'].map(csvCell).join(','); }));
-    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' })); a.download = D.slug(LAST.course) + '-clearance-' + LAST.cutoff + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+    var head = ['# Course: ' + LAST.course, '# Department: ' + dp, '# Total sessions held: ' + LAST.held, '# Eligibility cutoff: ' + cut + '%', '# Approved students: ' + rows.length + ' of ' + total, '# ' + D.stamp()].map(function (l) { return csvCell(l); });
+    var lines = head.concat(['No,Matric,Full name,Total attendance count,Final percentage'], rows.map(function (x, i) { return [i + 1, x.matric, x.name, x.attended, pctOf(x).toFixed(1)].map(csvCell).join(','); }));
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv' })); a.download = D.slug(LAST.course) + '-approved-' + cut + '.csv'; document.body.appendChild(a); a.click(); a.remove();
   };
-  D.choose(m, csv, D.slug(LAST.course) + '-clearance-' + LAST.cutoff);
+  D.choose(m, csv, D.slug(LAST.course) + '-approved-' + cut);
 };
 })();
 /* Academic Summit - lec-delete.js v1
@@ -1828,4 +1876,79 @@ function sync() { try { bar().style.display = navigator.onLine === false ? 'bloc
 W.addEventListener('online', sync); W.addEventListener('offline', sync);
 if (document.body) sync(); else document.addEventListener('DOMContentLoaded', sync);
 })();
+})();
+
+/* Academic Summit - att-extras.js v1
+   (a) Student Attendance screen: "Scan the lecturer's QR" button (before it only existed on Home) and, in an app build that has the
+       Bluetooth plugin, "Mark by Bluetooth".
+   (b) While the Attend tab is glowing on Home, the other Home cards are dimmed and the attendance card pulses.
+   (c) The matric / JAMB number typed at sign-up is copied into the profile after onboarding builds it. */
+(function () {
+'use strict';
+var W = window;
+function toast(m, t) { try { showToast(m, t); } catch (e) {} }
+function isLec() { try { return U && U.role === 'lecturer'; } catch (e) { return false; } }
+
+(function () { var st = document.createElement('style');
+  st.textContent = '.as-glow-card{animation:asCardPulse 1.8s ease-in-out infinite}@keyframes asCardPulse{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}50%{box-shadow:0 0 18px 4px rgba(16,185,129,.55)}}' +
+    '@media (prefers-reduced-motion:reduce){.as-glow-card{animation:none;box-shadow:0 0 0 2px rgba(16,185,129,.7)}}[data-asdim="1"]{opacity:.6;transition:opacity .4s}';
+  document.head.appendChild(st); })();
+
+/* (a) */
+var attBase = (typeof V !== 'undefined') ? V.att : null;
+if (typeof attBase === 'function') V.att = function () {
+  var h = attBase.apply(this, arguments);
+  if (typeof h !== 'string' || h.indexOf('as-alt-methods') > -1) return h;
+  var ble = typeof W.ASBleAvailable === 'function' && W.ASBleAvailable();
+  var block = '<div id="as-alt-methods" class="card p-4 space-y-2"><div class="font-extrabold text-sm">Other ways to mark</div>' +
+    '<button class="btn w-full" onclick="go(\'qrs\')">Scan the lecturer’s QR</button>' +
+    (ble ? '<button class="btn2 w-full" onclick="asBleMark(this)">Mark by Bluetooth (stand near the lecturer)</button>' : '') + '</div>';
+  var i = h.indexOf('</p></div>');
+  return i > -1 ? h.slice(0, i + 10) + block + h.slice(i + 10) : h.replace('<div class="space-y-5">', '<div class="space-y-5">' + block);
+};
+W.asBleMark = async function (btn) {
+  if (!W.ASBle) return toast('Bluetooth is not available in this version of the app.', 'error');
+  if (btn) btn.disabled = true;
+  try {
+    var r = await W.ASBle.studentMark(null, {});
+    toast('Marked' + (r && r.course ? ' for ' + r.course : '') + ' by Bluetooth' + (r && r.weak ? ' (weak signal)' : ''));
+    if (typeof attHistory === 'function') setTimeout(attHistory, 300);
+  } catch (e) { toast(e.message || 'Bluetooth mark failed', 'error'); }
+  finally { if (btn) btn.disabled = false; }
+};
+
+/* (b) */
+function applyDim() {
+  var m = document.getElementById('main'); if (!m) return;
+  var on = !isLec() && !!document.querySelector('.bn[data-n="att"].as-glow') && typeof view !== 'undefined' && view === 'home';
+  Array.prototype.forEach.call(m.querySelectorAll('.card'), function (c) {
+    var t = (c.textContent || '').replace(/\s+/g, ' ').trim();
+    var isAtt = /^Mark attendance\b/i.test(t) || !!c.querySelector('#ha-pin,[onclick*="markFromHome"]');
+    if (on && isAtt) c.classList.add('as-glow-card'); else c.classList.remove('as-glow-card');
+    if (on && !isAtt) c.setAttribute('data-asdim', '1'); else if (c.getAttribute('data-asdim') === '1') c.removeAttribute('data-asdim');
+  });
+}
+var goB = W.go;
+if (typeof goB === 'function') W.go = function () {
+  var r = goB.apply(this, arguments);
+  try { setTimeout(applyDim, 900); setTimeout(applyDim, 2000); } catch (e) {}
+  return r;
+};
+
+/* (c) */
+var startB = W.start;
+if (typeof startB === 'function') W.start = function () {
+  try {
+    if (typeof uid !== 'undefined' && uid && U && U.profile && !U.profile.matric) {
+      var k = 'as_signup_matric_' + uid, m = localStorage.getItem(k);
+      if (m) {
+        Promise.resolve(sb.from('profiles').update({ matric: m }).eq('id', uid)).then(function (x) {
+          try { localStorage.removeItem(k); } catch (e) {}
+          if (!(x && x.error) && U && U.profile) { U.profile.matric = m; if (typeof save === 'function') save(); }
+        }, function () {});
+      }
+    }
+  } catch (e) {}
+  return startB.apply(this, arguments);
+};
 })();

@@ -35,7 +35,9 @@
         '<button class="btn w-full py-3 mt-2" onclick="doLogin()">Enter Campus Portal</button>' + link('Forgot password?', 'forgotUI()') + link('New here? Create account', "authUI('signup')") + '</div>',
       signup: '<div class="space-y-3"><div><label class="lbl mb-1 block">Full Name</label><input id="a-name" class="inp" placeholder="Your full name"></div>' +
         '<div><label class="lbl mb-1 block">Email</label><input id="a-email" type="email" class="inp"></div>' +
+        '<div><label class="lbl mb-1 block">Matric / JAMB number</label><input id="a-matric" class="inp font-mono uppercase" autocapitalize="characters" placeholder="e.g. 21/ABC/1234 (100 level: JAMB number)"></div>' +
         '<div><label class="lbl mb-1 block">Password</label><input id="a-pass" type="password" class="inp" placeholder="6+ characters"></div>' +
+        '<details class="text-[11px]" style="color:var(--mut)"><summary style="cursor:pointer">By creating an account you agree to the terms. <span style="text-decoration:underline">Read</span></summary><div class="mt-1 space-y-1"><p>We store your name, email, matric/JAMB number and your attendance records so lecturers and your school can count your classes.</p><p>Your matric number is only used to identify you on attendance lists. Marking attendance for another student is not allowed.</p><p>You can ask for your account to be deleted from Settings or Support.</p></div></details>' +
         '<button class="btn w-full py-3 mt-2" onclick="doSignup()">Create Account</button>' + link('Have an account? Log in', "authUI('login')") + '</div>'
     };
     var resend = mode === 'login' && /not confirmed/i.test(msg) ? '<button class="btn2 w-full" onclick="resendConfirmTo()">Resend confirmation email</button>' : '';
@@ -63,13 +65,28 @@
     sb.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', r.data.user.id).then(function () {});
     boot(r.data.user);
   };
+  /* matric / JAMB: same lenient rule as the attendance identification check (letters, digits, / or -, 6-24 chars, 4+ digits) */
+  var MATRIC_OK = function (m) { return /^[A-Z0-9\/\-]{6,24}$/.test(m) && (m.match(/\d/g) || []).length >= 4; };
   W.doSignup = async function () {
     var name = val('a-name'), em = val('a-email').toLowerCase(), pw = ($('a-pass') || {}).value || '';
+    var mat = val('a-matric').toUpperCase().replace(/\s+/g, '');
     last.signup = em;
     if (!name || !em || pw.length < 6) return authUI('signup', 'Complete all fields (password 6+ characters).');
-    var r = await sb.auth.signUp({ email: em, password: pw, options: { data: { name: name }, emailRedirectTo: location.origin + location.pathname } });
+    if (!MATRIC_OK(mat)) return authUI('signup', 'Enter your matric number (or JAMB number if you are in 100 level).');
+    var r = await sb.auth.signUp({ email: em, password: pw, options: { data: { name: name, matric: mat }, emailRedirectTo: location.origin + location.pathname } });
     if (r.error) return authUI('signup', r.error.message);
+    try { if (r.data.user) localStorage.setItem('as_signup_matric_' + r.data.user.id, mat); } catch (e) {}
     if (!r.data.session) return confirmScreen(em);
+    var taken = false;
+    var save = function () {
+      return Promise.resolve(sb.from('profiles').update({ matric: mat }).eq('id', r.data.user.id)).then(function (x) {
+        if (x && x.error && (x.error.code === '23505' || /duplicate|unique/i.test(x.error.message || ''))) {
+          taken = true; try { localStorage.removeItem('as_signup_matric_' + r.data.user.id); } catch (e) {}
+          try { showToast('That matric number is already linked to another account. Contact support if it is yours.', 'error'); } catch (e) {}
+        }
+      }, function () {});
+    };
+    save(); setTimeout(function () { if (!taken) save(); }, 2500);   // the profile row can appear a moment after sign-up: try once more
     boot(r.data.user);
   };
 
