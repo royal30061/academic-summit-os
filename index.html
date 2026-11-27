@@ -1090,7 +1090,7 @@ function liveRestore(){
     const e=$(id);if(!e||!v)return;
     if(e.tagName==='SELECT'){if(Array.from(e.options).some(o=>o.value===v))e.value=v;}else e.value=v;
   };
-  put('lec-course',s.course);put('lec-topic',s.topic);put('lec-level',s.level);
+  if(window.__lrDone!==s.id){window.__lrDone=s.id;put('lec-course',s.course);put('lec-topic',s.topic);put('lec-level',s.level);}
   const lp=$('live-panel');if(lp)lp.classList.remove('hidden');
   liveRun();
 }
@@ -1133,7 +1133,8 @@ async function startAttendanceSession(){
   const btn=genBtn(),label=btn?btn.textContent:'';
   if(btn){btn.disabled=true;btn.textContent='Starting class...';}
   try{
-    const course=$('lec-course').value.trim()||'POS 204',topic=$('lec-topic').value.trim(),level=($('lec-level')||{}).value||'';
+    const course=$('lec-course').value.trim(),topic=$('lec-topic').value.trim(),level=($('lec-level')||{}).value||'';
+    if(!course){showToast('Choose or type the course first','error');return;}
     const{data,error}=await sb.rpc('start_session',{p_course:course,p_topic:topic});
     if(error)return showToast(error.message,'error');
     let s=normSession(data);
@@ -3261,7 +3262,8 @@ start=function(){_start63();setTimeout(function(){homeExtras();acadExtras();},25
 <script src="announce.js?v=2708"></script>
 <script src="smooth.js?v=2708"></script>
 <script src="native-boot.js?v=2708"></script>
-<script src="pinfix.js?v=2708"></script><script src="helpfix.js?v=2708"></script><script src="uxfix.js?v=2708"></script><script src="replist.js?v=2708"></script><script src="matricguard.js?v=2708"></script><script src="reissuegate.js?v=2708"></script><script src="reptime.js?v=2708"></script><script src="studystart.js?v=2708"></script><script src="leccourse.js?v=2708"></script><script src="coursefeed.js?v=2708"></script><script src="studyhub2.js?v=1"></script>
+<script src="pinfix.js?v=2708"></script><script src="helpfix.js?v=2708"></script><script src="uxfix.js?v=2708"></script><script src="replist.js?v=2708"></script><script src="matricguard.js?v=2708"></script><script src="reissuegate.js?v=2708"></script><script src="reptime.js?v=2708"></script><script src="studystart.js?v=2708"></script><script src="leccourse.js?v=2708"></script><script src="coursefeed.js?v=2708"></script><script src="studyhub2.js?v=2"></script>
+<script src="lecconsole.js?v=1"></script>
 </body>
 </html>
 

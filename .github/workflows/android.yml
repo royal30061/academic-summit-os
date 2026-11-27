@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - master
+      - academic-summit-console-fixes-v1
       - academic-summit-final-v3
       - native-android-migration
       - android-migration-clean
