@@ -1,4 +1,8 @@
-/* Academic Summit - studyhub2.js v1  (unified Study Hub)
+/* Academic Summit - studyhub2.js v2  (unified Study Hub)
+   v2: fixes the hub being painted over. studyhub.js listens for taps on the bottom Study button and, 90 ms later, repaints its
+   own classic screen over #main. The hub now switches that off while it is showing (and re-paints itself if anything still
+   covers it), turns it back on only for the classic screens it hands off to, and retargets the Profile "Open the Study engine"
+   button to the hub so the old engine no longer sits behind the profile.
    One home for everything that used to be split between the Study workspace and the Academics engine:
    Study tab -> hub -> (Materials | Practice | Study plan | My progress) -> the SAME course list -> a course page.
    It is a thin layer: it reads your existing data and hands off to the existing screens (nothing is deleted or migrated).
@@ -8,7 +12,7 @@
 (function () {
 'use strict';
 var W = window;
-if (W.__asHub2) return; W.__asHub2 = '1';
+if (W.__asHub2) return; W.__asHub2 = '2';
 
 var S = { screen: 'home', fn: 'materials', code: null, classic: false };
 var FN = {
@@ -212,7 +216,12 @@ function render() { return S.screen === 'list' ? list() : S.screen === 'course' 
 /* ---------- navigation ---------- */
 var goB = W.go, keep = false;
 function repaint() { keep = true; try { goB('study'); } finally { keep = false; } }
-function classic(then) { S.classic = true; keep = true; try { goB('study'); } finally { keep = false; } if (then) setTimeout(then, 90); }
+function shActive(on) { try { if (W.__sh && W.__sh.setActive) W.__sh.setActive(!!on); } catch (e) {} }
+function classic(then) {
+  S.classic = true; shActive(true); keep = true;
+  try { goB('study'); } finally { keep = false; }
+  setTimeout(function () { try { if (W.__sh && W.__sh.mount) W.__sh.mount(); } catch (e) {} if (then) setTimeout(then, 60); }, 90);
+}
 function direct(view, then) { try { goB(view); } catch (e) { toast('Could not open that screen', 'error'); return; } if (then) setTimeout(then, 90); }
 W.sxHome = function () { S.screen = 'home'; S.classic = false; repaint(); };
 W.sxPick = function (fn) { S.fn = fn; S.screen = 'list'; repaint(); };
@@ -239,6 +248,7 @@ if (typeof goB === 'function') W.go = function (v) {
 var vOrig = (typeof V !== 'undefined') ? V.study : null;
 if (typeof V !== 'undefined') V.study = function () {
   if (S.classic && typeof vOrig === 'function') return vOrig.apply(this, arguments);
+  shActive(false);
   return render();
 };
 /* older shortcuts (home cards) that call the classic course page directly keep working */
@@ -250,4 +260,44 @@ if (typeof V !== 'undefined') V.study = function () {
     return o.apply(this, a);
   };
 });
+
+/* ---------- tapping the bottom Study button: land on the hub and keep it there ---------- */
+function onStudy() { return typeof view !== 'undefined' && view === 'study'; }
+function guard() {
+  var tries = 0;
+  (function check() {
+    if (S.classic) return;
+    var m = document.getElementById('main');
+    if (m && !m.querySelector('.sx')) { if (onStudy() || tries === 0) { shActive(false); try { repaint(); } catch (e) {} } }
+    if (++tries < 4) setTimeout(check, tries === 1 ? 180 : 450);
+  })();
+}
+W.__sxGuard = guard;
+document.addEventListener('click', function (e) {
+  try {
+    var b = e.target && e.target.closest ? e.target.closest('button,a,[role=button]') : null; if (!b || W.__shSkip) return;
+    var r = b.getBoundingClientRect();
+    if (!(r.width > 0 && r.top > (W.innerHeight || 800) * 0.7)) return;
+    if (String(b.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase() === 'study') {
+      S.screen = 'home'; S.classic = false; shActive(false); setTimeout(guard, 60);   // runs after studyhub.js has armed its repaint
+    }
+  } catch (err) {}
+}, true);
+
+/* ---------- Profile: the old "Study engine" card now opens the hub ---------- */
+function retarget() {
+  var m = document.getElementById('main'); if (!m) return;
+  var bs = m.querySelectorAll('button');
+  for (var i = 0; i < bs.length; i++) {
+    var b = bs[i], t = String(b.textContent || '').replace(/\s+/g, ' ').trim();
+    if (t === 'Open the Study engine' && !b.getAttribute('data-sx')) {
+      b.setAttribute('data-sx', '1'); b.removeAttribute('onclick'); b.textContent = 'Open Study Hub';
+      b.onclick = function (ev) { ev.preventDefault(); S.screen = 'home'; S.classic = false; goB('study'); };
+      var card = b.parentNode, h = card && card.querySelectorAll ? card.querySelectorAll('div,h2,h3,span') : [];
+      for (var j = 0; j < h.length; j++) { if (!h[j].children.length && String(h[j].textContent).trim() === 'Study engine') h[j].textContent = 'Study Hub'; }
+    }
+  }
+}
+var tq = 0;
+try { new MutationObserver(function () { if (tq) return; tq = setTimeout(function () { tq = 0; retarget(); }, 120); }).observe(document.body, { childList: true, subtree: true }); } catch (e) {}
 })();
