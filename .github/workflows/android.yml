@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - master
+      - studyhub-rebuild-test
       - academic-summit-hotfix-courses
       - academic-summit-final-v4
       - academic-summit-console-fixes-v1
