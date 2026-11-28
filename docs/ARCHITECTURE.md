@@ -16,10 +16,13 @@ Read this first when you come back to the code after a long break. It only state
 5. **Phones cache scripts.** Every script tag carries `?v=N`. Change the file, raise N, or devices keep the old copy.
 6. **Splash:** `splash.js` draws the animated "Academic Summit" screen. The old static `#splash` block in `index.html` is kept (other code removes it) but its contents are hidden by a small style in `<head>`.
 
+7. **Avatar and profile routes.** For students, `go('aprof')` and `go('prof')` are redirected to the Profile page (`phub`) by `profilehub.js`. The old CGPA screen is still `aprof`, reached through the "Academic record" row. Lecturers are not redirected. The Profile page reads the old settings screen once so any button it does not know about appears under "More settings".
+
 ## Who owns what (one owner per feature)
 | Feature | File |
 |---|---|
 | Study Hub (hub, course panels, notes, practice, plan, progress) | `studyhub2.js` |
+| Student Profile page (tap the avatar: profile, preferences, privacy and support, sign out) | `profilehub.js` |
 | Classic Study workspace, timed sessions, planner | `studyhub.js` |
 | PDF/notes engine, reading sections, spaced review screens | `acad2.js` + `study-core.js` |
 | Attendance protections, planner, exports, exam clearance, student record | `attendance-upgrade.js` (several modules in one file) |

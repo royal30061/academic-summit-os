@@ -7,6 +7,7 @@ on:
       - main
       - master
       - studyhub-rebuild-test
+      - academic-summit-profile-page
       - academic-summit-hotfix-courses
       - academic-summit-final-v4
       - academic-summit-console-fixes-v1

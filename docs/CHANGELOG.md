@@ -1,5 +1,10 @@
 # Changelog
 
+## Profile page
+- Tapping the avatar opens one tidy Profile page (Profile, Preferences, Privacy and support, Sign out) instead of the long stacked settings screen. Every existing action is still there: personal and academic information, notifications, theme and dashboard style, privacy policy, data download and backup, support, FAQ, install, admin panel. Anything unknown from the old screen appears under "More settings".
+- The CGPA/trajectory screen is unchanged and reachable from "Academic record".
+- Touches attendance tables or functions: no.
+
 ## Hotfix: Add or edit courses
 - The Study Hub button now opens the classic Courses tab (where + Add and edit live). It used to open the Academics courses screen, which crashed for some accounts (screen shake, jump to Home).
 - Touches attendance tables or functions: no.
