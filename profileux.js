@@ -1,12 +1,14 @@
-/* Academic Summit - profileux.js v3: compact Profile per approved reference.
-   v3 drops the homepage-mode forcing (homeorder.js now owns the homepage).
-   Avatar single tap -> go('prof'). Identity card, PROFILE, PREFERENCES
-   (Display, Notifications), PRIVACY & SUPPORT, red Sign out. Real handlers
-   only; no dead rows. Lecturer profile, auth, data, DB untouched. */
+/* Academic Summit - profileux.js v4: compact grouped Profile, FAIL-SAFE.
+   Homepage is OFF-LIMITS: this file never touches V.home; it also restores the
+   homehub dashboard preference that homeorder.js had disabled.
+   If the new Profile render throws for ANY reason, it falls back to the
+   original V.prof, so the app can never blank or safe-mode because of it.
+   Undo = drop the tag. */
 (function(){
 'use strict';
-if(window.__asProfileUx)return;window.__asProfileUx='3';
+if(window.__asProfileUx)return;window.__asProfileUx='4';
 var W=window;
+var baseProf=(typeof V!=='undefined'&&typeof V.prof==='function')?V.prof:null;
 function fn(){for(var i=0;i<arguments.length;i++){if(typeof W[arguments[i]]==='function')return W[arguments[i]];}return null;}
 function findMark(){var d=fn('openMarks','marksOpen','showMarks','openSummitMarks','summitMarks');if(d)return d;for(var k in W){try{if(/mark/i.test(k)&&typeof W[k]==='function'&&!/benchmark/i.test(k))return W[k];}catch(e){}}return null;}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
@@ -44,12 +46,10 @@ W.__aboutSheet=function(){
   var b=(W.__AS_BUILD__||{});
   fullScreen('About Academic Summit','<div class="card space-y-2"><div class="font-extrabold">Academic Summit</div>'+
     '<p class="text-xs" style="color:var(--mut)">Build '+esc(b.ref||'dev')+' '+esc(String(b.sha||'').slice(0,7))+'</p>'+
-    '<p class="text-xs" style="color:var(--mut)">Your attendance, results and study space in one place.</p>'+
     '<button class="btn2 w-full" onclick="closeSheet();openPolicy()">Privacy policy</button>'+
     '<button class="btn2 w-full" onclick="closeSheet();openSupport()">Contact support</button></div>');
 };
-V.prof=function(){
-  var p=(U&&U.profile)||{};
+function mine(){
   var personal=fn('openInfoSheet'), edit=fn('openEditSheet'),
       academic=fn('openAcadSheet','openAcademicSheet','openAcadInfo')||edit,
       notif=fn('openNotifSheet'), policy=fn('openPolicy'),
@@ -81,22 +81,40 @@ V.prof=function(){
   if(admin&&typeof isAdmin==='function'&&isAdmin())h+=section('ADMIN',row(I.cap,'Open Admin Panel','Lecturer onboarding and controls','adminLoadLecturers()',true));
   if(out)h+='<button class="card w-full flex items-center gap-3 text-left" style="padding:14px 16px;margin-top:16px;color:#e11d48" onclick="logout()">'+I.out+'<span class="font-extrabold">Sign out</span></button>';
   return h+'</div>';
-};
-var marks=findMark();
-if(marks){
-  ['traj','acad'].forEach(function(v){
-    if(typeof V[v]==='function'){
-      var base=V[v];
-      V[v]=function(){
-        var h=base.apply(this,arguments);
-        if(typeof h==='string'&&h.indexOf('Summit Marks')<0){
-          h+='<button class="card w-full flex items-center gap-3 text-left" style="padding:14px 16px;margin-top:12px" onclick="__openMarks()">'+I.mark+'<span style="flex:1"><span class="font-extrabold block">Summit Marks</span><span class="block text-xs" style="color:var(--mut)">Achievements and progress</span></span><span style="color:var(--mut)">&rsaquo;</span></button>';
+}
+if(typeof V!=='undefined'){
+  V.prof=function(){
+    try{var h=mine();if(typeof h==='string'&&h.length>200)return h;}catch(e){}
+    return baseProf?baseProf.apply(this,arguments):'';
+  };
+  var marks=findMark();
+  if(marks){
+    ['traj','acad'].forEach(function(v){
+      try{
+        if(typeof V[v]==='function'){
+          var b2=V[v];
+          V[v]=function(){
+            var h=b2.apply(this,arguments);
+            try{
+              if(typeof h==='string'&&h.indexOf('Summit Marks')<0){
+                h+='<button class="card w-full flex items-center gap-3 text-left" style="padding:14px 16px;margin-top:12px" onclick="__openMarks()">'+I.mark+'<span style="flex:1"><span class="font-extrabold block">Summit Marks</span><span class="block text-xs" style="color:var(--mut)">Achievements and progress</span></span><span style="color:var(--mut)">&rsaquo;</span></button>';
+              }
+            }catch(e){}
+            return h;
+          };
         }
-        return h;
-      };
-    }
-  });
-  W.__openMarks=function(){marks();};
+      }catch(e){}
+    });
+    W.__openMarks=function(){try{marks();}catch(e){}};
+  }
+}
+function restoreHome(){
+  try{
+    localStorage.removeItem('as_hh_off');
+    localStorage.setItem('as_home_mode','new');
+    sessionStorage.removeItem('as_hh_classic');
+    var c=document.getElementById('hh-return');if(c)c.remove();
+  }catch(e){}
 }
 function forceAvatar(){
   try{
@@ -106,6 +124,6 @@ function forceAvatar(){
   }catch(e){}
 }
 var s0=W.start;
-W.start=function(){var r=s0.apply(this,arguments);forceAvatar();return r;};
-setInterval(forceAvatar,2000);
+W.start=function(){var r=s0.apply(this,arguments);try{restoreHome();forceAvatar();}catch(e){}return r;};
+setInterval(function(){try{forceAvatar();}catch(e){}},2000);
 })();
