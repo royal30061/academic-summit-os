@@ -27,7 +27,7 @@ function tile(icon,label,sub,js){
     '<span class="font-extrabold block" style="font-size:13px;margin-top:6px">'+esc(label)+'</span>'+
     '<span class="block text-xs" style="color:var(--mut);margin-top:2px">'+esc(sub)+'</span></button>';
 }
-W.V.home=function(){
+V.home=function(){
   var p=(U&&U.profile)||{};
   var c=(typeof cum==='function')?cum():{u:0,q:0,g:0};
   var tot=p.totalUnits||120;
@@ -48,7 +48,7 @@ W.V.home=function(){
      tile(IC.study,'Start studying','Focus session','go(\'study\')')+
      tile(IC.plan,'Plan','Tests & classes','go(\'plan\')')+
      '</div>';
-  var td=today(), d=dow();
+  var td=iso(), d=dow();
   var cls=((U.timetable)||[]).filter(function(r){return +r.day===d;}).sort(function(a,b){return (a.start||'')<(b.start||'')?-1:1;});
   var sess=((U.sh&&U.sh.plan)||[]).filter(function(x){return x.kind==='session'&&x.date===td&&!x.done;});
   h+='<div class="card p-5 space-y-2"><div class="font-extrabold">Today</div>'+

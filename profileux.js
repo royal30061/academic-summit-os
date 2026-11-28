@@ -48,7 +48,7 @@ W.__aboutSheet=function(){
     '<button class="btn2 w-full" onclick="closeSheet();openPolicy()">Privacy policy</button>'+
     '<button class="btn2 w-full" onclick="closeSheet();openSupport()">Contact support</button></div>');
 };
-W.V.prof=function(){
+V.prof=function(){
   var p=(U&&U.profile)||{};
   var personal=fn('openInfoSheet'), edit=fn('openEditSheet'),
       academic=fn('openAcadSheet','openAcademicSheet','openAcadInfo')||edit,
@@ -85,9 +85,9 @@ W.V.prof=function(){
 var marks=findMark();
 if(marks){
   ['traj','acad'].forEach(function(v){
-    if(typeof W.V[v]==='function'){
-      var base=W.V[v];
-      W.V[v]=function(){
+    if(typeof V[v]==='function'){
+      var base=V[v];
+      V[v]=function(){
         var h=base.apply(this,arguments);
         if(typeof h==='string'&&h.indexOf('Summit Marks')<0){
           h+='<button class="card w-full flex items-center gap-3 text-left" style="padding:14px 16px;margin-top:12px" onclick="__openMarks()">'+I.mark+'<span style="flex:1"><span class="font-extrabold block">Summit Marks</span><span class="block text-xs" style="color:var(--mut)">Achievements and progress</span></span><span style="color:var(--mut)">&rsaquo;</span></button>';
