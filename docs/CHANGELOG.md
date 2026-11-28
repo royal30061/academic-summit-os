@@ -1,5 +1,9 @@
 # Changelog
 
+## Hotfix: Add or edit courses
+- The Study Hub button now opens the classic Courses tab (where + Add and edit live). It used to open the Academics courses screen, which crashed for some accounts (screen shake, jump to Home).
+- Touches attendance tables or functions: no.
+
 ## Final build v4
 - **Study Hub is now a working area, not just a front.** Each course has four panels: Notes (paste and save), Practice (review due questions, or make new ones from the notes), Plan (topics), Progress (exposure, recall, mastery from real records). It uses the same stored questions as the classic screens. PDF upload and timed sessions still open the classic screens.
 - **Hub fixes:** the classic Study screen no longer paints over the hub; hand-offs check they opened and say why if not; "(manual)" course titles hidden; Profile "Study engine" opens the hub.

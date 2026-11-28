@@ -22,8 +22,10 @@ module.exports = async function () {
   T('missing screen: says why and opens the classic course page', c.toasts.some(t => /acad2 is not loaded/.test(t)) && c.calls.includes('shOpen:POS213'));
   c = L.world({ deadGo: true }); c.load('studyhub2.js'); c.go('study'); c.sxOpen('POS213'); c.calls.length = 0; c.sxMaterials('POS213'); c.run(900);
   T('a tap that does nothing is detected and falls back', c.toasts.some(t => /nothing happened/.test(t)) && c.calls.includes('shOpen:POS213'));
-  c = L.world(); c.load('studyhub2.js'); c.go('study'); c.calls.length = 0; c.sxCourses(); c.run(900); T('Add or edit courses opens the courses screen', c.main.innerHTML === 'ACAD SCREEN');
-  c = L.world({ deadGo: true }); c.load('studyhub2.js'); c.go('study'); c.calls.length = 0; c.sxCourses(); c.run(900); T('...and falls back to the classic Courses tab if it cannot', c.calls.includes('shTab:courses'));
+  c = L.world(); c.load('studyhub2.js'); c.go('study'); c.calls.length = 0; c.sxCourses(); c.run(900);
+  T('Add or edit courses opens the classic Courses tab (where + Add lives)', c.calls.includes('shTab:courses') && /CLASSIC/.test(c.main.innerHTML) && !c.toasts.length);
+  T('...and never goes through the Academics screen that crashed', !c.calls.includes('go:acad'));
+  c = L.world({ deadGo: true }); c.load('studyhub2.js'); c.go('study'); c.calls.length = 0; c.sxCourses(); c.run(900); T('...the same on a slow or odd screen: no error toast, no jump to Home', c.calls.includes('shTab:courses') && !c.calls.includes('go:home') && !c.toasts.length);
   /* --- in-hub engine --- */
   const NOTES = 'Thomas Hobbes published Leviathan in 1651 during the English Civil War. The Peace of Westphalia was signed in 1648 and ended the Thirty Years War in Europe. Niccolo Machiavelli wrote The Prince in 1513 for the Medici family in Florence. Hans Morgenthau published Politics Among Nations in 1948 and shaped classical realism after the Second World War. Kenneth Waltz published Theory of International Politics in 1979 and founded structural realism in the discipline.';
   const html = x => x.main.innerHTML;

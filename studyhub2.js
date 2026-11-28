@@ -1,4 +1,5 @@
-/* Academic Summit - studyhub2.js v4  (unified Study Hub)
+/* Academic Summit - studyhub2.js v4.1  (unified Study Hub)
+   v4.1: "Add or edit courses" opens the classic Courses tab directly (it used to try the Academics screen, which crashed for some accounts).
    v4: the hub now does the work itself. Each course has four working panels - Notes (paste/save), Practice (review due questions or
    make new ones from the notes, with the same spaced-review data the classic screens use), Plan (topics) and Progress.
    PDF upload and timed sessions still use the classic screens.
@@ -18,7 +19,7 @@
 (function () {
 'use strict';
 var W = window;
-if (W.__asHub2) return; W.__asHub2 = '4';
+if (W.__asHub2) return; W.__asHub2 = '4.1';
 
 var S = { screen: 'home', fn: 'materials', code: null, classic: false };
 var FN = {
@@ -385,8 +386,9 @@ W.sxPick = function (fn) { S.fn = fn; S.screen = 'list'; repaint(); };
 W.sxList = function () { S.screen = 'list'; S.pr = null; repaint(); };
 W.sxOpen = function (key) { S.code = key; S.screen = 'course'; S.pr = null; repaint(); };
 W.sxCourses = function () {
-  try { if (typeof aTab !== 'undefined') aTab = 'crs'; if (typeof editing !== 'undefined') editing = null; } catch (e) {}
-  hand('acad', null, function () { classic(function () { if (W.shTab) W.shTab('courses'); }); });
+  /* The classic Courses tab (with its + Add button) is the real place to add and edit courses. The Academics courses screen this used to
+     open crashes for some accounts, which showed as a shake and a jump to Home. */
+  classic(function () { if (W.shTab) W.shTab('courses'); else toast('Could not open the course list', 'error'); });
 };
 W.sxResume = function (key) { classic(function () { if (W.shStudy) W.shStudy(key); }); };
 W.sxMaterials = function (key) {
