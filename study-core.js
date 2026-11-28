@@ -1,8 +1,16 @@
-/* Academic Summit - study-core.js v1
+/* Academic Summit - study-core.js v2
    Pure study logic: no screens, no network, no storage. Plain data in, plain data out,
    so any screen can use it and it can be tested in Termux with: node study-core.test.js
 
-   Decisions taken for the spec's open points:
+   v2 changes (question generation rewrite):
+   - Aggressive cleaning of headers, outlines, page markers, course-code lines.
+   - Prefer real academic terms (definitions, comparisons, multi-word concepts)
+     over bare months, years, and administrative fluff.
+   - Quality gates so "November 2026", "Lecture Today", "COURSE OUTLINE" never become answers.
+   - Frequency signal + definitional-pattern boost.
+   - Slightly smarter answer checking for multi-word phrases.
+
+   Decisions kept from v1:
    - A wrong answer reveals the correct answer and never blocks by itself. A section unlocks
      at 60% correct; below that the weak questions are asked again.
    - Day 1 has nothing to review, so the lock only starts after the first session.
@@ -18,10 +26,11 @@ var LEVELS = [
 ];
 var MIN_PER_COURSE = 15, MAX_COURSES = 4, WPM = 220, GAPS = [2, 4, 6];
 var MONTHS = 'January|February|March|April|May|June|July|August|September|October|November|December';
-var NOT_NAME = new RegExp('^(' + MONTHS + '|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)$');
+var NOT_NAME = new RegExp('^(' + MONTHS + '|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)$', 'i');
 var STOP = { The:1, This:1, That:1, These:1, Those:1, There:1, Then:1, They:1, His:1, Her:1, Its:1, Our:1,
   But:1, And:1, For:1, From:1, With:1, However:1, Also:1, Thus:1, Because:1, Although:1, When:1, While:1,
-  After:1, Before:1, During:1, Some:1, Many:1, Most:1, Each:1, Every:1, One:1, Two:1, Three:1 };
+  After:1, Before:1, During:1, Some:1, Many:1, Most:1, Each:1, Every:1, One:1, Two:1, Three:1,
+  Page:1, Section:1, Course:1, Lecture:1, Notes:1, Outline:1, Unit:1, Chapter:1, Topic:1 };
 
 /* ---------- dates (ISO yyyy-mm-dd, UTC, no timezone surprises) ---------- */
 function addDays(s, n) { var d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
@@ -33,7 +42,6 @@ function levelFor(perCourseMin) {
   for (var i = LEVELS.length - 1; i >= 0; i--) if (perCourseMin >= LEVELS[i].per) return LEVELS[i];
   return LEVELS[0];
 }
-/* minutes: what the student chose; courses: [{code, weak?}]; last: {code: 'yyyy-mm-dd'}; want: how many (default 2) */
 function planDay(minutes, courses, last, want) {
   last = last || {};
   var cap = Math.min(MAX_COURSES, courses.length, Math.floor(minutes / MIN_PER_COURSE));
@@ -75,25 +83,184 @@ function splitSections(text, target) {
   if (cur2) { if (out.length && words(cur2) < target * 0.4) out[out.length - 1] += '\n\n' + cur2; else out.push(cur2); }
   return out.map(function (t, i) { var w = words(t); return { i: i, text: t, words: w, lock: lockSeconds(w) }; });
 }
+/* ---------- text cleaning (v2) ---------- */
+function cleanMaterial(text) {
+  var lines = String(text || '').replace(/\r/g, '').split('\n');
+  var kept = [];
+  for (var i = 0; i < lines.length; i++) {
+    var L = lines[i].trim();
+    if (!L) { kept.push(''); continue; }
 
-/* ---------- main points: dates and proper nouns ---------- */
-function sentences(t) {
-  return (String(t).replace(/\s+/g, ' ').match(/[^.!?]+[.!?]+(?=\s|$)|[^.!?]+$/g) || []).map(function (s) { return s.trim(); }).filter(Boolean);
+    if (/^(COURSE\s+OUTLINE|LECTURE\s+NOTES?|PAGE\s+\d+|SECTION\s+\d+\s+of\s+\d+|UNIT\s+\d+|CHAPTER\s+\d+)\s*$/i.test(L)) continue;
+    if (/^Question\s+\d+\s+of\s+\d+/i.test(L)) continue;
+    if (/^\(?from class\)?\s*$/i.test(L)) continue;
+    if (L.length < 35 && L === L.toUpperCase() && /[A-Z]{5,}/.test(L)) continue;
+
+    L = L.replace(/\bextended with contemporary issues to\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}\b/gi, '');
+    L = L.replace(/\bto\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}\s+COURSE\s+OUTLINE\b/gi, '');
+    L = L.replace(/\bCOURSE\s+OUTLINE\s*\(from class\)\s*\d*\.?/gi, '');
+    L = L.replace(/\bLECTURE\s+NOTES?\s*(\|?\s*Page\s+\d+)?/gi, '');
+    L = L.replace(/\b\d+-unit\s+course\s+notes?\b/gi, '');
+    L = L.replace(/\|\s*Africa and Nigeria focus\b/gi, '');
+    L = L.replace(/\b\(lecturer'?s?\s+wording[^)]*\)/gi, '');
+    L = L.replace(/\bedited for transcription errors\b/gi, '');
+    L = L.replace(/\bSection\s+\d+\s+of\s+\d+\s*\|\s*course\s+\d+\s+of\s+\d+/gi, '');
+    L = L.replace(/\s{2,}/g, ' ').trim();
+
+    if (L.length < 8) continue;
+    kept.push(L);
+  }
+  return kept.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
-function clean(w) { return w.replace(/^[("'\[]+|[)"'\],;:.!?]+$/g, '').replace(/['\u2019]s$/, ''); }
+
+/* ---------- main points ---------- */
+function sentences(t) {
+  var raw = String(t).replace(/\s+/g, ' ').trim();
+  if (!raw) return [];
+  raw = raw.replace(/\s*\|\s*/g, '. ').replace(/\s*,\s*Chapter\s+\d+/gi, '. Chapter');
+  var parts = raw.match(/[^.!?]+[.!?]+(?=\s|\( )|[^.!?]+ \)/g) || [raw];
+  return parts.map(function (s) { return s.trim(); }).filter(function (s) { return s.length > 15; });
+}
+function clean(w) { return w.replace(/^[("'\[]+|[)"'\],;:.!?]+\( /g, '').replace(/['\u2019]s \)/, ''); }
 function isCap(w) { return /^[A-Z][a-z]{2,}$/.test(w) && !STOP[w]; }
 function namesIn(s) {
   var toks = s.split(/\s+/), out = [], cur = [];
   function flush() { if (cur.length) out.push(cur.join(' ')); cur = []; }
   for (var i = 0; i < toks.length; i++) {
-    var w = clean(toks[i]), ok = isCap(w);
-    if (ok && i === 0 && !isCap(clean(toks[1] || ''))) ok = false;
+    var raw = toks[i], w = clean(raw);
+    var ok = isCap(w);
+    if (!ok && cur.length && /^(of|the|and|in|for|on|to|a|an)$/i.test(w) && i + 1 < toks.length && isCap(clean(toks[i + 1]))) {
+      cur.push(w);
+      continue;
+    }
+    if (ok && i === 0 && !isCap(clean(toks[1] || '')) && cur.length === 0) ok = false;
     if (ok) cur.push(w); else flush();
-    if (ok && /[,;:.!?)]$/.test(toks[i])) flush();
+    if (ok && /[,;:.!?)]$/.test(raw)) flush();
   }
   flush();
   return out;
 }
+
+function extractTerms(sentence, wholeText) {
+  var terms = [];
+  var s = sentence;
+
+  namesIn(s).forEach(function (n) {
+    if (n.length >= 5 && !NOT_NAME.test(n) && !/^(The|This|That|These|Those|There)\b/i.test(n)) {
+      terms.push({ term: n, score: 4 + Math.min(n.split(' ').length * 1.5, 5), kind: 'name' });
+    }
+  });
+
+  var defPatterns = [
+    { re: /\b(?:Foundations?|Scope|Nature|Meaning|Concept|Theory|Principle|Origin|Emergence)\s+of\s+([A-Z][a-zA-Z]*(?:\s+[A-Z]?[a-zA-Z]*){0,3})\b/i, score: 10 },
+    { re: /\b([A-Z][a-zA-Z]*(?:\s+[A-Z][a-zA-Z]*){0,3})\s+(?:is|are|refers? to|means|involves?|consists? of|emerged|developed|differs? from)\b/i, score: 9 },
+    { re: /\b(?:the\s+)?(?:difference|distinction|relationship|connection)\s+between\s+([A-Z][a-zA-Z]*(?:\s+[A-Z]?[a-zA-Z]*){0,4})\b/i, score: 9 },
+    { re: /\b([A-Z][a-zA-Z]*(?:\s+[A-Z][a-zA-Z]*){0,2})\s+(?:and|versus|vs\.?|vs)\s+([A-Z][a-zA-Z]*(?:\s+[A-Z][a-zA-Z]*){0,2})\b/, score: 8 }
+  ];
+  defPatterns.forEach(function (p) {
+    var m = p.re.exec(s);
+    if (m) {
+      for (var g = 1; g < m.length; g++) {
+        var cand = (m[g] || '').trim().replace(/\s+and\( /, '').replace(/\s+and\s* \)/, '');
+        if (cand.length >= 5 && !NOT_NAME.test(cand) && !/^(the|a|an)\s/i.test(cand)) {
+          terms.push({ term: cand, score: p.score, kind: 'concept' });
+        }
+      }
+    }
+  });
+
+  var histDate = /\b(?:in|since|after|before|during|by|from)\s+(\d{4}|\d{1,2}(?:st|nd|rd|th)?\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})\b/i;
+  var hm = histDate.exec(s);
+  if (hm && hm[1]) {
+    terms.push({ term: hm[1], score: 5, kind: 'date' });
+  }
+
+  terms.forEach(function (t) {
+    try {
+      var re = new RegExp('\\b' + t.term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi');
+      var count = (wholeText.match(re) || []).length;
+      if (count >= 2) t.score += Math.min(count, 4);
+    } catch (e) {}
+  });
+
+  var best = {};
+  terms.forEach(function (t) {
+    var k = t.term.toLowerCase();
+    if (!best[k] || t.score > best[k].score) best[k] = t;
+  });
+  return Object.keys(best).map(function (k) { return best[k]; });
+}
+
+function isJunkAnswer(term) {
+  if (!term || term.length < 4) return true;
+  var t = term.trim();
+  if (NOT_NAME.test(t)) return true;
+  if (/^(1[0-9]{3}|20[0-9]{2})$/.test(t)) return true;
+  if (/^(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}$/i.test(t)) return true;
+  if (/^(Lecture|Notes?|Outline|Page|Section|Course|Unit|Chapter|Today|Tomorrow|Yesterday|Scope|Focus|Notes)$/i.test(t)) return true;
+  if (/COURSE\s+OUTLINE/i.test(t)) return true;
+  if (/Lecture\s+(Notes?|Today)/i.test(t)) return true;
+  if (/\b(and|of|the|to|in|for|on|at|by|with)$/i.test(t)) return true;
+  if (t.split(/\s+/).length === 1 && t.length < 6) return true;
+  return false;
+}
+
+function questionsFor(text, n) {
+  n = n || 5;
+  var cleaned = cleanMaterial(text);
+  if (!cleaned || words(cleaned) < 12) return [];
+
+  var cands = [], seen = {};
+  var allSents = sentences(cleaned);
+
+  if (allSents.length < 2 && words(cleaned) >= 15) {
+    allSents = [cleaned].concat(allSents);
+  }
+
+  allSents.forEach(function (s) {
+    var w = words(s);
+    if (w < 6 || w > 70) return;
+    if (/^(POS|GST|GNS|CSC|MTH)\s*\d{3}/i.test(s) && w < 15) return;
+
+    var terms = extractTerms(s, cleaned);
+    terms.sort(function (a, b) { return b.score - a.score; });
+
+    for (var i = 0; i < terms.length; i++) {
+      var t = terms[i];
+      if (isJunkAnswer(t.term)) continue;
+      if (seen[t.term.toLowerCase()]) continue;
+
+      var cloze = s.replace(t.term, '_____');
+      if (cloze === s) continue;
+      if (cloze.indexOf('_____') === 0 && w < 12) continue;
+
+      seen[t.term.toLowerCase()] = 1;
+      cands.push({
+        q: cloze,
+        a: t.term,
+        kind: t.kind,
+        src: s,
+        score: t.score
+      });
+      break;
+    }
+  });
+
+  cands.sort(function (a, b) { return b.score - a.score; });
+
+  if (cands.length <= n) return cands.map(function (c) { return { q: c.q, a: c.a, kind: c.kind, src: c.src }; });
+
+  var out = [], used = {};
+  for (var i = 0; i < cands.length && out.length < n; i++) {
+    var c = cands[i];
+    var key = c.a.toLowerCase();
+    if (used[key]) continue;
+    used[key] = 1;
+    out.push({ q: c.q, a: c.a, kind: c.kind, src: c.src });
+  }
+  return out;
+}
+
 function mainPoints(text) {
   var dates = [], names = [], m;
   var re1 = new RegExp('\\b(?:\\d{1,2}(?:st|nd|rd|th)?\\s+)?(?:' + MONTHS + ')(?:\\s+\\d{1,2}(?:st|nd|rd|th)?,?)?\\s+\\d{4}\\b', 'g');
@@ -102,24 +269,6 @@ function mainPoints(text) {
   while ((m = re2.exec(text))) { var y = m[1]; if (!dates.some(function (d) { return d.indexOf(y) > -1; })) dates.push(y); }
   sentences(text).forEach(function (s) { namesIn(s).forEach(function (x) { if (names.indexOf(x) < 0 && !NOT_NAME.test(x)) names.push(x); }); });
   return { dates: dates, names: names };
-}
-/* fill-in-the-blank questions built from the dates and names in the text itself */
-function questionsFor(text, n) {
-  n = n || 5;
-  var cands = [], seen = {};
-  sentences(text).forEach(function (s) {
-    var w = words(s); if (w < 6 || w > 45) return;
-    var mp = mainPoints(s);
-    var term = mp.dates[0] || mp.names.slice().sort(function (a, b) { return b.length - a.length; })[0];
-    if (!term || seen[term]) return;
-    var cloze = s.replace(term, '_____'); if (cloze === s) return;
-    seen[term] = 1;
-    cands.push({ q: cloze, a: term, kind: mp.dates[0] ? 'date' : 'name', src: s });
-  });
-  if (cands.length <= n) return cands;
-  var out = [], step = cands.length / n;
-  for (var i = 0; i < n; i++) out.push(cands[Math.floor(i * step)]);
-  return out;
 }
 
 /* ---------- answers and section grading ---------- */
@@ -136,11 +285,26 @@ function checkAnswer(user, ans) {
   var u = norm(user), a = norm(ans);
   if (!u) return false;
   if (u === a) return true;
-  if (/\d/.test(a)) return false;                       /* dates must be exact */
-  var parts = a.split(' ');
-  if (parts.length > 1 && parts.some(function (t) { return t.length >= 4 && t === u; })) return true;
+
+  if (/\d/.test(a) && /\d/.test(u) === false) return false;
+  if (/\d/.test(a)) {
+    if (u.indexOf(a) !== -1 || a.indexOf(u) !== -1) return true;
+    return false;
+  }
+
+  var parts = a.split(' ').filter(function (t) { return t.length >= 4; });
+  if (parts.length > 1) {
+    var hit = parts.filter(function (t) { return u.indexOf(t) !== -1; }).length;
+    if (hit >= Math.ceil(parts.length * 0.6)) return true;
+  }
+
+  if (parts.length >= 1 && parts.some(function (t) { return t === u; })) return true;
+
   if (a.length >= 5 && lev(u, a) <= 1) return true;
-  return a.length >= 9 && lev(u, a) <= 2;
+  if (a.length >= 9 && lev(u, a) <= 2) return true;
+  if (a.length >= 14 && lev(u, a) <= 3) return true;
+
+  return false;
 }
 function gradeSection(results, passMark) {
   passMark = passMark || 0.6;
@@ -150,15 +314,14 @@ function gradeSection(results, passMark) {
   results.forEach(function (r, i) { if (!r.ok || (med && r.ms > med * 1.5 && r.ms > 8000)) weak.push(i); });
   return { score: ok / n, pass: ok / n >= passMark, weak: weak, medianMs: med };
 }
-
-/* ---------- spaced repetition: the 2-4-6 system ---------- */
+/* ---------- spaced repetition ---------- */
 function newItem(o, created) {
   return { id: o.id || (created + '-' + Math.random().toString(36).slice(2, 8)), course: o.course, section: o.section || 0,
     q: o.q, a: o.a, kind: o.kind || 'name', created: created, due: addDays(created, GAPS[0]), phase: 0, weak: o.weak || 0, done: false };
 }
 function advance(it, ok, ms, today, slowMs) {
   var x = {}; for (var k in it) x[k] = it[k];
-  if (ms > (slowMs || 20000)) x.weak = (x.weak || 0) + 1;      /* slow answers count as weak spots */
+  if (ms > (slowMs || 20000)) x.weak = (x.weak || 0) + 1;
   if (ok) {
     if (x.phase >= GAPS.length - 1) { x.done = true; x.due = null; }
     else { x.phase++; x.due = addDays(x.created, GAPS[x.phase]); if (x.due <= today) x.due = addDays(today, 1); }
@@ -184,7 +347,7 @@ function monthlyRecap(items, today, cap) {
   return { total: pool.length, days: days.slice(0, 2), marathon: pool.length > cap, overflow: Math.max(0, pool.length - cap * 2) };
 }
 
-/* ---------- streak (rest days are weekday numbers 0-6, Sunday = 0) ---------- */
+/* ---------- streak ---------- */
 function missed(last, today, rest) {
   rest = rest || []; var c = 0;
   for (var d = addDays(last, 1); d < today; d = addDays(d, 1)) if (rest.indexOf(weekday(d)) < 0) c++;
@@ -196,8 +359,6 @@ function updateStreak(st, today, rest) {
   var count = st.last && missed(st.last, today, rest) === 0 ? st.count + 1 : 1;
   return { count: count, last: today, best: Math.max(st.best || 0, count) };
 }
-/* Streak rebuilt from the dates the student really studied, plus any missed days they
-   made up (repaired). A made-up day counts as a studied day. Pure: no UI, no storage. */
 function streakFromDays(days, today, rest, repaired) {
   var seen = {}, all = [];
   (days || []).concat(repaired || []).forEach(function (d) { if (d && d <= today && !seen[d]) { seen[d] = 1; all.push(d); } });
@@ -219,9 +380,6 @@ function streakStatus(st, today, rest) {
   return { count: m > 0 ? 0 : st.count, doneToday: false, atRisk: m === 0, broken: m > 0 };
 }
 
-/* ---------- which CGPA to show ----------
-   While results are still being released, the portal's CGPA is the official number.
-   The figure worked out from the released results is shown as a projection beside it. */
 function pickCgpa(o) {
   var portal = o.portal, computed = o.computed, pending = o.pendingUnits || 0;
   if (portal != null && (pending > 0 || computed == null)) return { value: portal, label: 'Portal CGPA', projected: computed != null ? computed : null };
@@ -234,6 +392,7 @@ var API = { LEVELS: LEVELS, MIN_PER_COURSE: MIN_PER_COURSE, MAX_COURSES: MAX_COU
   splitSections: splitSections, sentences: sentences, mainPoints: mainPoints, questionsFor: questionsFor,
   checkAnswer: checkAnswer, gradeSection: gradeSection, newItem: newItem, advance: advance, dueNow: dueNow,
   isLocked: isLocked, previousSessionQuiz: previousSessionQuiz, recapDue: recapDue, monthlyRecap: monthlyRecap,
-  updateStreak: updateStreak, streakStatus: streakStatus, streakFromDays: streakFromDays, pickCgpa: pickCgpa };
+  updateStreak: updateStreak, streakStatus: streakStatus, streakFromDays: streakFromDays, pickCgpa: pickCgpa,
+  cleanMaterial: cleanMaterial };
 if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.StudyCore = API;
 })(typeof window !== 'undefined' ? window : this);
