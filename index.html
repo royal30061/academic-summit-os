@@ -107,6 +107,7 @@ input:checked+.sw::after{left:23px;background:#02120c}
 body[data-role="lecturer"] #tour-fab{display:none!important}
 @media print{aside,nav,header,.np,#toast-container{display:none!important}body{background:#fff!important;color:#000!important}.card{box-shadow:none!important;border:1px solid #ccc!important}}
 </style>
+<style id="as-nostatic-splash">@media (prefers-reduced-motion:no-preference){#splash>*{visibility:hidden!important}}</style>
 </head>
 <body class="antialiased">
 </style>
@@ -1090,7 +1091,7 @@ function liveRestore(){
     const e=$(id);if(!e||!v)return;
     if(e.tagName==='SELECT'){if(Array.from(e.options).some(o=>o.value===v))e.value=v;}else e.value=v;
   };
-  if(window.__lrDone!==s.id){window.__lrDone=s.id;put('lec-course',s.course);put('lec-topic',s.topic);put('lec-level',s.level);}
+  if(window.__lrDone!==s.id){window.__lrDone=s.id;if(window.__lrDone!==s.id){window.__lrDone=s.id;put('lec-course',s.course);put('lec-topic',s.topic);put('lec-level',s.level);}}
   const lp=$('live-panel');if(lp)lp.classList.remove('hidden');
   liveRun();
 }
@@ -3242,7 +3243,7 @@ start=function(){_start63();setTimeout(function(){homeExtras();acadExtras();},25
 <script src="attend-qr.js?v=2708"></script>
 <script src="attend-guard.js?v=2708"></script>
 <script src="attendance-upgrade.js?v=2709"></script>
-<script src="ble.js?v=3"></script>
+<script src="ble.js?v=4"></script>
 <script src="welcome.js?v=2708"></script>
 <script src="installfix.js?v=2708"></script>
 
@@ -3262,8 +3263,8 @@ start=function(){_start63();setTimeout(function(){homeExtras();acadExtras();},25
 <script src="announce.js?v=2708"></script>
 <script src="smooth.js?v=2708"></script>
 <script src="native-boot.js?v=2708"></script>
-<script src="pinfix.js?v=2708"></script><script src="helpfix.js?v=2708"></script><script src="uxfix.js?v=2708"></script><script src="replist.js?v=2708"></script><script src="matricguard.js?v=2708"></script><script src="reissuegate.js?v=2708"></script><script src="reptime.js?v=2708"></script><script src="studystart.js?v=2708"></script><script src="leccourse.js?v=2708"></script><script src="coursefeed.js?v=2708"></script><script src="studyhub2.js?v=2"></script>
-<script src="lecconsole.js?v=1"></script>
+<script src="pinfix.js?v=2708"></script><script src="helpfix.js?v=2708"></script><script src="uxfix.js?v=2708"></script><script src="replist.js?v=2708"></script><script src="matricguard.js?v=2708"></script><script src="reissuegate.js?v=2708"></script><script src="reptime.js?v=2708"></script><script src="studystart.js?v=2708"></script><script src="leccourse.js?v=2709"></script><script src="coursefeed.js?v=2708"></script><script src="studyhub2.js?v=3"></script>
+<script src="lecconsole.js?v=2"></script>
 </body>
 </html>
 

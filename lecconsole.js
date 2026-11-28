@@ -1,4 +1,9 @@
-/* Academic Summit - lecconsole.js v1
+/* Academic Summit - lecconsole.js v3
+   v3: plain-language wording ("Nearby check-in" instead of "Bluetooth with the code") on both the lecturer and student screens.
+   Earlier: v2 field guard; v1 switch, range picker hidden, student button always shown.
+   (history below is from v2)
+   v2: keeps course codes out of boxes that are not course boxes (Level, Topic, matric, notes). Something was writing the lecturer's
+   course code into every empty box. Anything the lecturer types themselves is never touched.
    (1) Lecturer console: a visible "Bluetooth with the code" switch beside Generate Code. Bluetooth runs ALONGSIDE the 5-digit code
        (never instead of it). On the website, or in an app build without the Bluetooth plugin, the switch is shown but disabled with a
        plain explanation.
@@ -9,7 +14,7 @@
 (function () {
 'use strict';
 var W = window;
-if (W.__asLecConsole) return; W.__asLecConsole = '1';
+if (W.__asLecConsole) return; W.__asLecConsole = '3';
 
 var KEY = 'as_lec_ble';
 function toast(m, t) { try { showToast(m, t); } catch (e) {} }
@@ -44,15 +49,15 @@ var BT = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="cu
 
 /* ---------- (1) lecturer: Bluetooth switch beside the code button ---------- */
 function state() {
-  if (!native()) return { ok: false, on: false, msg: 'Bluetooth works in the Android app. The 5-digit code works everywhere.' };
-  if (!bleReady()) return { ok: false, on: false, msg: 'Update the Android app to turn Bluetooth on. The 5-digit code still works.' };
+  if (!native()) return { ok: false, on: false, msg: 'Nearby check-in works in the Android app. The 5-digit code works everywhere.' };
+  if (!bleReady()) return { ok: false, on: false, msg: 'Update the Android app to use nearby check-in. The 5-digit code still works.' };
   var on = wanted();
-  return { ok: true, on: on, msg: on ? 'Students near you can mark by Bluetooth as well as with the 5-digit code.' : 'Students use the 5-digit code only.' };
+  return { ok: true, on: on, msg: on ? 'Students close to you can check in on their phones without typing the code. The 5-digit code still works.' : 'Students use the 5-digit code only.' };
 }
 function ctlHtml() {
   var s = state();
-  return '<div class="lb-chip">' + BT + '</div><div class="flex-1 min-w-0" style="flex:1;min-width:0"><div class="lb-t">Bluetooth with the code</div><div class="lb-s" id="lb-msg">' + s.msg + '</div></div>' +
-    '<button type="button" class="lb-sw" id="lb-sw" role="switch" aria-label="Bluetooth with the code" aria-checked="' + (s.on ? 'true' : 'false') + '"' + (s.ok ? '' : ' disabled') + ' onclick="lbToggle()"></button>';
+  return '<div class="lb-chip">' + BT + '</div><div class="flex-1 min-w-0" style="flex:1;min-width:0"><div class="lb-t">Nearby check-in</div><div class="lb-s" id="lb-msg">' + s.msg + '</div></div>' +
+    '<button type="button" class="lb-sw" id="lb-sw" role="switch" aria-label="Nearby check-in" aria-checked="' + (s.on ? 'true' : 'false') + '"' + (s.ok ? '' : ' disabled') + ' onclick="lbToggle()"></button>';
 }
 function inject() {
   try {
@@ -69,8 +74,8 @@ W.lbToggle = function () {
   var s = state(); if (!s.ok) return toast(s.msg);
   var next = !s.on; lss(KEY, next ? '1' : '0'); refresh();
   try {
-    if (!next) { W.ASBle.lecturerStop(); toast('Bluetooth off. Students use the code.'); }
-    else { var id = liveId(); if (id) { W.ASBle.lecturerStart(id); toast('Bluetooth on for this class.'); } else toast('Bluetooth will start with your next code.'); }
+    if (!next) { W.ASBle.lecturerStop(); toast('Nearby check-in is off. Students use the code.'); }
+    else { var id = liveId(); if (id) { W.ASBle.lecturerStart(id); toast('Nearby check-in is on for this class.'); } else toast('Nearby check-in will start with your next code.'); }
   } catch (e) {}
 };
 /* the class-start hook in index.html calls ASBle.lecturerStart(): honour the switch there */
@@ -85,21 +90,48 @@ W.lbToggle = function () {
   var base = (typeof V !== 'undefined') ? V.att : null; if (typeof base !== 'function') return;
   V.att = function () {
     var h = base.apply(this, arguments);
-    if (typeof h !== 'string' || h.indexOf('as-alt-methods') < 0 || h.indexOf('asBleMark(this)') > -1) return h;
+    if (typeof h !== 'string' || h.indexOf('as-alt-methods') < 0) return h;
+    if (h.indexOf('asBleMark(this)') > -1) return h.replace(/Mark by Bluetooth/g, 'Check in nearby').replace(/\(stand near the lecturer\)/g, '(stand near your lecturer)');
     var ok = native() && bleReady();
-    var b = '<button class="btn2 w-full" onclick="asBleMark(this)">Mark by Bluetooth' + (ok ? ' (stand near the lecturer)' : ' (Android app)') + '</button>';
+    var b = '<button class="btn2 w-full" onclick="asBleMark(this)">Check in nearby' + (ok ? ' (stand near your lecturer)' : ' (Android app)') + '</button>';
     return h.replace(/(go\('qrs'\)">[^<]*<\/button>)/, '$1' + b);
   };
   var ob = W.asBleMark;
   W.asBleMark = function (btn) {
-    if (!(native() && bleReady())) return toast('Bluetooth marking works in the Android app. Use the 5-digit code or scan the QR here.');
+    if (!(native() && bleReady())) return toast('Nearby check-in works in the Android app. Use the 5-digit code or scan the QR here.');
     if (typeof ob === 'function') return ob.apply(this, arguments);
   };
 })();
 
+
+/* ---------- (4) keep course codes out of fields that are not course fields ---------- */
+var CODE = /^[A-Za-z]{3}\s?\d{3}$/, hits = new WeakMap();
+function isLec() { try { return U && U.role === 'lecturer'; } catch (e) { return false; } }
+function courseField(el) {
+  if (el.tagName === 'SELECT') return true;
+  var k = [el.id, el.name, el.getAttribute('data-rg'), el.getAttribute('placeholder'), el.getAttribute('aria-label')].join(' ');
+  return /course|code/i.test(k);
+}
+function sanitize() {
+  if (!isLec()) return;
+  var els = document.querySelectorAll('input,textarea');
+  for (var i = 0; i < els.length; i++) {
+    var el = els[i], ty = (el.type || 'text').toLowerCase();
+    if (ty !== 'text' && ty !== 'search' && ty !== '' && ty !== 'textarea') continue;
+    if (el.getAttribute('data-usr') === '1' || courseField(el)) continue;
+    var v = String(el.value || '').trim();
+    if (!v || !CODE.test(v)) continue;
+    var n = hits.get(el) || 0; if (n >= 6) continue;           // something keeps re-filling it: stop fighting after 6 clears
+    hits.set(el, n + 1); el.value = '';
+  }
+}
+document.addEventListener('input', function (e) { try { if (e.isTrusted && e.target && e.target.setAttribute) e.target.setAttribute('data-usr', '1'); } catch (x) {} }, true);
+document.addEventListener('focusin', function () { try { sanitize(); } catch (e) {} }, true);
+setInterval(function () { try { sanitize(); } catch (e) {} }, 1500);
+
 /* ---------- keep the console control in place as screens redraw ---------- */
 var q = 0;
-try { new MutationObserver(function () { if (q) return; q = setTimeout(function () { q = 0; inject(); }, 100); }).observe(document.body, { childList: true, subtree: true }); } catch (e) {}
+try { new MutationObserver(function () { if (q) return; q = setTimeout(function () { q = 0; inject(); try { sanitize(); } catch (e) {} }, 100); }).observe(document.body, { childList: true, subtree: true }); } catch (e) {}
 setTimeout(inject, 400);
-W.__asLecConsoleTest = { inject: inject, state: state };
+W.__asLecConsoleTest = { inject: inject, state: state, sanitize: sanitize };
 })();
