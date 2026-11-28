@@ -1,20 +1,28 @@
-/* Academic Summit - ble.js v3 (Bluetooth proximity attendance, runs ALONGSIDE the code and QR methods)
+/* Academic Summit - ble.js v5
+   v5: plain-language messages ("Nearby check-in"); technical reasons are kept in window.__asBleLast for support, not shown to users.
+   (v4 notes follow)
+   Academic Summit - ble.js v4 (Bluetooth proximity attendance, runs ALONGSIDE the code and QR methods)
+   v4: finds the database client correctly. The app declares it as `const sb`, which is NOT a property of window, so v3 always
+   failed with "Not ready yet" after the broadcast had already started (lecturer) and could never save a mark (student).
    Uses ONE native plugin written for this app (android/.../BleProximityPlugin.java, name "BleProximity"): no npm package.
    Lecturer phone broadcasts a short rotating token; a student phone that hears it can mark. The server (sql/18) accepts the
    current and previous token for 90 s and writes the mark into the normal attendance table (method 'ble').
    Inert on the website and in an APK without the plugin: no buttons, no toasts. NOT TESTED ON REAL HARDWARE. */
 (function () {
-  if (window.__asBle) return; window.__asBle = '3';
+  if (window.__asBle) return; window.__asBle = '5';
 
   var SVC = '0000fe61-0000-1000-8000-00805f9b34fb';
   var ROTATE_MS = 45000, MAX_LECTURE_MS = 4 * 3600 * 1000;
   var CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   var DEFAULT_THRESHOLD = -72;           // dBm; phones differ, so this is a starting value to tune in a real hall
 
-  function client() { return window.sb || window.supabase || (window.AS && window.AS.sb) || null; }
+  function client() {
+    try { if (typeof sb !== 'undefined' && sb && sb.rpc) return sb; } catch (e) {}
+    return window.sb || (window.supabase && window.supabase.rpc ? window.supabase : null) || (window.AS && window.AS.sb) || null;
+  }
   function rpc(name, args) {
     var c = client();
-    if (!c || !c.rpc) return Promise.reject(new Error('Not ready yet. Try again.'));
+    if (!c || !c.rpc) return Promise.reject(new Error('Nearby check-in is starting up. Please wait a moment and try again.'));
     return Promise.resolve(c.rpc(name, args)).then(function (r) {
       if (r.error) throw new Error(r.error.message || String(r.error));
       return r.data;
@@ -59,13 +67,17 @@
     Promise.resolve(p.stopAdvertising()).catch(function () {})
       .then(function () { return p.startAdvertising({ service: SVC, data: t }); })
       .then(function () { return rpc('ble_rotate_token', { p_session: L.id, p_token: t }); })
-      .then(function () { pill('Bluetooth attendance ON - tap to stop', window.ASBleLecturerStop); })
-      .catch(function (e) { pill(null); toast('Bluetooth attendance could not start: ' + (e.message || e), 'error'); });
+      .then(function () { pill('Nearby check-in is on - tap to stop', window.ASBleLecturerStop); })
+      .catch(function (e) {
+        pill(null); try { p.stopAdvertising(); } catch (x) {}
+        try { window.__asBleLast = { at: Date.now(), reason: String((e && e.message) || e) }; } catch (x) {}
+        if (!L.warned) { L.warned = true; toast(/bluetooth|permission|nearby/i.test((e && e.message) || '') ? String(e.message) : 'Nearby check-in could not start. Please try again.', 'error'); }
+      });
   }
   window.ASBleLecturerStart = function (sessionId) {
     if (!sessionId || !plug()) return Promise.resolve(false);            // silent on web / old APK
     window.ASBleLecturerStop();
-    L.id = sessionId; L.stopAt = Date.now() + MAX_LECTURE_MS;
+    L.id = sessionId; L.stopAt = Date.now() + MAX_LECTURE_MS; L.warned = false;
     advertise(); L.timer = setInterval(advertise, ROTATE_MS);
     return Promise.resolve(true);
   };
@@ -81,7 +93,7 @@
   window.ASBleStudentMark = function (session, opts) {
     opts = opts || {};
     var P = plug();
-    if (!P) return Promise.reject(new Error('Bluetooth is not available in this version of the app.'));
+    if (!P) return Promise.reject(new Error('Nearby check-in is not available in this version of the app.'));
     var threshold = (session && session.ble_rssi_threshold != null) ? session.ble_rssi_threshold : DEFAULT_THRESHOLD;
     pill('Looking for your lecturer...');
     return Promise.resolve(P.scan({ service: SVC, durationMs: opts.scanMs || 8000 }))
